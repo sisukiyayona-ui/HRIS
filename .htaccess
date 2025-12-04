@@ -1,0 +1,13 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /HRIS/
+
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^(.*)$ index.php/$1 [L]
+  RewriteEngine On
+
+  RewriteRule ^iclock/(cdata|getrequest|devicecmd|test)$ /HRIS/index.php/adms/receive [QSA,L]
+  RewriteRule ^cdata$ /HRIS/index.php/adms/receive [QSA,L]
+
+</IfModule>

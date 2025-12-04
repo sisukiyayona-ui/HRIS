@@ -1,0 +1,64 @@
+<!-- page content -->
+<?php $role = $this->session->userdata('role_id'); ?>
+        <div class="right_col" role="main">
+          <div class="">
+            <div class="page-title">
+              <div class="title_left">
+                <h3> Master Budget</h3>
+              </div>
+
+              <div class="title_right">
+                <div class="col-md-5 col-sm-5 col-xs-12 form-group pull-right top_search">
+                </div>
+              </div>
+            </div>
+
+            <div class="clearfix"></div>
+
+            <div class="row">
+              <div class="col-md-12 col-sm-12 col-xs-12">
+                <div class="x_panel">
+                  <div class="x_title">
+                    <?php if($role == '1' or $role == '3' or $role == '5'  or $role == '7'  or $role == '8' ){ ?>
+                    <a class="btn btn-info btn-sm" href="<?php echo base_url()?>Lembur/masterbudget_insert">
+                      <i class="fa fa-plus"></i>  | Master Budget
+                    </a> 
+                     <?php } ?>
+                    <div class="clearfix"></div>
+                  </div>
+                  <div class="x_content">
+                     <table id="t_budget" class="table table-striped table-bordered">
+                      <thead>
+                        <tr>
+                          <th><center>Bagian</center></th>
+                          <th><center>Tahun</center></th>
+                          <th><center>Total Jam</center></th>
+                          <th><center>Keterangan</center></th>
+                          <th><center>Aksi</center></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                       <?php 
+                       foreach ($budget as $data) {
+                        echo "
+                        <tr>
+                        <td>$data->indeks_hr ($data->nama_bag)</td>
+                        <td>$data->tahun</td>
+                        <td>".round($data->total)."</td>
+                        <td>$data->note</td>
+                        <td><center>";
+                        if($role == '1' or $role == '2' or $role == '5' or $role == '7'){?>
+                          <a href="<?php echo base_url()?>Lembur/masterbudget_detail/<?php echo $data->recid_bag?>/<?php echo $data->tahun?>"><button class="btn btn-success btn-xs"><span class='fa fa-search-plus'></span></button></a>
+                          <a href="<?php echo base_url()?>Lembur/masterbudget_update/<?php echo $data->recid_bag?>/<?php echo $data->tahun?>"><button class="btn btn-info btn-xs"><span class='fa fa-edit'></span></button></a>
+                        <?php } ?>
+                      <?php } ?>
+
+                    </tbody>
+                     </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- /page content -->
