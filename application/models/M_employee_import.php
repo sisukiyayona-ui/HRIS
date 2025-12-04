@@ -168,6 +168,8 @@ class M_employee_import extends CI_Model
             'total_records' => 0,
             'successful_imports' => 0,
             'failed_imports' => 0,
+            'updated_records' => 0,
+            'inserted_records' => 0,
             'errors' => []
         ];
         
@@ -183,8 +185,25 @@ class M_employee_import extends CI_Model
                     // Map Excel data to database fields
                     $employee_data = $this->map_employee_data($employee);
                     
-                    // Insert into karyawan table
-                    $this->M_hris->karyawan_pinsert($employee_data);
+                    // Check if employee already exists based on NIK
+                    $existing_employee = null;
+                    if (isset($employee['NIK']) && !empty($employee['NIK'])) {
+                        $existing_employees = $this->M_hris->karyawan_by_nik($employee['NIK']);
+                        if (!empty($existing_employees) && is_array($existing_employees)) {
+                            $existing_employee = $existing_employees[0]; // Get the first match
+                        }
+                    }
+                    
+                    if ($existing_employee && isset($existing_employee->recid_karyawan)) {
+                        // Update existing employee
+                        $this->M_hris->karyawan_update($employee_data, $existing_employee->recid_karyawan);
+                        $import_results['updated_records']++;
+                    } else {
+                        // Insert new employee
+                        $this->M_hris->karyawan_pinsert($employee_data);
+                        $import_results['inserted_records']++;
+                    }
+                    
                     $import_results['successful_imports']++;
                     
                 } catch (Exception $e) {
@@ -201,7 +220,7 @@ class M_employee_import extends CI_Model
             unset($batch);
         }
         
-        $import_results['message'] = "Import completed. Success: {$import_results['successful_imports']}, Failed: {$import_results['failed_imports']}";
+        $import_results['message'] = "Import completed. Success: {$import_results['successful_imports']}, Failed: {$import_results['failed_imports']}, Inserted: {$import_results['inserted_records']}, Updated: {$import_results['updated_records']}";
         
         if ($import_results['failed_imports'] > 0) {
             $import_results['success'] = false;
@@ -285,6 +304,39 @@ class M_employee_import extends CI_Model
             $mapped_data['tgl_m_kerja'] = $this->format_date($employee['TGL_MASUK']);
         }
         
+        // Map jabatan name to recid_jbtn
+        if (isset($employee['JABATAN']) && !empty($employee['JABATAN'])) {
+            $jabatan_name = trim($employee['JABATAN']);
+            $jabatan = $this->jabatan_by_name($jabatan_name);
+            
+            if ($jabatan && isset($jabatan->recid_jbtn)) {
+                $mapped_data['recid_jbtn'] = (int)$jabatan->recid_jbtn;
+            }
+            // If not found or not provided, we simply don't set recid_jbtn at all
+        }
+        
+        // Map bagian name to recid_bag
+        if (isset($employee['BAGIAN']) && !empty($employee['BAGIAN'])) {
+            $bagian_name = trim($employee['BAGIAN']);
+            $bagian = $this->bagian_by_name($bagian_name);
+            
+            if ($bagian && isset($bagian->recid_bag)) {
+                $mapped_data['recid_bag'] = (int)$bagian->recid_bag;
+            }
+            // If not found or not provided, we simply don't set recid_bag at all
+        }
+        
+        // Map sub bagian name to recid_subbag
+        if (isset($employee['SUB_BAGIAN']) && !empty($employee['SUB_BAGIAN'])) {
+            $sub_bagian_name = trim($employee['SUB_BAGIAN']);
+            $sub_bagian = $this->sub_bagian_by_name($sub_bagian_name);
+            
+            if ($sub_bagian && isset($sub_bagian->recid_subbag)) {
+                $mapped_data['recid_subbag'] = (int)$sub_bagian->recid_subbag;
+            }
+            // If not found or not provided, we simply don't set recid_subbag at all
+        }
+        
         // Set default values for fields not in Excel
         $mapped_data['sts_aktif'] = 'Aktif'; // Default to active
         
@@ -311,5 +363,46 @@ class M_employee_import extends CI_Model
         }
         
         return null;
+    }
+
+    // ################################################### LOOKUP METHODS FOR IMPORT ###################################################################
+
+    /**
+     * Lookup jabatan by name
+     * 
+     * @param string $nama_jbtn Name of the jabatan
+     * @return object|null Jabatan object or null if not found
+     */
+    public function jabatan_by_name($nama_jbtn)
+    {
+        $query = $this->db->query("SELECT * FROM jabatan WHERE nama_jbtn = ? AND is_delete = '0' LIMIT 1", array($nama_jbtn));
+        $result = $query->row();
+        return $result;
+    }
+
+    /**
+     * Lookup bagian by name
+     * 
+     * @param string $nama_bag Name of the bagian
+     * @return object|null Bagian object or null if not found
+     */
+    public function bagian_by_name($nama_bag)
+    {
+        $query = $this->db->query("SELECT * FROM bagian WHERE nama_bag = ? AND is_delete = '0' LIMIT 1", array($nama_bag));
+        $result = $query->row();
+        return $result;
+    }
+
+    /**
+     * Lookup sub bagian by name
+     * 
+     * @param string $sub_bag Name of the sub bagian
+     * @return object|null Sub bagian object or null if not found
+     */
+    public function sub_bagian_by_name($sub_bag)
+    {
+        $query = $this->db->query("SELECT * FROM bagian_sub WHERE sub_bag = ? AND is_delete = '0' LIMIT 1", array($sub_bag));
+        $result = $query->row();
+        return $result;
     }
 }

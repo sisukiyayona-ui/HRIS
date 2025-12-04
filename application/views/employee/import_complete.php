@@ -18,25 +18,32 @@
           </div>
           <div class="x_content">
             <div class="row">
-              <div class="col-md-4 col-sm-4 col-xs-12">
+              <div class="col-md-3 col-sm-3 col-xs-12">
                 <div class="tile-stats">
                   <div class="icon"><i class="fa fa-database text-info"></i></div>
                   <div class="count"><?php echo $import_summary['total_records']; ?></div>
                   <h3>Total Records</h3>
                 </div>
               </div>
-              <div class="col-md-4 col-sm-4 col-xs-12">
+              <div class="col-md-3 col-sm-3 col-xs-12">
                 <div class="tile-stats">
                   <div class="icon"><i class="fa fa-check text-success"></i></div>
                   <div class="count"><?php echo $import_summary['successful_imports']; ?></div>
                   <h3>Successful Imports</h3>
                 </div>
               </div>
-              <div class="col-md-4 col-sm-4 col-xs-12">
+              <div class="col-md-3 col-sm-3 col-xs-12">
                 <div class="tile-stats">
-                  <div class="icon"><i class="fa fa-times text-danger"></i></div>
-                  <div class="count"><?php echo $import_summary['failed_imports']; ?></div>
-                  <h3>Failed Imports</h3>
+                  <div class="icon"><i class="fa fa-plus-circle text-primary"></i></div>
+                  <div class="count"><?php echo $import_summary['inserted_records']; ?></div>
+                  <h3>New Records</h3>
+                </div>
+              </div>
+              <div class="col-md-3 col-sm-3 col-xs-12">
+                <div class="tile-stats">
+                  <div class="icon"><i class="fa fa-refresh text-warning"></i></div>
+                  <div class="count"><?php echo $import_summary['updated_records']; ?></div>
+                  <h3>Updated Records</h3>
                 </div>
               </div>
             </div>
@@ -77,7 +84,8 @@
                   <span aria-hidden="true">×</span>
                 </button>
                 <h4><i class="icon fa fa-check"></i> Import Completed Successfully</h4>
-                <p>All <?php echo $import_summary['successful_imports']; ?> records were successfully imported into the system.</p>
+                <p>All <?php echo $import_summary['successful_imports']; ?> records were processed successfully.</p>
+                <p>Inserted: <?php echo $import_summary['inserted_records']; ?> | Updated: <?php echo $import_summary['updated_records']; ?></p>
               </div>
             <?php endif; ?>
 
