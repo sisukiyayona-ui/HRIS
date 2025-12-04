@@ -3386,6 +3386,9 @@ class Karyawan extends CI_Controller
 			$data['sanksi'] = $this->m_hris->sanksi_history($recid_karyawan);
 			$data['karirs'] = $this->m_hris->karirs_history($recid_karyawan);
 			$data['tunjangan'] = $this->m_hris->tunjangan_history($recid_karyawan);
+			// Load contract data
+			$this->load->model('M_kontrak');
+			$data['kontrak'] = $this->M_kontrak->get_kontrak_by_karyawan($recid_karyawan);
 			$data['usia'] = $this->m_hris->umur($recid_karyawan);
 			$rp_masker = $this->m_hris->param_upah_id(1);
 			foreach ($rp_masker->result() as $r) {

@@ -1,5 +1,36 @@
 <!-- page content -->
 <?php $role = $this->session->userdata('role_id'); ?>
+<style>
+.toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 20000;
+}
+.toast {
+    min-width: 250px;
+    padding: 12px 18px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+    color: #fff;
+    font-weight: 600;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+    opacity: 0;
+    transform: translateX(50px);
+    animation: slideIn 0.4s forwards;
+}
+.toast-success { background: #4caf50; }
+.toast-error   { background: #f44336; }
+.toast-info    { background: #2196f3; }
+.toast-warning { background: #ff9800; }
+
+@keyframes slideIn {
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+</style>
 <div class="right_col" role="main">
   <div class="">
     <div class="page-title">
@@ -38,6 +69,8 @@
                 <li role="presentation" class=""><a href="#tab_content55" role="tab" id="profile-tabb3" data-toggle="tab" aria-controls="profile" aria-expanded="false">Sanksi</a>
                 </li>
               <?php } ?>
+              <li role="presentation" class=""><a href="#tab_content66" role="tab" id="profile-tabb4" data-toggle="tab" aria-controls="profile" aria-expanded="false">Kontrak</a>
+              </li>
             </ul>
             <div id="myTabContent2" class="tab-content">
               <div role="tabpanel" class="tab-pane fade active in" id="tab_content11" aria-labelledby="home-tab">
@@ -1050,13 +1083,281 @@
               </div>
               <!--/ SANKSI -->
             <?php } ?>
+          <!-- KONTRAK -->
+          <div role="tabpanel" class="tab-pane fade" id="tab_content66" aria-labelledby="profile-tab">
+            <?php if ($role == '1' or $role == '2' or $role == '5') { ?>
+            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#createKontrakModal">
+              <i class="fa fa-plus"></i> Tambah Kontrak
+            </button>
+            <br><br>
+            <?php } ?>
+            <table class="table table-striped jambo_table bulk_action">
+              <thead>
+                <tr class="headings">
+                  <th class="column-title">No</th>
+                  <th class="column-title">Tanggal Mulai</th>
+                  <th class="column-title">Tanggal Akhir</th>
+                  <th class="column-title">Created At</th>
+                  <th class="column-title">Updated At</th>
+                  <?php if ($role == '1' or $role == '2' or $role == '5') { ?>
+                  <th class="column-title">Aksi</th>
+                  <?php } ?>
+                </tr>
+              </thead>
+              <tbody>
+                <?php 
+                $no = 1;
+                foreach ($kontrak as $data) { 
+                ?>
+                <tr class="even pointer">
+                  <td><?php echo $no++; ?></td>
+                  <td><?php echo date('d M Y', strtotime($data->tgl_mulai)); ?></td>
+                  <td><?php echo date('d M Y', strtotime($data->tgl_akhir)); ?></td>
+                  <td><?php echo date('d M Y H:i:s', strtotime($data->created_at)); ?></td>
+                  <td><?php echo date('d M Y H:i:s', strtotime($data->updated_at)); ?></td>
+                  <?php if ($role == '1' or $role == '2' or $role == '5') { ?>
+                  <td>
+                    <button type="button" class="btn btn-info btn-xs" data-toggle="modal" data-target="#editKontrakModal" 
+                            data-id="<?php echo $data->recid_kontrak; ?>" 
+                            data-tgl_mulai="<?php echo $data->tgl_mulai; ?>" 
+                            data-tgl_akhir="<?php echo $data->tgl_akhir; ?>">
+                      <i class="fa fa-edit"></i>
+                    </button>
+                    <button type="button" class="btn btn-danger btn-xs" onclick="deleteKontrak(<?php echo $data->recid_kontrak; ?>)">
+                      <i class="fa fa-trash"></i>
+                    </button>
+                  </td>
+                  <?php } ?>
+                </tr>
+                <?php } ?>
+              </tbody>
+            </table>
           </div>
+          <!--/ KONTRAK -->
         </div>
-
       </div>
+
     </div>
   </div>
-  <div class="clearfix"></div>
+</div>
+<div class="clearfix"></div>
+
+          <!-- Create Kontrak Modal -->
+          <div class="modal fade" id="createKontrakModal" tabindex="-1" role="dialog" aria-labelledby="createKontrakModalLabel">
+            <div class="modal-dialog" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                  <h4 class="modal-title" id="createKontrakModalLabel">Tambah Kontrak Baru</h4>
+                </div>
+                <div class="modal-body">
+                  <form id="createKontrakForm">
+                    <input type="hidden" id="recid_karyawan" value="<?php echo $data->recid_karyawan; ?>">
+                    <div class="form-group">
+                      <label for="tgl_mulai">Tanggal Mulai:</label>
+                      <input type="date" class="form-control" id="tgl_mulai" required>
+                    </div>
+                    <div class="form-group">
+                      <label for="tgl_akhir">Tanggal Akhir:</label>
+                      <input type="date" class="form-control" id="tgl_akhir" required>
+                    </div>
+                  </form>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-default" data-dismiss="modal">Batal</button>
+                  <button type="button" class="btn btn-primary" id="saveCreateKontrak">Simpan</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Edit Kontrak Modal -->
+          <div class="modal fade" id="editKontrakModal" tabindex="-1" role="dialog" aria-labelledby="editKontrakModalLabel">
+            <div class="modal-dialog" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                  <h4 class="modal-title" id="editKontrakModalLabel">Edit Kontrak</h4>
+                </div>
+                <div class="modal-body">
+                  <form id="editKontrakForm">
+                    <input type="hidden" id="edit_recid_kontrak">
+                    <div class="form-group">
+                      <label for="edit_tgl_mulai">Tanggal Mulai:</label>
+                      <input type="date" class="form-control" id="edit_tgl_mulai" required>
+                    </div>
+                    <div class="form-group">
+                      <label for="edit_tgl_akhir">Tanggal Akhir:</label>
+                      <input type="date" class="form-control" id="edit_tgl_akhir" required>
+                    </div>
+                  </form>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-default" data-dismiss="modal">Batal</button>
+                  <button type="button" class="btn btn-primary" id="saveEditKontrak">Simpan</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Success Message -->
+          <div class="modal fade" id="successModal" tabindex="-1" role="dialog" aria-labelledby="successModalLabel">
+            <div class="modal-dialog" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                  <h4 class="modal-title" id="successModalLabel">Sukses</h4>
+                </div>
+                <div class="modal-body">
+                  <p id="successMessage"></p>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-default" data-dismiss="modal">OK</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Delete Confirmation Modal -->
+          <div class="modal fade" id="deleteKontrakModal" tabindex="-1">
+            <div class="modal-dialog modal-sm">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h4 class="modal-title">Konfirmasi</h4>
+                </div>
+                <div class="modal-body">
+                  <p>Yakin ingin menghapus kontrak ini?</p>
+                  <input type="hidden" id="delete_recid_kontrak">
+                </div>
+                <div class="modal-footer">
+                  <button class="btn btn-default" data-dismiss="modal">Batal</button>
+                  <button class="btn btn-danger" id="confirmDeleteKontrak">Hapus</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Toast Container -->
+          <div class="toast-container" id="toastContainer"></div>
+
+          <!-- Toast JavaScript -->
+          <script>
+          function showToast(message, type = "success") {
+              var container = document.getElementById("toastContainer");
+
+              var toast = document.createElement("div");
+              toast.className = "toast toast-" + type;
+              toast.innerText = message;
+
+              container.appendChild(toast);
+
+              // Hapus otomatis
+              setTimeout(() => {
+                  toast.style.opacity = "0";
+                  toast.style.transform = "translateX(50px)";
+                  setTimeout(() => container.removeChild(toast), 300);
+              }, 3000);
+          }
+          </script>
+
+          <!-- JavaScript for Kontrak CRUD Operations -->
+          <script>
+          $(document).ready(function() {
+
+              // Open Edit Modal
+              $('#editKontrakModal').on('show.bs.modal', function (event) {
+                  var button = $(event.relatedTarget);
+                  $('#edit_recid_kontrak').val(button.data('id'));
+                  $('#edit_tgl_mulai').val(button.data('tgl_mulai'));
+                  $('#edit_tgl_akhir').val(button.data('tgl_akhir'));
+              });
+
+              // CREATE KONTRAK
+              $('#saveCreateKontrak').click(function() {
+                  var recid_karyawan = $('#recid_karyawan').val();
+                  var tgl_mulai = $('#tgl_mulai').val();
+                  var tgl_akhir = $('#tgl_akhir').val();
+
+                  if (!tgl_mulai || !tgl_akhir) {
+                      showToast('Harap isi semua field', 'error');
+                      return;
+                  }
+
+                  $.ajax({
+                      url: '<?php echo base_url(); ?>Kontrak/create',
+                      type: 'POST',
+                      data: { recid_karyawan, tgl_mulai, tgl_akhir },
+                      success: function() {
+                          $('#createKontrakModal').modal('hide');
+                          showToast("Kontrak berhasil ditambahkan", "success");
+                          setTimeout(() => location.reload(), 1500);
+                      },
+                      error: function() {
+                          showToast("Gagal menambah kontrak", "error");
+                      }
+                  });
+              });
+
+              // UPDATE KONTRAK
+              $('#saveEditKontrak').click(function() {
+                  var id = $('#edit_recid_kontrak').val();
+                  var tgl_mulai = $('#edit_tgl_mulai').val();
+                  var tgl_akhir = $('#edit_tgl_akhir').val();
+
+                  if (!tgl_mulai || !tgl_akhir) {
+                      showToast('Harap isi semua field', 'error');
+                      return;
+                  }
+
+                  $.ajax({
+                      url: '<?php echo base_url(); ?>Kontrak/update/' + id,
+                      type: 'POST',
+                      data: { tgl_mulai, tgl_akhir },
+                      success: function() {
+                          $('#editKontrakModal').modal('hide');
+                          showToast("Kontrak berhasil diupdate", "success");
+                          setTimeout(() => location.reload(), 1500);
+                      },
+                      error: function() {
+                          showToast("Gagal update kontrak", "error");
+                      }
+                  });
+              });
+
+              // Confirm Delete
+              $('#confirmDeleteKontrak').click(function() {
+                  var id = $('#delete_recid_kontrak').val();
+
+                  $.ajax({
+                      url: '<?php echo base_url(); ?>Kontrak/delete/' + id,
+                      type: 'POST',
+                      success: function() {
+                          $('#deleteKontrakModal').modal('hide');
+                          showToast("Kontrak berhasil dihapus", "success");
+                          setTimeout(() => location.reload(), 1500);
+                      },
+                      error: function() {
+                          showToast("Gagal hapus kontrak", "error");
+                      }
+                  });
+              });
+
+          });
+
+          // OPEN delete modal
+          function deleteKontrak(id) {
+              $('#delete_recid_kontrak').val(id);
+              $('#deleteKontrakModal').modal('show');
+          }
+          </script>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+<div class="clearfix"></div>
 
 </div>
 </div>
