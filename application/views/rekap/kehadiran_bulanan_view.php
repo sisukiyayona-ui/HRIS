@@ -491,6 +491,7 @@ function renderKehadiranTable(data, dates, summary) {
   
   headerHtml += '<th style="background:#27ae60; min-width:80px;">Total<br>Hadir</th>';
   headerHtml += '<th style="background:#e74c3c; min-width:80px;">Total<br>Absen</th>';
+  headerHtml += '<th style="background:#f39c12; min-width:80px;">Tidak<br>Hadir</th>';
   headerHtml += '<th style="background:#3498db; min-width:80px;">%<br>Hadir</th>';
   headerHtml += '</tr>';
   
@@ -506,6 +507,7 @@ function renderKehadiranTable(data, dates, summary) {
     // Count attendance per employee
     let totalHadir = 0;
     let totalAbsen = 0;
+    let totalTidakHadir = 0; // New counter for non-attendance reasons
     
     dates.forEach(function(d) {
       let status = karyawan.kehadiran[d.full_date];
@@ -523,12 +525,15 @@ function renderKehadiranTable(data, dates, summary) {
       } else if (status === 'libur') {
         cssClass = 'status-libur';
         icon = '-';
+        totalTidakHadir++; // Count libur as tidak hadir
       } else if (status === 'izin') {
         cssClass = 'status-izin';
         icon = '½';
+        totalTidakHadir++; // Count izin as tidak hadir
       } else if (status === 'cuti') {
         cssClass = 'status-cuti';
         icon = 'C';
+        totalTidakHadir++; // Count cuti as tidak hadir
       }
       
       html += '<td class="' + cssClass + '">' + icon + '</td>';
@@ -540,6 +545,7 @@ function renderKehadiranTable(data, dates, summary) {
     
     html += '<td style="background:#ecf0f1;"><strong>' + totalHadir + '</strong></td>';
     html += '<td style="background:#ecf0f1;"><strong>' + totalAbsen + '</strong></td>';
+    html += '<td style="background:#ecf0f1;"><strong>' + totalTidakHadir + '</strong></td>';
     html += '<td style="background:#ecf0f1;"><strong>' + persenHadir + '%</strong></td>';
     html += '</tr>';
   });

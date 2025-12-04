@@ -1286,6 +1286,7 @@ class Rekap extends CI_Controller {
             }
             $sheet->setCellValueByColumnAndRow($col++, $row, 'Total Hadir');
             $sheet->setCellValueByColumnAndRow($col++, $row, 'Total Absen');
+            $sheet->setCellValueByColumnAndRow($col++, $row, 'Tidak Hadir');
             $sheet->setCellValueByColumnAndRow($col++, $row, '% Hadir');
             $sheet->getStyle('A'.$row.':'.$sheet->getCellByColumnAndRow($col-1,$row)->getColumn().$row)->getFont()->setBold(true);
             $sheet->freezePane('A'.($row+1));
@@ -1298,10 +1299,11 @@ class Rekap extends CI_Controller {
                 $sheet->setCellValueByColumnAndRow($c++, $row, $no++);
                 $sheet->setCellValueByColumnAndRow($c++, $row, $k['nik']);
                 $sheet->setCellValueByColumnAndRow($c++, $row, $k['nama_karyawan']);
-                $hadir = 0; $absen = 0;
+                $hadir = 0; $absen = 0; $tidak_hadir = 0;
                 foreach ($dates as $d) {
                     if ($d['is_weekend']) {
                         $sheet->setCellValueByColumnAndRow($c++, $row, '-');
+                        $tidak_hadir++; // Count weekend as tidak hadir
                     } else {
                         if (!empty($att_map[$k['recid_karyawan']][$d['full_date']])) {
                             $sheet->setCellValueByColumnAndRow($c++, $row, '✓'); $hadir++;
@@ -1312,6 +1314,7 @@ class Rekap extends CI_Controller {
                 }
                 $sheet->setCellValueByColumnAndRow($c++, $row, $hadir);
                 $sheet->setCellValueByColumnAndRow($c++, $row, $absen);
+                $sheet->setCellValueByColumnAndRow($c++, $row, $tidak_hadir);
                 $percent = $hari_kerja>0 ? round(($hadir/$hari_kerja)*100, 1) : 0;
                 $sheet->setCellValueByColumnAndRow($c++, $row, $percent.'%');
                 $row++;
