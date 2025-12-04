@@ -159,20 +159,58 @@ class Employee_import extends CI_Controller
             return;
         }
 
-        $employee_data = $this->session->userdata('employee_import_data');
+        // Check if we're coming from pagination (import results in session) or fresh import
+        $import_results = $this->session->userdata('employee_import_results');
         
-        if (empty($employee_data)) {
-            $this->session->set_flashdata('error', 'No data to import. Please upload a file first.');
-            redirect('Employee_import');
+        if (empty($import_results)) {
+            $employee_data = $this->session->userdata('employee_import_data');
+            
+            if (empty($employee_data)) {
+                $this->session->set_flashdata('error', 'No data to import. Please upload a file first.');
+                redirect('Employee_import');
+                return;
+            }
+
+            // Perform the import (without validation)
+            $import_results = $this->M_employee_import->import_employee_data($employee_data);
+            
+            // Store import results in session for pagination
+            $this->session->set_userdata('employee_import_results', $import_results);
+            
+            // Clean up original session data
+            $this->session->unset_userdata('employee_import_data');
+            $this->session->unset_userdata('employee_import_file');
+        }
+
+        $usr = $this->session->userdata('kar_id');
+        $data['cek_usr'] = $this->M_hris->cek_usr($usr);
+        $data['import_summary'] = $import_results;
+
+        $this->load->view('layout/a_header');
+        $this->load->view('layout/menu_super', $data);
+        $this->load->view('employee/import_complete', $data);
+        $this->load->view('layout/a_footer');
+    }
+    
+    /**
+     * Handle pagination for import results
+     */
+    public function paginate_results()
+    {
+        $logged_in = $this->session->userdata('logged_in');
+        if ($logged_in != 1) {
+            redirect('Auth/keluar');
             return;
         }
 
-        // Perform the import (without validation)
-        $import_results = $this->M_employee_import->import_employee_data($employee_data);
-
-        // Clean up session data
-        $this->session->unset_userdata('employee_import_data');
-        $this->session->unset_userdata('employee_import_file');
+        // Get import results from session
+        $import_results = $this->session->userdata('employee_import_results');
+        
+        if (empty($import_results)) {
+            $this->session->set_flashdata('error', 'No import results found.');
+            redirect('Employee_import');
+            return;
+        }
 
         $usr = $this->session->userdata('kar_id');
         $data['cek_usr'] = $this->M_hris->cek_usr($usr);

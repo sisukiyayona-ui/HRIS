@@ -170,7 +170,9 @@ class M_employee_import extends CI_Model
             'failed_imports' => 0,
             'updated_records' => 0,
             'inserted_records' => 0,
-            'errors' => []
+            'inserted_details' => [], // Track inserted records
+            'updated_details' => [],  // Track updated records
+            'errors' => []            // Track failed records
         ];
         
         $total_records = count($employee_data);
@@ -198,10 +200,23 @@ class M_employee_import extends CI_Model
                         // Update existing employee
                         $this->M_hris->karyawan_update($employee_data, $existing_employee->recid_karyawan);
                         $import_results['updated_records']++;
+                        
+                        // Track updated record details
+                        $import_results['updated_details'][] = [
+                            'NIK' => isset($employee['NIK']) ? $employee['NIK'] : '',
+                            'NAMA' => isset($employee['NAMA']) ? $employee['NAMA'] : '',
+                            'recid_karyawan' => $existing_employee->recid_karyawan
+                        ];
                     } else {
                         // Insert new employee
                         $this->M_hris->karyawan_pinsert($employee_data);
                         $import_results['inserted_records']++;
+                        
+                        // Track inserted record details
+                        $import_results['inserted_details'][] = [
+                            'NIK' => isset($employee['NIK']) ? $employee['NIK'] : '',
+                            'NAMA' => isset($employee['NAMA']) ? $employee['NAMA'] : ''
+                        ];
                     }
                     
                     $import_results['successful_imports']++;
