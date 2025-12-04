@@ -1,0 +1,21 @@
+{
+    "name": "chitose/hris",
+    "description": "untuk hris",
+    "type": "project",
+    "license": "GPL",
+    "authors": [
+        {
+            "name": "anysah",
+            "email": "anysah.murti@gmail.com"
+        }
+    ],
+    "require": {
+        "mpdf/mpdf": "8.0.13",
+        "phpoffice/phpword": "^0.18.2",
+        "phpoffice/phpspreadsheet": "^1.22"
+    },
+    "require-dev": {
+        "mikey179/vfsstream": "1.1.*",
+        "phpunit/phpunit": "4.* || 5.*"
+    }
+}
