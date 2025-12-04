@@ -503,6 +503,11 @@ class Rekap extends CI_Controller {
             $karyawan_by_nama = [];
             
             foreach ($karyawan_list as $k) {
+                // Validasi bahwa recid_karyawan adalah integer
+                if (!is_numeric($k['recid_karyawan'])) {
+                    continue; // Skip invalid entries
+                }
+                
                 // Map by NIK (untuk matching prioritas)
                 if (!empty($k['nik'])) {
                     $nik_clean = strtoupper(trim($k['nik']));
@@ -569,6 +574,35 @@ class Rekap extends CI_Controller {
                 
                 // Insert mapping jika ada match
                 if ($karyawan) {
+                    // Validasi tambahan untuk memastikan recid_karyawan valid
+                    if (!is_numeric($karyawan['recid_karyawan']) || $karyawan['recid_karyawan'] <= 0) {
+                        $total_unmapped++;
+                        $unmapped_users[] = [
+                            'pin' => $pin,
+                            'nama_mesin' => $nama_mesin,
+                            'cardno' => $cardno,
+                            'error' => 'Invalid recid_karyawan: ' . $karyawan['recid_karyawan']
+                        ];
+                        continue;
+                    }
+                    
+                    // Tambahan validasi: Pastikan karyawan benar-benar ada di tabel karyawan
+                    $karyawan_exists = $this->db->where('recid_karyawan', $karyawan['recid_karyawan'])
+                                                ->where('sts_aktif', 'AKTIF')
+                                                ->get('karyawan')
+                                                ->num_rows();
+                    
+                    if ($karyawan_exists == 0) {
+                        $total_unmapped++;
+                        $unmapped_users[] = [
+                            'pin' => $pin,
+                            'nama_mesin' => $nama_mesin,
+                            'cardno' => $cardno,
+                            'error' => 'Karyawan tidak ditemukan di database: ' . $karyawan['recid_karyawan']
+                        ];
+                        continue;
+                    }
+                    
                     // Cek apakah sudah ada mapping untuk PIN ini
                     $exists = $this->db->where('pin', $pin)
                                        ->where('recid_karyawan', $karyawan['recid_karyawan'])
@@ -577,11 +611,16 @@ class Rekap extends CI_Controller {
                                        ->num_rows();
                     
                     if ($exists == 0) {
-                        $this->db->insert('karyawan_pin_map', [
+                        // Tambahkan validasi sebelum insert
+                        $insert_data = [
                             'pin' => $pin,
-                            'recid_karyawan' => $karyawan['recid_karyawan'],
-                            'device_sn' => $device_sn
-                        ]);
+                            'recid_karyawan' => (int)$karyawan['recid_karyawan'], // Pastikan integer
+                            'device_sn' => $device_sn,
+                            'nama_di_mesin' => $nama_mesin,
+                            'created_date' => date('Y-m-d')
+                        ];
+                        
+                        $this->db->insert('karyawan_pin_map', $insert_data);
                         $total_mapped++;
                     } else {
                         $total_duplicate++;
@@ -641,7 +680,8 @@ class Rekap extends CI_Controller {
                 INNER JOIN hris.karyawan_pin_map pm ON k.recid_karyawan = pm.recid_karyawan
                 WHERE k.sts_aktif = 'AKTIF'
             ";
-            $total_mapped = $this->db->query($query)->row()->total_mapped;
+            $result = $this->db->query($query)->row();
+            $total_mapped = $result ? $result->total_mapped : 0;
             
             // Total karyawan belum dimapping
             $total_unmapped = $total_karyawan - $total_mapped;
@@ -670,6 +710,102 @@ class Rekap extends CI_Controller {
                     'persentase_mapped' => $total_karyawan > 0 ? round(($total_mapped / $total_karyawan) * 100, 2) . '%' : '0%'
                 ],
                 'karyawan_unmapped' => $karyawan_unmapped
+            ], JSON_PRETTY_PRINT);
+            
+        } catch (Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ], JSON_PRETTY_PRINT);
+        }
+    }
+    
+    // Cleanup function to remove invalid mappings
+    public function cleanup_invalid_mappings()
+    {
+        header('Content-Type: application/json');
+        
+        try {
+            // Remove mappings with non-existent karyawan
+            $this->db->query("
+                DELETE kpm FROM karyawan_pin_map kpm
+                LEFT JOIN karyawan k ON kpm.recid_karyawan = k.recid_karyawan
+                WHERE k.recid_karyawan IS NULL
+            ");
+            
+            // Remove mappings with inactive karyawan
+            $this->db->query("
+                DELETE kpm FROM karyawan_pin_map kpm
+                LEFT JOIN karyawan k ON kpm.recid_karyawan = k.recid_karyawan
+                WHERE k.sts_aktif != 'AKTIF'
+            ");
+            
+            // Remove duplicate mappings, keeping only the first one
+            $this->db->query("
+                DELETE kpm1 FROM karyawan_pin_map kpm1
+                INNER JOIN karyawan_pin_map kpm2
+                WHERE kpm1.id > kpm2.id
+                AND kpm1.pin = kpm2.pin
+                AND kpm1.recid_karyawan = kpm2.recid_karyawan
+            ");
+            
+            echo json_encode([
+                'success' => true,
+                'message' => 'Invalid mappings cleaned up successfully'
+            ], JSON_PRETTY_PRINT);
+            
+        } catch (Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ], JSON_PRETTY_PRINT);
+        }
+    }
+    
+    // Test function to verify mapping integrity
+    public function test_mapping_integrity()
+    {
+        header('Content-Type: application/json');
+        
+        try {
+            // Check for invalid recid_karyawan values
+            $invalid_mappings = $this->db->query("
+                SELECT kpm.id, kpm.pin, kpm.recid_karyawan, k.nama_karyawan
+                FROM karyawan_pin_map kpm
+                LEFT JOIN karyawan k ON kpm.recid_karyawan = k.recid_karyawan
+                WHERE kpm.recid_karyawan IS NULL OR kpm.recid_karyawan <= 0
+            ")->result_array();
+            
+            // Check for mappings with non-existent karyawan
+            $orphaned_mappings = $this->db->query("
+                SELECT kpm.id, kpm.pin, kpm.recid_karyawan
+                FROM karyawan_pin_map kpm
+                LEFT JOIN karyawan k ON kpm.recid_karyawan = k.recid_karyawan
+                WHERE k.recid_karyawan IS NULL
+            ")->result_array();
+            
+            // Check for mappings with inactive karyawan
+            $inactive_mappings = $this->db->query("
+                SELECT kpm.id, kpm.pin, kpm.recid_karyawan, k.nama_karyawan, k.sts_aktif
+                FROM karyawan_pin_map kpm
+                LEFT JOIN karyawan k ON kpm.recid_karyawan = k.recid_karyawan
+                WHERE k.sts_aktif != 'AKTIF'
+            ")->result_array();
+            
+            // Check for duplicate mappings
+            $duplicate_mappings = $this->db->query("
+                SELECT pin, recid_karyawan, COUNT(*) as count
+                FROM karyawan_pin_map
+                GROUP BY pin, recid_karyawan
+                HAVING COUNT(*) > 1
+            ")->result_array();
+            
+            echo json_encode([
+                'success' => true,
+                'invalid_mappings' => $invalid_mappings,
+                'orphaned_mappings' => $orphaned_mappings,
+                'inactive_mappings' => $inactive_mappings,
+                'duplicate_mappings' => $duplicate_mappings
             ], JSON_PRETTY_PRINT);
             
         } catch (Exception $e) {
@@ -1462,10 +1598,39 @@ class Rekap extends CI_Controller {
                 
                 // Insert mapping jika ada match
                 if ($karyawan) {
+                    // Validasi tambahan untuk memastikan recid_karyawan valid
+                    if (!is_numeric($karyawan['recid_karyawan']) || $karyawan['recid_karyawan'] <= 0) {
+                        $total_unmapped++;
+                        $unmapped_users[] = [
+                            'pin' => $pin,
+                            'nama' => $name,
+                            'ac_no' => $ac_no,
+                            'error' => 'Invalid recid_karyawan: ' . $karyawan['recid_karyawan']
+                        ];
+                        continue;
+                    }
+                    
+                    // Tambahan validasi: Pastikan karyawan benar-benar ada di tabel karyawan
+                    $karyawan_exists = $this->db->where('recid_karyawan', $karyawan['recid_karyawan'])
+                                                ->where('sts_aktif', 'AKTIF')
+                                                ->get('karyawan')
+                                                ->num_rows();
+                    
+                    if ($karyawan_exists == 0) {
+                        $total_unmapped++;
+                        $unmapped_users[] = [
+                            'pin' => $pin,
+                            'nama' => $name,
+                            'ac_no' => $ac_no,
+                            'error' => 'Karyawan tidak ditemukan di database: ' . $karyawan['recid_karyawan']
+                        ];
+                        continue;
+                    }
+                    
                     // Cek apakah sudah ada mapping untuk PIN ini
                     $where = [
                         'pin' => $pin,
-                        'recid_karyawan' => $karyawan['recid_karyawan']
+                        'recid_karyawan' => (int)$karyawan['recid_karyawan'] // Pastikan integer
                     ];
                     
                     if (!empty($device_sn)) {
@@ -1477,7 +1642,9 @@ class Rekap extends CI_Controller {
                     if ($exists == 0) {
                         $insert_data = [
                             'pin' => $pin,
-                            'recid_karyawan' => $karyawan['recid_karyawan']
+                            'recid_karyawan' => (int)$karyawan['recid_karyawan'], // Pastikan integer
+                            'nama_di_mesin' => $name,
+                            'created_date' => date('Y-m-d')
                         ];
                         
                         if (!empty($device_sn)) {
