@@ -124,6 +124,11 @@ $route['rekap/hapus_jadwal_shift'] = 'rekap/hapus_jadwal_shift';
 $route['rekap/get_shift_list'] = 'rekap/get_shift_list';
 $route['rekap/create_custom_shift'] = 'rekap/create_custom_shift';
 
-
-
+// Routes for Employee Import
+$route['employee_import'] = 'employee_import';
+$route['employee_import/upload'] = 'employee_import/upload';
+$route['employee_import/preview'] = 'employee_import/preview';
+$route['employee_import/process_data'] = 'employee_import/process_data';
+$route['employee_import/do_import'] = 'employee_import/do_import';
+$route['employee_import/download_template'] = 'employee_import/download_template';
 

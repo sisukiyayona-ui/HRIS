@@ -294,6 +294,9 @@ if ($as_user == "CINT") {
                     <?php if ($role == '1' or $role == '2' or $role == '3' or $role == '5' or $role == '25' or $role == '27') { ?>
                       <li><a href="<?php echo base_url() ?>index.php/Karir/expedisi_karir">Ekspedisi</a></li>
                     <?php } ?>
+                    <?php if ($role == '1' or $role == '2' or $role == '3' or $role == '5' or $role == '25') { ?>
+                      <li><a href="<?php echo base_url() ?>Employee_import">Bulk Employee Import</a></li>
+                    <?php } ?>
 
                   </ul>
                 </li>
