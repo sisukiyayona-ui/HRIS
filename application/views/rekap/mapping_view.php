@@ -401,40 +401,104 @@ $(document).ready(function() {
           `;
           
           if (res.unmapped_users && res.unmapped_users.length > 0) {
+            // Categorize unmapped users
+            let tidakAda = [];
+            let nonAktif = [];
+            
+            res.unmapped_users.forEach(user => {
+              if (user.kategori === 'non_aktif') {
+                nonAktif.push(user);
+              } else {
+                tidakAda.push(user);
+              }
+            });
+            
             resultHtml += `
               <div class="panel panel-warning">
                 <div class="panel-heading">
                   <h4>User di Mesin yang Tidak Ditemukan (${res.unmapped_users.length})</h4>
                 </div>
-                <div class="panel-body" style="max-height: 300px; overflow-y: auto;">
-                  <table class="table table-striped">
-                    <thead>
-                      <tr>
-                        <th>No</th>
-                        <th>PIN</th>
-                        <th>Nama di Mesin</th>
-                        <th>Card No (AC.No)</th>
-                      </tr>
-                    </thead>
-                    <tbody>
+                <div class="panel-body" style="max-height: 500px; overflow-y: auto;">
             `;
             
-            res.unmapped_users.forEach((user, index) => {
+            // Display non-active users
+            if (nonAktif.length > 0) {
               resultHtml += `
-                <tr>
-                  <td>${index + 1}</td>
-                  <td>${user.pin}</td>
-                  <td>${user.nama_mesin}</td>
-                  <td>${user.cardno || '<span class="text-muted">-</span>'}</td>
-                </tr>
+                <h5><strong>1. Karyawan Non-Aktif (${nonAktif.length} user)</strong></h5>
+                <table class="table table-striped">
+                  <thead>
+                    <tr>
+                      <th>No</th>
+                      <th>PIN</th>
+                      <th>Nama di Mesin</th>
+                      <th>Card No (AC.No)</th>
+                      <th>NIK Karyawan</th>
+                      <th>Nama Karyawan</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
               `;
-            });
+              
+              nonAktif.forEach((user, index) => {
+                resultHtml += `
+                  <tr>
+                    <td>${index + 1}</td>
+                    <td>${user.pin}</td>
+                    <td>${user.nama_mesin}</td>
+                    <td>${user.cardno || '<span class="text-muted">-</span>'}</td>
+                    <td>${user.karyawan_info ? user.karyawan_info.nik : '-'}</td>
+                    <td>${user.karyawan_info ? user.karyawan_info.nama_karyawan : '-'}</td>
+                    <td><span class="label label-warning">${user.karyawan_info ? user.karyawan_info.sts_aktif : '-'}</span></td>
+                  </tr>
+                `;
+              });
+              
+              resultHtml += `
+                  </tbody>
+                </table>
+              `;
+            }
+            
+            // Display users not found in database
+            if (tidakAda.length > 0) {
+              resultHtml += `
+                <h5><strong>2. User Tidak Ada di Database (${tidakAda.length} user)</strong></h5>
+                <table class="table table-striped">
+                  <thead>
+                    <tr>
+                      <th>No</th>
+                      <th>PIN</th>
+                      <th>Nama di Mesin</th>
+                      <th>Card No (AC.No)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+              `;
+              
+              tidakAda.forEach((user, index) => {
+                resultHtml += `
+                  <tr>
+                    <td>${index + 1}</td>
+                    <td>${user.pin}</td>
+                    <td>${user.nama_mesin}</td>
+                    <td>${user.cardno || '<span class="text-muted">-</span>'}</td>
+                  </tr>
+                `;
+              });
+              
+              resultHtml += `
+                  </tbody>
+                </table>
+              `;
+            }
             
             resultHtml += `
-                    </tbody>
-                  </table>
                   <div class="alert alert-info">
-                    <strong>Catatan:</strong> User ini tidak ditemukan di database karyawan. 
+                    <strong>Catatan:</strong><br>
+                    • <strong>Karyawan Non-Aktif:</strong> User ditemukan di database karyawan tetapi statusnya tidak aktif<br>
+                    • <strong>User Tidak Ada di Database:</strong> User tidak ditemukan sama sekali di database karyawan
+                    <br><br>
                     Sistem mencoba matching berdasarkan NIK (Card No) terlebih dahulu, jika tidak cocok baru matching berdasarkan Nama.
                   </div>
                 </div>
@@ -534,6 +598,7 @@ function rebuildSemuaMesin() {
   let successCount = 0;
   let failCount = 0;
   let allResults = [];
+  let allUnmappedUsers = []; // Store all unmapped users
   
   function prosesNext() {
     if (currentIndex >= machines.length) {
@@ -561,6 +626,14 @@ function rebuildSemuaMesin() {
           totalUnmapped += res.summary.total_unmapped;
           successCount++;
           allResults.push(res);
+          
+          // Collect unmapped users
+          if (res.unmapped_users && res.unmapped_users.length > 0) {
+            res.unmapped_users.forEach(user => {
+              user.mesin = res.mesin.nama; // Add mesin info to each user
+              allUnmappedUsers.push(user);
+            });
+          }
         } else {
           addLog('✗ Mesin ' + mesinId + ': ' + res.message, 'error');
           failCount++;
@@ -634,7 +707,7 @@ function rebuildSemuaMesin() {
         resultHtml += '<td>' + res.mesin.nama + '</td>';
         resultHtml += '<td>' + res.summary.total_users + '</td>';
         resultHtml += '<td><strong>' + res.summary.total_mapped + '</strong></td>';
-        resultHtml += '<td>' + res.summary.mapped_by_pin + '</td>';
+        resultHtml += '<td>' + (res.summary.mapped_by_nik || 0) + '</td>';
         resultHtml += '<td>' + res.summary.mapped_by_nama + '</td>';
         resultHtml += '<td>' + res.summary.total_unmapped + '</td>';
         resultHtml += '<td><span class="label label-' + statusColor + '">' + statusIcon + '</span></td>';
@@ -642,6 +715,77 @@ function rebuildSemuaMesin() {
       });
       
       resultHtml += '</tbody></table>';
+      resultHtml += '</div></div>';
+    }
+    
+    // Detail users yang tidak ditemukan
+    if (allUnmappedUsers.length > 0) {
+      // Categorize unmapped users
+      let tidakAda = [];
+      let nonAktif = [];
+      
+      allUnmappedUsers.forEach(user => {
+        if (user.kategori === 'non_aktif') {
+          nonAktif.push(user);
+        } else {
+          tidakAda.push(user);
+        }
+      });
+      
+      resultHtml += '<div class="panel panel-warning">';
+      resultHtml += '<div class="panel-heading"><h4>User di Mesin yang Tidak Ditemukan (' + allUnmappedUsers.length + ')</h4></div>';
+      resultHtml += '<div class="panel-body" style="max-height: 500px; overflow-y: auto;">';
+      
+      // Display non-active users
+      if (nonAktif.length > 0) {
+        resultHtml += '<h5><strong>1. Karyawan Non-Aktif (' + nonAktif.length + ' user)</strong></h5>';
+        resultHtml += '<table class="table table-striped">';
+        resultHtml += '<thead><tr><th>No</th><th>Mesin</th><th>PIN</th><th>Nama di Mesin</th><th>Card No (AC.No)</th><th>NIK Karyawan</th><th>Nama Karyawan</th><th>Status</th></tr></thead>';
+        resultHtml += '<tbody>';
+        
+        nonAktif.forEach(function(user, index) {
+          resultHtml += '<tr>';
+          resultHtml += '<td>' + (index + 1) + '</td>';
+          resultHtml += '<td>' + user.mesin + '</td>';
+          resultHtml += '<td>' + user.pin + '</td>';
+          resultHtml += '<td>' + user.nama_mesin + '</td>';
+          resultHtml += '<td>' + (user.cardno || '-') + '</td>';
+          resultHtml += '<td>' + (user.karyawan_info ? user.karyawan_info.nik : '-') + '</td>';
+          resultHtml += '<td>' + (user.karyawan_info ? user.karyawan_info.nama_karyawan : '-') + '</td>';
+          resultHtml += '<td><span class="label label-warning">' + (user.karyawan_info ? user.karyawan_info.sts_aktif : '-') + '</span></td>';
+          resultHtml += '</tr>';
+        });
+        
+        resultHtml += '</tbody></table>';
+      }
+      
+      // Display users not found in database
+      if (tidakAda.length > 0) {
+        resultHtml += '<h5><strong>2. User Tidak Ada di Database (' + tidakAda.length + ' user)</strong></h5>';
+        resultHtml += '<table class="table table-striped">';
+        resultHtml += '<thead><tr><th>No</th><th>Mesin</th><th>PIN</th><th>Nama di Mesin</th><th>Card No (AC.No)</th></tr></thead>';
+        resultHtml += '<tbody>';
+        
+        tidakAda.forEach(function(user, index) {
+          resultHtml += '<tr>';
+          resultHtml += '<td>' + (index + 1) + '</td>';
+          resultHtml += '<td>' + user.mesin + '</td>';
+          resultHtml += '<td>' + user.pin + '</td>';
+          resultHtml += '<td>' + user.nama_mesin + '</td>';
+          resultHtml += '<td>' + (user.cardno || '-') + '</td>';
+          resultHtml += '</tr>';
+        });
+        
+        resultHtml += '</tbody></table>';
+      }
+      
+      resultHtml += '<div class="alert alert-info">';
+      resultHtml += '<strong>Catatan:</strong><br>';
+      resultHtml += '• <strong>Karyawan Non-Aktif:</strong> User ditemukan di database karyawan tetapi statusnya tidak aktif<br>';
+      resultHtml += '• <strong>User Tidak Ada di Database:</strong> User tidak ditemukan sama sekali di database karyawan';
+      resultHtml += '<br><br>';
+      resultHtml += 'Sistem mencoba matching berdasarkan NIK (Card No) terlebih dahulu, jika tidak cocok baru matching berdasarkan Nama.';
+      resultHtml += '</div>';
       resultHtml += '</div></div>';
     }
     

@@ -727,8 +727,60 @@ class Rekap extends CI_Controller {
                     $error_info = [
                         'pin' => $pin_dari_mesin,
                         'nama_mesin' => $nama_mesin,
-                        'cardno' => $cardno
+                        'cardno' => $cardno,
+                        'kategori' => 'tidak_ada' // Default category
                     ];
+                    
+                    // Check if user exists in karyawan table but with non-active status
+                    $karyawan_non_aktif = null;
+                    
+                    // Try to find by SSN first
+                    if (!empty($userinfo) && !empty($userinfo['SSN'])) {
+                        $ssn_clean = strtoupper(trim($userinfo['SSN']));
+                        $karyawan_non_aktif = $this->db->select('recid_karyawan, nik, nama_karyawan, sts_aktif')
+                                                      ->where('nik', $ssn_clean)
+                                                      ->where('sts_aktif !=', 'AKTIF')
+                                                      ->get('karyawan')
+                                                      ->row_array();
+                    }
+                    
+                    // If not found by SSN, try by CardNo
+                    if (!$karyawan_non_aktif && !empty($cardno)) {
+                        $cardno_clean = strtoupper(trim($cardno));
+                        $karyawan_non_aktif = $this->db->select('recid_karyawan, nik, nama_karyawan, sts_aktif')
+                                                      ->where('nik', $cardno_clean)
+                                                      ->where('sts_aktif !=', 'AKTIF')
+                                                      ->get('karyawan')
+                                                      ->row_array();
+                    }
+                    
+                    // If not found by CardNo, try by name
+                    if (!$karyawan_non_aktif) {
+                        $nama_normalized = strtoupper(trim(preg_replace('/\s+/', ' ', $nama_mesin)));
+                        // Get all non-active karyawan and check name matching manually
+                        $all_non_active = $this->db->select('recid_karyawan, nik, nama_karyawan, sts_aktif')
+                                                  ->where('sts_aktif !=', 'AKTIF')
+                                                  ->get('karyawan')
+                                                  ->result_array();
+                        
+                        foreach ($all_non_active as $karyawan) {
+                            $karyawan_nama_normalized = strtoupper(trim(preg_replace('/\s+/', ' ', $karyawan['nama_karyawan'])));
+                            if ($karyawan_nama_normalized === $nama_normalized) {
+                                $karyawan_non_aktif = $karyawan;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    // If found non-active karyawan, update category
+                    if ($karyawan_non_aktif) {
+                        $error_info['kategori'] = 'non_aktif';
+                        $error_info['karyawan_info'] = [
+                            'nik' => $karyawan_non_aktif['nik'],
+                            'nama_karyawan' => $karyawan_non_aktif['nama_karyawan'],
+                            'sts_aktif' => $karyawan_non_aktif['sts_aktif']
+                        ];
+                    }
                     
                     // Add DBfinger data if available
                     if (!empty($userinfo)) {
