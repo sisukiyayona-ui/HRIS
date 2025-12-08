@@ -139,3 +139,27 @@ $db['absen2'] = array(
 	'failover' => array(),
 	'save_queries' => TRUE
 );
+
+
+$db['DBfinger'] = array(
+	'dsn'	=> '',
+	'hostname' => '192.168.9.66\SQLEXPRESS',
+	'username' => 'trimas',
+	'password' => 'trimas777',
+	'database' => 'DBfinger',
+	'dbdriver' => 'SQLSRV',
+	'dbprefix' => '',
+	'port' => '1433',
+	'pconnect' => FALSE,
+	'db_debug' => (ENVIRONMENT !== 'production'),
+	'cache_on' => false,
+	'cachedir' => '',
+	'char_set' => 'utf8',
+	'dbcollat' => 'utf8_general_ci',
+	'swap_pre' => '',
+	'encrypt' => FALSE,
+	'compress' => FALSE,
+	'stricton' => FALSE,
+	'failover' => array(),
+	'save_queries' => TRUE
+);

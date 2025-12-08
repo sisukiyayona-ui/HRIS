@@ -1,7 +1,7 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-use ZK\ZKLib;
+include_once APPPATH . 'third_party/zklib/zklib.php';
 
 class M_finger extends CI_Model
 {
@@ -42,5 +42,31 @@ class M_finger extends CI_Model
         }
 
         return ['ok'=>true, 'ip'=>$ip, 'count'=>count($logs)];
+    }
+    
+    /**
+     * Get USERINFO from DBfinger database by BADGENUMBER
+     */
+    public function get_userinfo_by_badgenumber($badgenumber)
+    {
+        try {
+            // Load DBfinger database connection
+            $dbfinger = $this->load->database('DBfinger', TRUE);
+            
+            // Query USERINFO table
+            $query = $dbfinger->select('SSN, NAME')
+                              ->from('USERINFO')
+                              ->where('BADGENUMBER', $badgenumber)
+                              ->get();
+            
+            if ($query->num_rows() > 0) {
+                return $query->row_array();
+            }
+            
+            return null;
+        } catch (Exception $e) {
+            log_message('error', 'Error getting USERINFO for BADGENUMBER ' . $badgenumber . ': ' . $e->getMessage());
+            return null;
+        }
     }
 }

@@ -492,37 +492,40 @@ class Rekap extends CI_Controller {
         $mesin = $mesin_list[$mesin_id];
         
         try {
-            // Step 1: Ambil semua karyawan aktif
+            // Step 1: Ambil semua karyawan aktif dari tabel karyawan
+            log_message('debug', 'Starting rebuild mapping process');
             $karyawan_list = $this->db->select('recid_karyawan, nik, nama_karyawan')
                                       ->where('sts_aktif', 'AKTIF')
                                       ->get('karyawan')
                                       ->result_array();
+            log_message('debug', 'Retrieved ' . count($karyawan_list) . ' active karyawan records');
             
-            // Build map berdasarkan NIK dan Nama
+            // Buat mapping karyawan berdasarkan NIK
             $karyawan_by_nik = [];
-            $karyawan_by_nama = [];
+            
+            log_message('debug', 'Total karyawan loaded: ' . count($karyawan_list));
             
             foreach ($karyawan_list as $k) {
-                // Validasi bahwa recid_karyawan adalah integer
+                // Validasi recid_karyawan
                 if (!is_numeric($k['recid_karyawan'])) {
-                    continue; // Skip invalid entries
+                    continue;
                 }
                 
-                // Map by NIK (untuk matching prioritas)
+                // Map berdasarkan NIK
                 if (!empty($k['nik'])) {
                     $nik_clean = strtoupper(trim($k['nik']));
                     $karyawan_by_nik[$nik_clean] = $k;
                 }
-                
-                // Map by Nama (untuk fallback matching)
-                $nama_normalized = strtoupper(trim(preg_replace('/\s+/', ' ', $k['nama_karyawan'])));
-                $karyawan_by_nama[$nama_normalized] = $k;
             }
             
-            // Step 2: Tarik user dari mesin
+            log_message('debug', 'Total indexed by NIK: ' . count($karyawan_by_nik));
+            
+            // Step 2: Tarik user dari mesin fingerprint
+            log_message('debug', 'Connecting to fingerprint machine: ' . $mesin['ip'] . ':' . $mesin['port']);
             $zk = new ZKLib($mesin['ip'], $mesin['port']);
             
             if (!$zk->connect()) {
+                log_message('error', 'Failed to connect to fingerprint machine: ' . $mesin['ip'] . ':' . $mesin['port']);
                 echo json_encode([
                     'success' => false,
                     'message' => 'Gagal terhubung ke ' . $mesin['nama']
@@ -535,50 +538,124 @@ class Rekap extends CI_Controller {
             $device_sn = $zk->serialNumber();
             $zk->enableDevice();
             $zk->disconnect();
+            log_message('debug', 'Retrieved ' . count($users) . ' users from fingerprint machine');
+            log_message('debug', 'Device serial number: ' . $device_sn);
             
-            // Step 3: Mapping users
+            // Step 3: Koneksi ke database SQL Server DBfinger
+            $dbfinger = null;
+            try {
+                log_message('debug', 'Attempting to connect to DBfinger database');
+                // Load the database connection for DBfinger (SQLSRV)
+                $dbfinger = $this->load->database('DBfinger', TRUE);
+                
+                // Test if the connection is working
+                if ($dbfinger) {
+                    log_message('debug', 'DBfinger connection successful');
+                }
+            } catch (Exception $e) {
+                log_message('error', 'DBfinger connection error: ' . $e->getMessage());
+                $dbfinger = null;
+            } catch (Error $e) {
+                log_message('error', 'DBfinger connection error (Error): ' . $e->getMessage());
+                $dbfinger = null;
+            }
+            
+            // Step 4: Cocokkan antara user mesin dengan tabel karyawan dan DBfinger
             $total_mapped = 0;
             $total_unmapped = 0;
             $total_duplicate = 0;
-            $mapped_by_nik = 0;
+            $mapped_by_pin_ssn = 0;
+            $mapped_by_cardno_nik = 0;
             $mapped_by_nama = 0;
             $unmapped_users = [];
             
+            log_message('debug', 'Starting user matching process for ' . count($users) . ' users');
+            
             foreach ($users as $user) {
-                $pin = $user['userid'];
+                $pin_dari_mesin = $user['userid']; // PIN dari mesin
                 $nama_mesin = trim($user['name']);
-                $cardno = !empty($user['cardno']) ? trim($user['cardno']) : '';
+                $cardno = !empty($user['cardno']) ? trim($user['cardno']) : ''; // Card No (NIK) dari mesin
+                
+                // Step 5: Cocokkan PIN dari mesin dengan BADGENUMBER di DBfinger
+                // dan ambil SSN serta NAME dari tabel USERINFO
+                $userinfo = [];
+                if ($dbfinger) {
+                    try {
+                        $userinfo_query = $dbfinger->query("SELECT SSN, NAME FROM USERINFO WHERE BADGENUMBER = ?", [$pin_dari_mesin]);
+                        
+                        if ($userinfo_query && $userinfo_query->num_rows() > 0) {
+                            $userinfo = $userinfo_query->row_array();
+                            log_message('debug', 'Found USERINFO for PIN ' . $pin_dari_mesin . ' - SSN: ' . (isset($userinfo['SSN']) ? $userinfo['SSN'] : 'N/A') . ', Name: ' . (isset($userinfo['NAME']) ? $userinfo['NAME'] : 'N/A'));
+                        } else {
+                            log_message('debug', 'No USERINFO found for PIN ' . $pin_dari_mesin);
+                        }
+                    } catch (Exception $e) {
+                        log_message('error', 'Error querying USERINFO table for PIN ' . $pin_dari_mesin . ': ' . $e->getMessage());
+                        $userinfo = [];
+                    } catch (Error $e) {
+                        log_message('error', 'Error querying USERINFO table for PIN ' . $pin_dari_mesin . ' (Error): ' . $e->getMessage());
+                        $userinfo = [];
+                    }
+                }
                 
                 $karyawan = null;
                 $match_method = '';
                 
-                // PRIORITAS 1: Matching berdasarkan NIK (Card No dari mesin)
-                if (!empty($cardno)) {
-                    $cardno_clean = strtoupper(trim($cardno));
-                    if (isset($karyawan_by_nik[$cardno_clean])) {
-                        $karyawan = $karyawan_by_nik[$cardno_clean];
-                        $match_method = 'nik';
-                        $mapped_by_nik++;
+                // PRIORITAS 1: Matching berdasarkan PIN/BADGENUMBER (dari mesin ke DBfinger)
+                // Jika berhasil dapat data dari USERINFO, coba cocokkan SSN dengan NIK karyawan
+                if (!empty($userinfo) && !empty($userinfo['SSN'])) {
+                    $ssn_clean = strtoupper(trim($userinfo['SSN']));
+                    log_message('debug', 'Trying to match SSN: ' . $ssn_clean . ' for PIN: ' . $pin_dari_mesin);
+                    
+                    if (isset($karyawan_by_nik[$ssn_clean])) {
+                        $karyawan = $karyawan_by_nik[$ssn_clean];
+                        $match_method = 'pin_ssn';
+                        $mapped_by_pin_ssn++;
+                        log_message('debug', 'Matched by PIN/SSN - PIN: ' . $pin_dari_mesin . ', SSN: ' . $ssn_clean . ', Name: ' . $nama_mesin . ', RecID: ' . $karyawan['recid_karyawan']);
+                    } else {
+                        log_message('debug', 'No match found for SSN: ' . $ssn_clean . ' in karyawan_by_nik');
                     }
                 }
                 
-                // PRIORITAS 2: Fallback ke matching nama (jika NIK tidak cocok)
+                // PRIORITAS 2: Matching berdasarkan NIK (Card No dari mesin)
+                if (!$karyawan && !empty($cardno)) {
+                    $cardno_clean = strtoupper(trim($cardno));
+                    log_message('debug', 'Trying to match CardNo: ' . $cardno_clean . ' for PIN: ' . $pin_dari_mesin);
+                    if (isset($karyawan_by_nik[$cardno_clean])) {
+                        $karyawan = $karyawan_by_nik[$cardno_clean];
+                        $match_method = 'nik';
+                        $mapped_by_cardno_nik++;
+                        log_message('debug', 'Matched by CardNo/NIK - PIN: ' . $pin_dari_mesin . ', CardNo: ' . $cardno_clean . ', Name: ' . $nama_mesin . ', RecID: ' . $karyawan['recid_karyawan']);
+                    } else {
+                        log_message('debug', 'No match found for CardNo: ' . $cardno_clean . ' in karyawan_by_nik');
+                    }
+                }
+                
+                // PRIORITAS 3: Fallback ke matching nama (jika PIN dan NIK tidak cocok)
                 if (!$karyawan) {
                     $nama_normalized = strtoupper(trim(preg_replace('/\s+/', ' ', $nama_mesin)));
+                    // Buat juga mapping karyawan berdasarkan nama untuk fallback
+                    $karyawan_by_nama = [];
+                    foreach ($karyawan_list as $k) {
+                        $k_nama_normalized = strtoupper(trim(preg_replace('/\s+/', ' ', $k['nama_karyawan'])));
+                        $karyawan_by_nama[$k_nama_normalized] = $k;
+                    }
+                    
                     if (isset($karyawan_by_nama[$nama_normalized])) {
                         $karyawan = $karyawan_by_nama[$nama_normalized];
                         $match_method = 'nama';
                         $mapped_by_nama++;
+                        log_message('debug', 'Matched by Name - PIN: ' . $pin_dari_mesin . ', Name: ' . $nama_mesin . ', Normalized: ' . $nama_normalized . ', RecID: ' . $karyawan['recid_karyawan']);
                     }
                 }
                 
-                // Insert mapping jika ada match
+                // Step 6: Jika ada karyawan yang cocok, insert ke karyawan_pin_map
                 if ($karyawan) {
-                    // Validasi tambahan untuk memastikan recid_karyawan valid
+                    // Validasi recid_karyawan
                     if (!is_numeric($karyawan['recid_karyawan']) || $karyawan['recid_karyawan'] <= 0) {
                         $total_unmapped++;
                         $unmapped_users[] = [
-                            'pin' => $pin,
+                            'pin' => $pin_dari_mesin,
                             'nama_mesin' => $nama_mesin,
                             'cardno' => $cardno,
                             'error' => 'Invalid recid_karyawan: ' . $karyawan['recid_karyawan']
@@ -586,7 +663,7 @@ class Rekap extends CI_Controller {
                         continue;
                     }
                     
-                    // Tambahan validasi: Pastikan karyawan benar-benar ada di tabel karyawan
+                    // Validasi karyawan ada di tabel karyawan
                     $karyawan_exists = $this->db->where('recid_karyawan', $karyawan['recid_karyawan'])
                                                 ->where('sts_aktif', 'AKTIF')
                                                 ->get('karyawan')
@@ -595,7 +672,7 @@ class Rekap extends CI_Controller {
                     if ($karyawan_exists == 0) {
                         $total_unmapped++;
                         $unmapped_users[] = [
-                            'pin' => $pin,
+                            'pin' => $pin_dari_mesin,
                             'nama_mesin' => $nama_mesin,
                             'cardno' => $cardno,
                             'error' => 'Karyawan tidak ditemukan di database: ' . $karyawan['recid_karyawan']
@@ -604,38 +681,76 @@ class Rekap extends CI_Controller {
                     }
                     
                     // Cek apakah sudah ada mapping untuk PIN ini
-                    $exists = $this->db->where('pin', $pin)
-                                       ->where('recid_karyawan', $karyawan['recid_karyawan'])
-                                       ->where('device_sn', $device_sn)
-                                       ->get('karyawan_pin_map')
-                                       ->num_rows();
+                    $exists_query = $this->db->where('pin', $pin_dari_mesin)
+                                             ->where('recid_karyawan', $karyawan['recid_karyawan'])
+                                             ->where('device_sn', $device_sn)
+                                             ->get('karyawan_pin_map');
+                    $exists = $exists_query->num_rows();
+                    log_message('debug', 'Checking for existing mapping - PIN: ' . $pin_dari_mesin . ', RecID: ' . $karyawan['recid_karyawan'] . ', Device SN: ' . $device_sn . ', Exists: ' . $exists);
                     
                     if ($exists == 0) {
-                        // Tambahkan validasi sebelum insert
+                        // Insert data mapping
                         $insert_data = [
-                            'pin' => $pin,
-                            'recid_karyawan' => (int)$karyawan['recid_karyawan'], // Pastikan integer
+                            'pin' => $pin_dari_mesin,
+                            'recid_karyawan' => (int)$karyawan['recid_karyawan'],
                             'device_sn' => $device_sn,
-                            'nama_di_mesin' => $nama_mesin,
+                            'nama_di_mesin' => !empty($userinfo['NAME']) ? $userinfo['NAME'] : $nama_mesin, // Ambil nama dari USERINFO jika ada
                             'created_date' => date('Y-m-d')
                         ];
                         
-                        $this->db->insert('karyawan_pin_map', $insert_data);
-                        $total_mapped++;
+                        log_message('debug', 'Attempting to insert mapping - PIN: ' . $pin_dari_mesin . ', RecID: ' . $karyawan['recid_karyawan'] . ', Device SN: ' . $device_sn);
+                        
+                        // Handle potential duplicate entry errors
+                        try {
+                            $this->db->insert('karyawan_pin_map', $insert_data);
+                            if ($this->db->affected_rows() > 0) {
+                                log_message('debug', 'Successfully inserted mapping for PIN: ' . $pin_dari_mesin);
+                                $total_mapped++;
+                            } else {
+                                log_message('debug', 'No rows affected when inserting mapping for PIN: ' . $pin_dari_mesin . '. Error: ' . $this->db->error()['message']);
+                            }
+                        } catch (Exception $e) {
+                            if (strpos($e->getMessage(), 'Duplicate entry') !== false) {
+                                log_message('debug', 'Duplicate entry ignored for PIN: ' . $pin_dari_mesin . '. Message: ' . $e->getMessage());
+                                $total_duplicate++;
+                            } else {
+                                log_message('debug', 'Error inserting mapping for PIN: ' . $pin_dari_mesin . '. Error: ' . $e->getMessage());
+                            }
+                        }
                     } else {
                         $total_duplicate++;
                     }
                 } else {
                     $total_unmapped++;
-                    $unmapped_users[] = [
-                        'pin' => $pin,
+                    
+                    // Create detailed error information
+                    $error_info = [
+                        'pin' => $pin_dari_mesin,
                         'nama_mesin' => $nama_mesin,
                         'cardno' => $cardno
                     ];
+                    
+                    // Add DBfinger data if available
+                    if (!empty($userinfo)) {
+                        $error_info['dbfinger_ssn'] = isset($userinfo['SSN']) ? $userinfo['SSN'] : '';
+                        $error_info['dbfinger_name'] = isset($userinfo['NAME']) ? $userinfo['NAME'] : '';
+                    }
+                    
+                    // Add matching attempt details
+                    if (!empty($userinfo) && !empty($userinfo['SSN'])) {
+                        $error_info['attempted_match_ssn'] = strtoupper(trim($userinfo['SSN']));
+                    }
+                    
+                    if (!empty($cardno)) {
+                        $error_info['attempted_match_cardno'] = strtoupper(trim($cardno));
+                    }
+                    
+                    $unmapped_users[] = $error_info;
                 }
             }
             
-            // Step 4: Response
+            // Step 7: Response
+            log_message('debug', 'Mapping process completed - Total: ' . count($users) . ', Mapped: ' . $total_mapped . ', Unmapped: ' . $total_unmapped);
             echo json_encode([
                 'success' => true,
                 'message' => 'Mapping dari ' . $mesin['nama'] . ' selesai',
@@ -647,7 +762,7 @@ class Rekap extends CI_Controller {
                 'summary' => [
                     'total_users' => count($users),
                     'total_mapped' => $total_mapped,
-                    'mapped_by_nik' => $mapped_by_nik,
+                    'mapped_by_nik' => $mapped_by_pin_ssn + $mapped_by_cardno_nik, // Combined PIN-based and CardNo-based matching
                     'mapped_by_nama' => $mapped_by_nama,
                     'total_duplicate' => $total_duplicate,
                     'total_unmapped' => $total_unmapped,
@@ -657,9 +772,11 @@ class Rekap extends CI_Controller {
             ], JSON_PRETTY_PRINT);
             
         } catch (Exception $e) {
+            log_message('error', 'rebuild_mapping error: ' . $e->getMessage() . ' | Trace: ' . $e->getTraceAsString());
             echo json_encode([
                 'success' => false,
-                'message' => 'Error: ' . $e->getMessage()
+                'message' => 'Error: ' . $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ], JSON_PRETTY_PRINT);
         }
     }
