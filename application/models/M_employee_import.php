@@ -13,6 +13,34 @@ class M_employee_import extends CI_Model
     }
 
     /**
+     * Convert Excel date serial number to formatted date string
+     * 
+     * @param float $excelDate Excel date serial number
+     * @return string Formatted date string
+     */
+    private function convertExcelDate($excelDate)
+    {
+        // Handle special case: 0 should be treated as "00-Jan-00"
+        if ($excelDate == 0) {
+            return '00-Jan-00';
+        }
+        
+        try {
+            // Use PhpOffice\PhpSpreadsheet's built-in date conversion
+            // Suppress deprecation warnings from PhpSpreadsheet library
+            $previousErrorReporting = error_reporting();
+            error_reporting($previousErrorReporting & ~E_DEPRECATED);
+            $dateObj = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($excelDate);
+            // Restore error reporting
+            error_reporting($previousErrorReporting);
+            return $dateObj->format('d-M-y');
+        } catch (Exception $e) {
+            // If conversion fails, return the original value
+            return $excelDate;
+        }
+    }
+
+    /**
      * Parse Excel file for employee data without validation
      * 
      * @param string $file_path Path to uploaded Excel file
@@ -30,8 +58,13 @@ class M_employee_import extends CI_Model
 
         try {
             // Load the Excel file
+            // Suppress deprecation warnings from PhpSpreadsheet library
+            $previousErrorReporting = error_reporting();
+            error_reporting($previousErrorReporting & ~E_DEPRECATED);
             $spreadsheet = IOFactory::load($file_path);
             $worksheet = $spreadsheet->getActiveSheet();
+            // Restore error reporting
+            error_reporting($previousErrorReporting);
             
             // Get highest row and column
             $highestRow = $worksheet->getHighestRow();
@@ -105,13 +138,113 @@ class M_employee_import extends CI_Model
                 
                 // Extract data for each expected column
                 foreach ($expected_columns as $columnName => $columnIndex) {
-                    $cellValue = $worksheet->getCellByColumnAndRow($columnIndex, $row)->getValue();
+                    $cell = $worksheet->getCellByColumnAndRow($columnIndex, $row);
+                    $cellValue = $cell->getValue();
+                    
                     // Handle date cells properly
-                    if ($worksheet->getCellByColumnAndRow($columnIndex, $row)->getDataType() == 'd') {
-                        $cellValue = $worksheet->getCellByColumnAndRow($columnIndex, $row)->getFormattedValue();
+                    if (in_array(strtoupper($columnName), ['TGL. MASUK', 'TGL. KELUAR', 'TGL.JEDA', 'TGL LAHIR', 'TGL.DIANGKAT', 'SEJAK AWAL'])) {
+                        // For date columns, try to format them properly
+                        try {
+                            // Special handling for TGL LAHIR - only show day number
+                            if (strtoupper($columnName) === 'TGL LAHIR') {
+                                // For birth day, extract just the day number
+                                if (is_numeric($cellValue)) {
+                                    if ($cellValue == 0) {
+                                        $cellValue = '';
+                                    } else {
+                                        // Try to convert to date and extract day
+                                        // Suppress deprecation warnings from PhpSpreadsheet library
+                                        $previousErrorReporting = error_reporting();
+                                        error_reporting($previousErrorReporting & ~E_DEPRECATED);
+                                        $dateObj = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($cellValue);
+                                        // Restore error reporting
+                                        error_reporting($previousErrorReporting);
+                                        $cellValue = $dateObj->format('j'); // 'j' gives day without leading zeros
+                                    }
+                                } else {
+                                    // For non-numeric values, try to extract day from date string
+                                    if (!empty($cellValue) && $cellValue !== '00-Jan-00') {
+                                        // Try to parse the date and extract day
+                                        $timestamp = strtotime($cellValue);
+                                        if ($timestamp !== false) {
+                                            $cellValue = date('j', $timestamp);
+                                        }
+                                    } else {
+                                        $cellValue = '';
+                                    }
+                                }
+                            } 
+                            // Special handling for BULAN LAHIR - only show month name
+                            elseif (strtoupper($columnName) === 'BULAN LAHIR') {
+                                // For birth month, extract just the month name
+                                if (is_numeric($cellValue)) {
+                                    if ($cellValue == 0) {
+                                        $cellValue = '';
+                                    } else {
+                                        // Try to convert to date and extract month
+                                        // Suppress deprecation warnings from PhpSpreadsheet library
+                                        $previousErrorReporting = error_reporting();
+                                        error_reporting($previousErrorReporting & ~E_DEPRECATED);
+                                        $dateObj = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($cellValue);
+                                        // Restore error reporting
+                                        error_reporting($previousErrorReporting);
+                                        $cellValue = $dateObj->format('F'); // 'F' gives full month name
+                                    }
+                                } else {
+                                    // For non-numeric values, try to extract month from date string
+                                    if (!empty($cellValue) && $cellValue !== '00-Jan-00') {
+                                        // Try to parse the date and extract month
+                                        $timestamp = strtotime($cellValue);
+                                        if ($timestamp !== false) {
+                                            $cellValue = date('F', $timestamp);
+                                        }
+                                    } else {
+                                        $cellValue = '';
+                                    }
+                                }
+                            } else {
+                                // Handle other date columns normally
+                                // Suppress deprecation warnings from PhpSpreadsheet library
+                                $previousErrorReporting = error_reporting();
+                                error_reporting($previousErrorReporting & ~E_DEPRECATED);
+                                $formattedValue = $cell->getFormattedValue();
+                                // Restore error reporting
+                                error_reporting($previousErrorReporting);
+                                
+                                // If formatted value is different from raw value, use it
+                                if ($formattedValue != $cellValue) {
+                                    $cellValue = $formattedValue;
+                                } else {
+                                    // If it's a numeric value, try to convert Excel date serial number to date
+                                    if (is_numeric($cellValue) && $cellValue > 0 && $cellValue < 100000) {
+                                        // Suppress deprecation warnings from PhpSpreadsheet library
+                                        $previousErrorReporting = error_reporting();
+                                        error_reporting($previousErrorReporting & ~E_DEPRECATED);
+                                        $cellValue = $this->convertExcelDate($cellValue);
+                                        // Restore error reporting
+                                        error_reporting($previousErrorReporting);
+                                    } else {
+                                        // Try to get the formatted value with date format
+                                        // Suppress deprecation warnings from PhpSpreadsheet library
+                                        $previousErrorReporting = error_reporting();
+                                        error_reporting($previousErrorReporting & ~E_DEPRECATED);
+                                        $cellValue = $cell->getFormattedValue();
+                                        // Restore error reporting
+                                        error_reporting($previousErrorReporting);
+                                    }
+                                }
+                            }
+                        } catch (Exception $e) {
+                            // If formatting fails, keep the original value
+                        }
                     }
                     
-                    $rowData[strtoupper(str_replace([' ', '.', '/'], '_', $columnName))] = $cellValue;
+                    // Normalize column name: replace spaces, dots, slashes, and hyphens with single underscore
+                    $normalizedColumnName = preg_replace('/[\s\.\/\-]+/', '_', $columnName);
+                    $rowData[strtoupper($normalizedColumnName)] = $cellValue;
+                    
+                    // Debug: Log the transformation for troubleshooting
+                    // error_log("Column '{$columnName}' normalized to '" . strtoupper($normalizedColumnName) . "'");
                     
                     // Check if any cell in this row has data
                     if (!empty($cellValue)) {
@@ -272,7 +405,7 @@ class M_employee_import extends CI_Model
         }
         
         if (isset($employee['ALAMAT_E_MAIL_PRIBADI'])) {
-            $mapped_data['email_pribadi'] = $employee['ALAMAT_E_MAIL_PRIBADI'];
+            $mapped_data['email'] = $employee['ALAMAT_E_MAIL_PRIBADI'];
         }
         
         if (isset($employee['TEMPAT_LAHIR'])) {
@@ -283,16 +416,54 @@ class M_employee_import extends CI_Model
             $mapped_data['tgl_lahir'] = $this->format_date($employee['TGL_LAHIR']);
         }
         
+        if (isset($employee['USIA'])) {
+            $mapped_data['usia'] = $employee['USIA'];
+        }
+        
+        if (isset($employee['BULAN_LAHIR'])) {
+            $mapped_data['bulan_lahir'] = $employee['BULAN_LAHIR'];
+        }
+        
         if (isset($employee['JENIS_KELAMIN'])) {
-            $mapped_data['jenkel'] = $employee['JENIS_KELAMIN'];
+            // Map gender values: L -> Laki-laki, P -> Perempuan
+            $gender = $employee['JENIS_KELAMIN'];
+            if (strtoupper($gender) === 'L') {
+                $mapped_data['jenkel'] = 'L';
+            } elseif (strtoupper($gender) === 'P') {
+                $mapped_data['jenkel'] = 'P';
+            } else {
+                $mapped_data['jenkel'] = $gender;
+            }
         }
         
         if (isset($employee['AGAMA'])) {
-            $mapped_data['agama'] = $employee['AGAMA'];
+            // Ensure agama values match database enum values
+            $religion = $employee['AGAMA'];
+            $validReligions = ['ISLAM', 'KRISTEN PROTESTAN', 'KRISTEN KATHOLIK', 'HINDU', 'BUDHA', 'KONGHUCU'];
+            
+            // Convert to proper case if it's a valid religion
+            $upperReligion = strtoupper($religion);
+            if (in_array($upperReligion, $validReligions)) {
+                $mapped_data['agama'] = $upperReligion;
+            } else {
+                // Default to ISLAM if not valid
+                $mapped_data['agama'] = 'ISLAM';
+            }
         }
         
         if (isset($employee['PENDIDIKAN_TERAKHIR'])) {
-            $mapped_data['pendidikan'] = $employee['PENDIDIKAN_TERAKHIR'];
+            // Ensure pendidikan values match database enum values
+            $education = $employee['PENDIDIKAN_TERAKHIR'];
+            $validEducation = ['SD', 'SMP', 'SMA', 'D-3', 'S-1', 'S-2', 'S-3'];
+            
+            // Convert to proper case if it's a valid education level
+            $upperEducation = strtoupper($education);
+            if (in_array($upperEducation, $validEducation)) {
+                $mapped_data['pendidikan'] = $upperEducation;
+            } else {
+                // Default to SMA if not valid
+                $mapped_data['pendidikan'] = 'SMA';
+            }
         }
         
         if (isset($employee['NO_TELEPON'])) {
@@ -301,6 +472,10 @@ class M_employee_import extends CI_Model
         
         if (isset($employee['NO_KTP'])) {
             $mapped_data['no_ktp'] = $employee['NO_KTP'];
+        }
+        
+        if (isset($employee['NO_KK'])) {
+            $mapped_data['no_kk'] = $employee['NO_KK'];
         }
         
         if (isset($employee['ALAMAT_KTP'])) {
@@ -312,14 +487,79 @@ class M_employee_import extends CI_Model
         }
         
         if (isset($employee['STATUS_PERNIKAHAN'])) {
-            $mapped_data['sts_nikah'] = $employee['STATUS_PERNIKAHAN'];
+            // Ensure status pernikahan values match database enum values
+            $maritalStatus = $employee['STATUS_PERNIKAHAN'];
+            $validStatus = ['KAWIN', 'BELUM KAWIN', 'CERAI HIDUP', 'CERAI MATI'];
+            
+            // Convert to proper case if it's a valid marital status
+            $upperStatus = strtoupper($maritalStatus);
+            if (in_array($upperStatus, $validStatus)) {
+                $mapped_data['sts_nikah'] = $upperStatus;
+            } else {
+                // Default to BELUM KAWIN if not valid
+                $mapped_data['sts_nikah'] = 'BELUM KAWIN';
+            }
+        }
+        
+        if (isset($employee['NAMA_ORANG_TUA'])) {
+            $mapped_data['nama_orang_tua'] = $employee['NAMA_ORANG_TUA'];
+        }
+        
+        if (isset($employee['NAMA_SUAMI_ISTRI'])) {
+            $mapped_data['nama_pasangan'] = $employee['NAMA_SUAMI_ISTRI'];
+        }
+        
+        if (isset($employee['JUMLAH_ANAK'])) {
+            $mapped_data['jumlah_anak'] = $employee['JUMLAH_ANAK'];
+        }
+        
+        if (isset($employee['NAMA_ANAK'])) {
+            $mapped_data['nama_anak'] = $employee['NAMA_ANAK'];
         }
         
         if (isset($employee['TGL_MASUK'])) {
             $mapped_data['tgl_m_kerja'] = $this->format_date($employee['TGL_MASUK']);
         }
         
-        // Map jabatan name to recid_jbtn
+        if (isset($employee['TGL_KELUAR'])) {
+            $mapped_data['tgl_keluar'] = $this->format_date($employee['TGL_KELUAR']);
+        }
+        
+        if (isset($employee['TGL_JEDA'])) {
+            $mapped_data['tgl_jeda'] = $this->format_date($employee['TGL_JEDA']);
+        }
+        
+        if (isset($employee['NOMOR_SK'])) {
+            $mapped_data['sk_kary_tetap_nomor'] = $employee['NOMOR_SK'];
+        }
+        
+        if (isset($employee['TGL_DIANGKAT'])) {
+            $mapped_data['sk_kary_tetap_tanggal'] = $this->format_date($employee['TGL_DIANGKAT']);
+        }
+        
+        if (isset($employee['SEJAK_AWAL'])) {
+            $mapped_data['masa_kerja'] = $employee['SEJAK_AWAL'];
+        }
+        
+        // Set sts_aktif based on TGL_KELUAR
+        if (isset($employee['TGL_KELUAR']) && !empty($employee['TGL_KELUAR']) && $employee['TGL_KELUAR'] != '00-Jan-00') {
+            // If there's a TGL_KELUAR value, set status to Resign
+            $mapped_data['sts_aktif'] = 'Resign';
+        } else {
+            // If no TGL_KELUAR or it's empty, set status to Aktif
+            $mapped_data['sts_aktif'] = 'Aktif';
+        }
+        
+        // Map BPJS fields
+        if (isset($employee['BPJS_NO_KPJ'])) {
+            $mapped_data['no_kpj'] = $employee['BPJS_NO_KPJ'];
+        }
+        
+        if (isset($employee['NO_KARTU_TRIMAS'])) {
+            $mapped_data['no_kartu_trimas'] = $employee['NO_KARTU_TRIMAS'];
+        }
+        
+        // Map jabatan name to recid_jbtn and jabatan text field
         if (isset($employee['JABATAN']) && !empty($employee['JABATAN'])) {
             $jabatan_name = trim($employee['JABATAN']);
             $jabatan = $this->jabatan_by_name($jabatan_name);
@@ -327,10 +567,11 @@ class M_employee_import extends CI_Model
             if ($jabatan && isset($jabatan->recid_jbtn)) {
                 $mapped_data['recid_jbtn'] = (int)$jabatan->recid_jbtn;
             }
-            // If not found or not provided, we simply don't set recid_jbtn at all
+            
+            // No need to store jabatan name text, we already have recid_jbtn
         }
         
-        // Map bagian name to recid_bag
+        // Map bagian name to recid_bag and bagian text field
         if (isset($employee['BAGIAN']) && !empty($employee['BAGIAN'])) {
             $bagian_name = trim($employee['BAGIAN']);
             $bagian = $this->bagian_by_name($bagian_name);
@@ -338,10 +579,11 @@ class M_employee_import extends CI_Model
             if ($bagian && isset($bagian->recid_bag)) {
                 $mapped_data['recid_bag'] = (int)$bagian->recid_bag;
             }
-            // If not found or not provided, we simply don't set recid_bag at all
+            
+            // No need to store bagian name text, we already have recid_bag
         }
         
-        // Map sub bagian name to recid_subbag
+        // Map sub bagian name to recid_subbag and sub_bagian text field
         if (isset($employee['SUB_BAGIAN']) && !empty($employee['SUB_BAGIAN'])) {
             $sub_bagian_name = trim($employee['SUB_BAGIAN']);
             $sub_bagian = $this->sub_bagian_by_name($sub_bagian_name);
@@ -349,11 +591,15 @@ class M_employee_import extends CI_Model
             if ($sub_bagian && isset($sub_bagian->recid_subbag)) {
                 $mapped_data['recid_subbag'] = (int)$sub_bagian->recid_subbag;
             }
-            // If not found or not provided, we simply don't set recid_subbag at all
+            
+            // No need to store sub_bagian name text, we already have recid_subbag
         }
         
+        // Departemen is not stored as a separate field, it's linked through bagian
+        
         // Set default values for fields not in Excel
-        $mapped_data['sts_aktif'] = 'Aktif'; // Default to active
+        // sts_aktif is already handled above
+        // Other default values are set at the beginning of the function
         
         return $mapped_data;
     }

@@ -62,43 +62,53 @@
                 <tbody>
                   <?php foreach ($preview_data as $employee): ?>
                     <tr>
-                      <td><?php echo isset($employee['NIK']) ? $employee['NIK'] : ''; ?></td>
-                      <td><?php echo isset($employee['NAMA']) ? $employee['NAMA'] : ''; ?></td>
-                      <td><?php echo isset($employee['ALAMAT_E_MAIL_PRIBADI']) ? $employee['ALAMAT_E_MAIL_PRIBADI'] : ''; ?></td>
-                      <td><?php echo isset($employee['JABATAN']) ? $employee['JABATAN'] : ''; ?></td>
-                      <td><?php echo isset($employee['BAGIAN']) ? $employee['BAGIAN'] : ''; ?></td>
-                      <td><?php echo isset($employee['SUB_BAGIAN']) ? $employee['SUB_BAGIAN'] : ''; ?></td>
-                      <td><?php echo isset($employee['DEPARTEMEN']) ? $employee['DEPARTEMEN'] : ''; ?></td>
-                      <td><?php echo isset($employee['STATUS_KARYAWAN']) ? $employee['STATUS_KARYAWAN'] : ''; ?></td>
-                      <td><?php echo isset($employee['TGL_MASUK']) ? $employee['TGL_MASUK'] : ''; ?></td>
-                      <td><?php echo isset($employee['TGL_KELUAR']) ? $employee['TGL_KELUAR'] : ''; ?></td>
-                      <td><?php echo isset($employee['TGL_JEDA']) ? $employee['TGL_JEDA'] : ''; ?></td>
-                      <td><?php echo isset($employee['SEJAK_AWAL']) ? $employee['SEJAK_AWAL'] : ''; ?></td>
-                      <td><?php echo isset($employee['NOMOR_SK']) ? $employee['NOMOR_SK'] : ''; ?></td>
-                      <td><?php echo isset($employee['TGL_DIANGKAT']) ? $employee['TGL_DIANGKAT'] : ''; ?></td>
-                      <td><?php echo isset($employee['BPJS_NO_KPJ']) ? $employee['BPJS_NO_KPJ'] : ''; ?></td>
-                      <td><?php echo isset($employee['NO_KARTU_TRIMAS']) ? $employee['NO_KARTU_TRIMAS'] : ''; ?></td>
-                      <td><?php echo isset($employee['STATUS_PERNIKAHAN']) ? $employee['STATUS_PERNIKAHAN'] : ''; ?></td>
-                      <td><?php echo isset($employee['TEMPAT_LAHIR']) ? $employee['TEMPAT_LAHIR'] : ''; ?></td>
-                      <td><?php echo isset($employee['TGL_LAHIR']) ? $employee['TGL_LAHIR'] : ''; ?></td>
-                      <td><?php echo isset($employee['BULAN_LAHIR']) ? $employee['BULAN_LAHIR'] : ''; ?></td>
-                      <td><?php echo isset($employee['USIA']) ? $employee['USIA'] : ''; ?></td>
-                      <td><?php echo isset($employee['ALAMAT_KTP']) ? $employee['ALAMAT_KTP'] : ''; ?></td>
-                      <td><?php echo isset($employee['ALAMAT_TINGGAL_SEKARANG']) ? $employee['ALAMAT_TINGGAL_SEKARANG'] : ''; ?></td>
-                      <td><?php echo isset($employee['JENIS_KELAMIN']) ? $employee['JENIS_KELAMIN'] : ''; ?></td>
-                      <td><?php echo isset($employee['AGAMA']) ? $employee['AGAMA'] : ''; ?></td>
-                      <td><?php echo isset($employee['PENDIDIKAN_TERAKHIR']) ? $employee['PENDIDIKAN_TERAKHIR'] : ''; ?></td>
-                      <td><?php echo isset($employee['NO_TELEPON']) ? $employee['NO_TELEPON'] : ''; ?></td>
-                      <td><?php echo isset($employee['NO_KK']) ? $employee['NO_KK'] : ''; ?></td>
-                      <td><?php echo isset($employee['NO_KTP']) ? $employee['NO_KTP'] : ''; ?></td>
-                      <td><?php echo isset($employee['NAMA_ORANG_TUA']) ? $employee['NAMA_ORANG_TUA'] : ''; ?></td>
-                      <td><?php echo isset($employee['NAMA_SUAMI__ISTRI']) ? $employee['NAMA_SUAMI__ISTRI'] : ''; ?></td>
-                      <td><?php echo isset($employee['JUMLAH_ANAK']) ? $employee['JUMLAH_ANAK'] : ''; ?></td>
-                      <td><?php echo isset($employee['NAMA_ANAK']) ? $employee['NAMA_ANAK'] : ''; ?></td>
+                      <td><?php echo isset($employee['NIK']) ? htmlspecialchars($employee['NIK']) : ''; ?></td>
+                      <td><?php echo isset($employee['NAMA']) ? htmlspecialchars($employee['NAMA']) : ''; ?></td>
+                      <td><?php echo isset($employee['ALAMAT_E_MAIL_PRIBADI']) ? htmlspecialchars($employee['ALAMAT_E_MAIL_PRIBADI']) : ''; ?></td>
+                      <td><?php echo isset($employee['JABATAN']) ? htmlspecialchars($employee['JABATAN']) : ''; ?></td>
+                      <td><?php echo isset($employee['BAGIAN']) ? htmlspecialchars($employee['BAGIAN']) : ''; ?></td>
+                      <td><?php echo isset($employee['SUB_BAGIAN']) ? htmlspecialchars($employee['SUB_BAGIAN']) : ''; ?></td>
+                      <td><?php echo isset($employee['DEPARTEMEN']) ? htmlspecialchars($employee['DEPARTEMEN']) : ''; ?></td>
+                      <td><?php echo isset($employee['STATUS_KARYAWAN']) ? htmlspecialchars($employee['STATUS_KARYAWAN']) : ''; ?></td>
+                      <td><?php echo isset($employee['TGL_MASUK']) ? htmlspecialchars($employee['TGL_MASUK']) : ''; ?></td>
+                      <td><?php echo isset($employee['TGL_KELUAR']) ? htmlspecialchars($employee['TGL_KELUAR']) : ''; ?></td>
+                      <td><?php echo isset($employee['TGL_JEDA']) ? htmlspecialchars($employee['TGL_JEDA']) : ''; ?></td>
+                      <td><?php echo isset($employee['SEJAK_AWAL']) ? htmlspecialchars($employee['SEJAK_AWAL']) : ''; ?></td>
+                      <td><?php echo isset($employee['NOMOR_SK']) ? htmlspecialchars($employee['NOMOR_SK']) : ''; ?></td>
+                      <td><?php echo isset($employee['TGL_DIANGKAT']) ? htmlspecialchars($employee['TGL_DIANGKAT']) : ''; ?></td>
+                      <td><?php echo isset($employee['BPJS_NO_KPJ']) ? htmlspecialchars($employee['BPJS_NO_KPJ']) : ''; ?></td>
+                      <td><?php echo isset($employee['NO_KARTU_TRIMAS']) ? htmlspecialchars($employee['NO_KARTU_TRIMAS']) : ''; ?></td>
+                      <td><?php echo isset($employee['STATUS_PERNIKAHAN']) ? htmlspecialchars($employee['STATUS_PERNIKAHAN']) : ''; ?></td>
+                      <td><?php echo isset($employee['TEMPAT_LAHIR']) ? htmlspecialchars($employee['TEMPAT_LAHIR']) : ''; ?></td>
+                      <td><?php echo isset($employee['TGL_LAHIR']) ? htmlspecialchars($employee['TGL_LAHIR']) : ''; ?></td>
+                      <td><?php echo isset($employee['BULAN_LAHIR']) ? htmlspecialchars($employee['BULAN_LAHIR']) : ''; ?></td>
+                      <td><?php echo isset($employee['USIA']) ? htmlspecialchars($employee['USIA']) : ''; ?></td>
+                      <td><?php echo isset($employee['ALAMAT_KTP']) ? htmlspecialchars($employee['ALAMAT_KTP']) : ''; ?></td>
+                      <td><?php echo isset($employee['ALAMAT_TINGGAL_SEKARANG']) ? htmlspecialchars($employee['ALAMAT_TINGGAL_SEKARANG']) : ''; ?></td>
+                      <td><?php echo isset($employee['JENIS_KELAMIN']) ? htmlspecialchars($employee['JENIS_KELAMIN']) : ''; ?></td>
+                      <td><?php echo isset($employee['AGAMA']) ? htmlspecialchars($employee['AGAMA']) : ''; ?></td>
+                      <td><?php echo isset($employee['PENDIDIKAN_TERAKHIR']) ? htmlspecialchars($employee['PENDIDIKAN_TERAKHIR']) : ''; ?></td>
+                      <td><?php echo isset($employee['NO_TELEPON']) ? htmlspecialchars($employee['NO_TELEPON']) : ''; ?></td>
+                      <td><?php echo isset($employee['NO_KK']) ? htmlspecialchars($employee['NO_KK']) : ''; ?></td>
+                      <td><?php echo isset($employee['NO_KTP']) ? htmlspecialchars($employee['NO_KTP']) : ''; ?></td>
+                      <td><?php echo isset($employee['NAMA_ORANG_TUA']) ? htmlspecialchars($employee['NAMA_ORANG_TUA']) : ''; ?></td>
+                      <td><?php echo isset($employee['NAMA_SUAMI_ISTRI']) ? htmlspecialchars($employee['NAMA_SUAMI_ISTRI']) : ''; ?></td>
+                      <td><?php echo isset($employee['JUMLAH_ANAK']) ? htmlspecialchars($employee['JUMLAH_ANAK']) : ''; ?></td>
+                      <td><?php echo isset($employee['NAMA_ANAK']) ? htmlspecialchars($employee['NAMA_ANAK']) : ''; ?></td>
                     </tr>
                   <?php endforeach; ?>
                 </tbody>
               </table>
+            </div>
+            
+            <!-- Debug: Show raw data structure -->
+            <div class="panel panel-default">
+              <div class="panel-heading">
+                <h3 class="panel-title">Raw Data Debug (First Record)</h3>
+              </div>
+              <div class="panel-body">
+                <pre><?php echo isset($preview_data[0]) ? print_r($preview_data[0], true) : 'No data available'; ?></pre>
+              </div>
             </div>
             
             <div class="form-group">
