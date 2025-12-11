@@ -763,7 +763,7 @@ class Rekap extends CI_Controller {
                                                   ->get('karyawan')
                                                   ->result_array();
                         
-                        foreach ($all_non_active as $karyawan) {
+                        foreach ($all_non_active as $karyawan) {    
                             $karyawan_nama_normalized = strtoupper(trim(preg_replace('/\s+/', ' ', $karyawan['nama_karyawan'])));
                             if ($karyawan_nama_normalized === $nama_normalized) {
                                 $karyawan_non_aktif = $karyawan;

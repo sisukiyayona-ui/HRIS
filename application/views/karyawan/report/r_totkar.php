@@ -50,7 +50,8 @@
                         <td>$i</td>
                         <td>$bagian</td>
                         <td>$data->nama_department</td>
-                        <td>$data->total</td>";
+                        <td>$data->total</td>
+                        </tr>";
                         $i++;
                       }
                       ?>

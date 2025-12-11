@@ -89,23 +89,29 @@ class M_employee_import extends CI_Model
                 'TGL.DIANGKAT' => 14,
                 'BPJS NO.KPJ' => 15,
                 'NO. KARTU TRIMAS' => 16,
-                'STATUS PERNIKAHAN' => 17,
-                'TEMPAT LAHIR' => 18,
-                'TGL LAHIR' => 19,
-                'BULAN LAHIR' => 20,
-                'USIA' => 21,
-                'ALAMAT KTP' => 22,
-                'ALAMAT TINGGAL SEKARANG' => 23,
-                'JENIS KELAMIN' => 24,
-                'AGAMA' => 25,
-                'PENDIDIKAN TERAKHIR' => 26,
-                'NO. TELEPON' => 27,
-                'NO. KK' => 28,
-                'NO. KTP' => 29,
-                'NAMA ORANG TUA' => 30,
-                'NAMA SUAMI / ISTRI' => 31,
-                'JUMLAH ANAK' => 32,
-                'NAMA ANAK' => 33
+                'NO.REKENING' => 17,
+                'STS PENUNJANG' => 18,
+                'ALASAN KELUAR' => 19,
+                'KETERANGAN' => 20,
+                'LEVEL' => 21,
+                'DL/IDL' => 22,
+                'STATUS PERNIKAHAN' => 23,
+                'TEMPAT LAHIR' => 24,
+                'TGL LAHIR' => 25,
+                'BULAN LAHIR' => 26,
+                'USIA' => 27,
+                'ALAMAT KTP' => 28,
+                'ALAMAT TINGGAL SEKARANG' => 29,
+                'JENIS KELAMIN' => 30,
+                'AGAMA' => 31,
+                'PENDIDIKAN TERAKHIR' => 32,
+                'NO. TELEPON' => 33,
+                'NO. KK' => 34,
+                'NO. KTP' => 35,
+                'NAMA ORANG TUA' => 36,
+                'NAMA SUAMI / ISTRI' => 37,
+                'JUMLAH ANAK' => 38,
+                'NAMA ANAK' => 39
             ];
             
             // Read header row to verify column positions
@@ -389,10 +395,7 @@ class M_employee_import extends CI_Model
         $mapped_data = [
             'crt_by' => 1, // Default creator ID
             'crt_date' => date('Y-m-d H:i:s'),
-            'sts_aktif' => 'Aktif',
-            'spm' => 'Tidak',
-            'cci' => 'Tidak',
-            'tc' => '0'
+            'sts_aktif' => 'Aktif'
         ];
         
         // Map fields from Excel to database
@@ -552,11 +555,45 @@ class M_employee_import extends CI_Model
         
         // Map BPJS fields
         if (isset($employee['BPJS_NO_KPJ'])) {
-            $mapped_data['no_kpj'] = $employee['BPJS_NO_KPJ'];
+            $mapped_data['no_bpjs_tk'] = $employee['BPJS_NO_KPJ'];
         }
         
         if (isset($employee['NO_KARTU_TRIMAS'])) {
-            $mapped_data['no_kartu_trimas'] = $employee['NO_KARTU_TRIMAS'];
+            $mapped_data['no_bpjs_kes'] = $employee['NO_KARTU_TRIMAS'];
+        }
+        
+        // Map sts_penunjang field (replacing tipe_ptkp)
+        if (isset($employee['TIPE_PTKP'])) {
+            $stsPenunjang = strtoupper($employee['TIPE_PTKP']);
+            // Convert L0 to TK
+            if ($stsPenunjang === 'L0') {
+                $stsPenunjang = 'TK';
+            }
+            // Validate against allowed enum values
+            $validStsPenunjang = ['TK', 'K0', 'K1', 'K2', 'K3', 'TK1', 'TK2', 'TK3'];
+            if (in_array($stsPenunjang, $validStsPenunjang)) {
+                $mapped_data['sts_penunjang'] = $stsPenunjang;
+            } else {
+                // Default to TK if not valid
+                $mapped_data['sts_penunjang'] = 'TK';
+            }
+        }
+        
+        if (isset($employee['ALASAN_KELUAR'])) {
+            $mapped_data['alasan_keluar'] = $employee['ALASAN_KELUAR'];
+        }
+        
+        if (isset($employee['KETERANGAN'])) {
+            $mapped_data['keterangan'] = $employee['KETERANGAN'];
+        }
+        
+        if (isset($employee['DL_IDL'])) {
+            $mapped_data['dl_idl'] = $employee['DL_IDL'];
+        }
+        
+        // Map LEVEL field
+        if (isset($employee['LEVEL'])) {
+            $mapped_data['level'] = $employee['LEVEL'];
         }
         
         // Map jabatan name to recid_jbtn and jabatan text field

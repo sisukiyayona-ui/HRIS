@@ -47,6 +47,12 @@
               </a>
             <?php } ?>
 
+          <?php if ($role == '1' or $role == '2' or $role == '3' or $role == '5' or $role == '26') { ?>
+              <a class="btn btn-dark btn-sm" href="<?php echo base_url('karyawan/export') ?>">
+                  <i class="fa fa-file-excel-o"></i> | Export Data Karyawan
+              </a>
+          <?php } ?>
+
             <div class="clearfix"></div>
           </div>
 
@@ -68,7 +74,13 @@
                       <center>Nik</center>
                     </th>
                     <th>
-                      <center>Nama Karyawan</center>
+                      <center>Nama</center>
+                    </th>
+                    <th>
+                      <center>Jenis Kelamin</center>
+                    </th>
+                    <th>
+                      <center>Jabatan</center>
                     </th>
                     <th>
                       <center>Bagian</center>
@@ -77,28 +89,19 @@
                       <center>Sub Bagian</center>
                     </th>
                     <th>
-                      <center>Jabatan</center>
+                      <center>Departemen</center>
                     </th>
                     <th>
-                      <center>Golongan</center>
+                      <center>Status Karyawan</center>
                     </th>
                     <th>
-                      <center>Penempatan</center>
+                      <center>Tanggal Masuk</center>
                     </th>
                     <th>
-                      <center>SPM</center>
+                      <center>Tanggal Keluar</center>
                     </th>
                     <th>
-                      <center>CCI</center>
-                    </th>
-                    <th>
-                      <center>Status</center>
-                    </th>
-                    <th>
-                      <center>Tanggal Mulai</center>
-                    </th>
-                    <th>
-                      <center>Tanggal Berakhir</center>
+                      <center>Tanggal Habis Kontrak</center>
                     </th>
                     <th>
                       <center>Aksi</center>
@@ -110,41 +113,11 @@
                 <tbody>
                   <?php
                   foreach ($karyawan as $data) {
-                    $bagian = $data->indeks_hr;
-                    if ($bagian != "") {
-                      // $jabatan = substr($jabatan, strpos($jabatan ?? "", ". ") + 1); strpos php 8.1 deprecated
-                      $bagian = substr($bagian, strpos($bagian, " ") + 1);
-                    }
-
-                    if ($data->recid_subbag != "0") {
-                      // $jabatan = substr($jabatan, strpos($jabatan ?? "", ". ") + 1); strpos php 8.1 deprecated
-                      $sub_bag = $data->sub_bag;
-                    } else {
-                      $sub_bag = " ";
-                    }
-
-
-                    $jabatan = $data->indeks_jabatan;
-                    if ($jabatan != "") {
-                      $jabatan = substr($jabatan, strpos($jabatan, " ") + 1);
-                    }
-
-                    $golongan = $data->nama_golongan;
-                    if ($golongan != "") {
-                      $golongan = substr($golongan, strpos($golongan, " ") + 1);
-                    }
-
-                    if ($data->recid_bag == 0) {
-                      $nama_bag = "-";
-                    } else {
-                      $nama_bag = $data->nama_bag;
-                    }
-
-                    if ($data->recid_jbtn == 0) {
-                      $nama_jbtn = "-";
-                    } else {
-                      $nama_jbtn = $data->nama_jbtn;
-                    }
+                    // Format dates
+                    $tgl_masuk = ($data->tgl_m_kerja && $data->tgl_m_kerja != '0000-00-00') ? date("d M Y", strtotime($data->tgl_m_kerja)) : '-';
+                    $tgl_keluar = (isset($data->tgl_a_kerja) && $data->tgl_a_kerja && $data->tgl_a_kerja != '0000-00-00') ? date("d M Y", strtotime($data->tgl_a_kerja)) : '-';
+                    $tgl_habis_kontrak = ($data->tgl_akhir_kontrak && $data->tgl_akhir_kontrak != '0000-00-00') ? date("d M Y", strtotime($data->tgl_akhir_kontrak)) : '-';
+                    
                     echo "
             <tr>
             ";
@@ -153,39 +126,16 @@
                     }
                     echo "
             <td>$data->nik</td>
-            <td>$data->nama_karyawan</td>";
-                    if ($role == '1' or $role == '2' or $role == '3' or $role == '5' or $role == '25' or $role == '27') {
-                      echo "
-                <td>$data->indeks_hr</td>
-                <td>$sub_bag</td>
-                <td>$nama_jbtn</td>
-                <td>$data->nama_golongan</td>
-                ";
-                    } else {
-                      echo "<td>$bagian</td>
-                      <td>$sub_bag</td>
-                <td>$nama_jbtn</td>
-                <td>$golongan</td>";
-                    }
-                    echo "
-            <td>$data->penempatan</td>
-            <td>$data->spm</td>
-            <td>$data->cci</td>
+            <td>$data->nama_karyawan</td>
+            <td>$data->jenkel</td>
+            <td>" . (isset($data->nama_jbtn) ? $data->nama_jbtn : '-') . "</td>
+            <td>" . (isset($data->nama_bag) ? $data->nama_bag : '-') . "</td>
+            <td>" . (isset($data->sub_bag) ? $data->sub_bag : '-') . "</td>
+            <td>" . (isset($data->departemen) ? $data->departemen : '-') . "</td>
             <td>$data->sts_aktif</td>
-            <td>";
-                    if ($data->tgl_m_kerja == '' or $data->tgl_m_kerja == '0000-00-00') {
-                      echo " - ";
-                    } else {
-                      echo date("d M Y", strtotime($data->tgl_m_kerja));
-                    }
-                    echo "</td>
-            <td>";
-                    if ($data->tgl_a_kerja == '' or $data->tgl_a_kerja == '0000-00-00') {
-                      echo " - ";
-                    } else {
-                      echo date("d M Y", strtotime($data->tgl_a_kerja));
-                    }
-                    echo "</td>
+            <td>$tgl_masuk</td>
+            <td>$tgl_keluar</td>
+            <td>$tgl_habis_kontrak</td>
             <td><center>"; ?>
                     <?php
                     if ($role == '1' or $role == '2' or $role == '3' or $role == '5' or $role == '26') { ?>

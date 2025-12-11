@@ -140,7 +140,7 @@ class M_absenbarcode extends CI_Model
     public function data_shift_date($tgl)
     {
         $db2 = $this->load->database('absen', TRUE);
-        $query = $db2->query("SELECT s.*, k.nik, k.nama_karyawan, k.penempatan, b.indeks_hr, j.indeks_jabatan, ja.jenis, ja.keterangan from jadwal_shift s join hris.karyawan k on k.recid_karyawan = s.recid_karyawan join hris.bagian b on b.recid_bag = k.recid_bag join hris.jabatan j on j.recid_jbtn = k.recid_jbtn join jenis_absen ja on ja.recid_jenisabsen = s.recid_jenisabsen where s.tgl_kerja = '$tgl'");
+        $query = $db2->query("SELECT s.*, k.nik, k.nama_karyawan,  b.indeks_hr, j.indeks_jabatan, ja.jenis, ja.keterangan from jadwal_shift s join hris.karyawan k on k.recid_karyawan = s.recid_karyawan join hris.bagian b on b.recid_bag = k.recid_bag join hris.jabatan j on j.recid_jbtn = k.recid_jbtn join jenis_absen ja on ja.recid_jenisabsen = s.recid_jenisabsen where s.tgl_kerja = '$tgl'");
         return $query;
     }
 
@@ -179,7 +179,7 @@ class M_absenbarcode extends CI_Model
     public function hadir_today($tgl)
     {
         $db2 = $this->load->database('absen', TRUE);
-        $query = $db2->query("SELECT a.*, k.nik, k.nama_karyawan, b.recid_bag, b.indeks_hr, j.indeks_jabatan, s.nama_struktur, j.recid_jbtn, ja.jenis, ja.keterangan, g.nama_golongan, k.penempatan from hadir_barcode a 
+        $query = $db2->query("SELECT a.*, k.nik, k.nama_karyawan, b.recid_bag, b.indeks_hr, j.indeks_jabatan, s.nama_struktur, j.recid_jbtn, ja.jenis, ja.keterangan, g.nama_golongan from hadir_barcode a 
 			join hris.karyawan k on k.recid_karyawan = a.recid_karyawan 
 			join hris.bagian b on b.recid_bag = k.recid_bag 
 			left join hris.department d on d.recid_department = b.recid_department
@@ -194,7 +194,7 @@ class M_absenbarcode extends CI_Model
     public function absen_sebelah($tgl)
     {
         $db2 = $this->load->database('absen', TRUE);
-        $query = $db2->query("SELECT a.*, k.nik, k.nama_karyawan, b.recid_bag, b.indeks_hr, j.indeks_jabatan, s.nama_struktur, j.recid_jbtn, ja.jenis, ja.keterangan, g.nama_golongan, k.penempatan from hadir_barcode a join hris.karyawan k on k.recid_karyawan = a.recid_karyawan 
+        $query = $db2->query("SELECT a.*, k.nik, k.nama_karyawan, b.recid_bag, b.indeks_hr, j.indeks_jabatan, s.nama_struktur, j.recid_jbtn, ja.jenis, ja.keterangan, g.nama_golongan from hadir_barcode a join hris.karyawan k on k.recid_karyawan = a.recid_karyawan 
 			join hris.bagian b on b.recid_bag = k.recid_bag 
 			join hris.department d on d.recid_department  = b.recid_department
 			join hris.jabatan j on j.recid_jbtn = k.recid_jbtn 
@@ -208,7 +208,7 @@ class M_absenbarcode extends CI_Model
     public function hadir_today_bagian($tgl, $bagian)
     {
         $db2 = $this->load->database('absen', TRUE);
-        $query = $db2->query("SELECT a.*, k.nik, k.nama_karyawan, b.recid_bag, b.indeks_hr, j.indeks_jabatan, s.nama_struktur, j.recid_jbtn, ja.jenis, ja.keterangan, g.nama_golongan, k.penempatan from hadir_barcode a join hris.karyawan k on k.recid_karyawan = a.recid_karyawan 
+        $query = $db2->query("SELECT a.*, k.nik, k.nama_karyawan, b.recid_bag, b.indeks_hr, j.indeks_jabatan, s.nama_struktur, j.recid_jbtn, ja.jenis, ja.keterangan, g.nama_golongan from hadir_barcode a join hris.karyawan k on k.recid_karyawan = a.recid_karyawan 
 			join hris.bagian b on b.recid_bag = k.recid_bag 
 			join hris.department d on d.recid_department  = b.recid_department
 			join hris.jabatan j on j.recid_jbtn = k.recid_jbtn 
@@ -222,7 +222,7 @@ class M_absenbarcode extends CI_Model
     public function absen_sebelah_bagian($tgl, $bagian)
     {
         $db2 = $this->load->database('absen', TRUE);
-        $query = $db2->query("SELECT a.*, k.nik, k.nama_karyawan, b.recid_bag, b.indeks_hr, j.indeks_jabatan, s.nama_struktur, j.recid_jbtn, ja.jenis, ja.keterangan, g.nama_golongan, k.penempatan from hadir_barcode a join hris.karyawan k on k.recid_karyawan = a.recid_karyawan 
+        $query = $db2->query("SELECT a.*, k.nik, k.nama_karyawan, b.recid_bag, b.indeks_hr, j.indeks_jabatan, s.nama_struktur, j.recid_jbtn, ja.jenis, ja.keterangan, g.nama_golongan from hadir_barcode a join hris.karyawan k on k.recid_karyawan = a.recid_karyawan 
 			join hris.bagian b on b.recid_bag = k.recid_bag 
 			join hris.department d on d.recid_department  = b.recid_department
 			join hris.jabatan j on j.recid_jbtn = k.recid_jbtn 
@@ -236,60 +236,60 @@ class M_absenbarcode extends CI_Model
     public function tidak_hadir_today($tgl)
     {
         $db2 = $this->load->database('absen', TRUE);
-        $query = $db2->query("SELECT k.*, b.indeks_hr, b.recid_bag, j.indeks_jabatan, j.recid_jbtn, j.sts_jabatan, g.nama_golongan, s.nama_struktur, d.nama_department, sa.nama_karyawan as atasan1, ba.nama_karyawan as atasan2 from hris.karyawan k join hris.bagian b on b.recid_bag = k.recid_bag join hris.jabatan j on j.recid_jbtn = k.recid_jbtn join hris.golongan g on g.recid_golongan = k.recid_golongan join hris.struktur s on s.recid_struktur = b.recid_struktur join hris.department d on d.recid_department = b.recid_department left join hris.karyawan sa on s.pic_struktur = sa.recid_karyawan left join hris.karyawan ba on b.pic_bagian = ba.recid_karyawan where k.recid_karyawan not in (select h.recid_karyawan from hadir_barcode h where tanggal ='$tgl' and h.is_closed = '0') and k.sts_aktif = 'aktif' and k.cci = 'Tidak' and k.SPM = 'tidak' and k.tc = '0'  order by b.indeks_hr, j.indeks_jabatan, k.nama_karyawan asc");
+        $query = $db2->query("SELECT k.*, b.indeks_hr, b.recid_bag, j.indeks_jabatan, j.recid_jbtn, j.sts_jabatan, g.nama_golongan, s.nama_struktur, d.nama_department, sa.nama_karyawan as atasan1, ba.nama_karyawan as atasan2 from hris.karyawan k join hris.bagian b on b.recid_bag = k.recid_bag join hris.jabatan j on j.recid_jbtn = k.recid_jbtn join hris.golongan g on g.recid_golongan = k.recid_golongan join hris.struktur s on s.recid_struktur = b.recid_struktur join hris.department d on d.recid_department = b.recid_department left join hris.karyawan sa on s.pic_struktur = sa.recid_karyawan left join hris.karyawan ba on b.pic_bagian = ba.recid_karyawan where k.recid_karyawan not in (select h.recid_karyawan from hadir_barcode h where tanggal ='$tgl' and h.is_closed = '0') and k.sts_aktif = 'aktif'   order by b.indeks_hr, j.indeks_jabatan, k.nama_karyawan asc");
         return $query;
     }
 
     public function tidak_hadir_today_baros($tgl)
     {
         $db2 = $this->load->database('absen', TRUE);
-        $query = $db2->query("SELECT k.*, b.indeks_hr, b.recid_bag, j.indeks_jabatan, j.recid_jbtn, j.sts_jabatan, g.nama_golongan, s.nama_struktur, d.nama_department, sa.nama_karyawan as atasan1, ba.nama_karyawan as atasan2 from hris.karyawan k join hris.bagian b on b.recid_bag = k.recid_bag join hris.jabatan j on j.recid_jbtn = k.recid_jbtn join hris.golongan g on g.recid_golongan = k.recid_golongan join hris.struktur s on s.recid_struktur = b.recid_struktur join hris.department d on d.recid_department = b.recid_department left join hris.karyawan sa on s.pic_struktur = sa.recid_karyawan left join hris.karyawan ba on b.pic_bagian = ba.recid_karyawan where k.recid_karyawan not in (select h.recid_karyawan from hadir_barcode h where tanggal ='$tgl' and h.is_closed = '0') and k.sts_aktif = 'aktif' and k.cci = 'Tidak' and k.SPM = 'tidak' and k.tc = '0'   and k.penempatan = 'Baros' order by b.indeks_hr, j.indeks_jabatan, k.nama_karyawan asc");
+        $query = $db2->query("SELECT k.*, b.indeks_hr, b.recid_bag, j.indeks_jabatan, j.recid_jbtn, j.sts_jabatan, g.nama_golongan, s.nama_struktur, d.nama_department, sa.nama_karyawan as atasan1, ba.nama_karyawan as atasan2 from hris.karyawan k join hris.bagian b on b.recid_bag = k.recid_bag join hris.jabatan j on j.recid_jbtn = k.recid_jbtn join hris.golongan g on g.recid_golongan = k.recid_golongan join hris.struktur s on s.recid_struktur = b.recid_struktur join hris.department d on d.recid_department = b.recid_department left join hris.karyawan sa on s.pic_struktur = sa.recid_karyawan left join hris.karyawan ba on b.pic_bagian = ba.recid_karyawan where k.recid_karyawan not in (select h.recid_karyawan from hadir_barcode h where tanggal ='$tgl' and h.is_closed = '0') and k.sts_aktif = 'aktif'     order by b.indeks_hr, j.indeks_jabatan, k.nama_karyawan asc");
         return $query;
     }
 
     public function tidak_hadir_bagian($tgl, $bagian)
     {
         $db2 = $this->load->database('absen', TRUE);
-        $query = $db2->query("SELECT k.*, b.indeks_hr, b.recid_bag, j.indeks_jabatan, j.recid_jbtn, j.sts_jabatan, g.nama_golongan, s.nama_struktur, d.nama_department, sa.nama_karyawan as atasan1, ba.nama_karyawan as atasan2 from hris.karyawan k join hris.bagian b on b.recid_bag = k.recid_bag join hris.jabatan j on j.recid_jbtn = k.recid_jbtn join hris.golongan g on g.recid_golongan = k.recid_golongan join hris.struktur s on s.recid_struktur = b.recid_struktur join hris.department d on d.recid_department = b.recid_department left join hris.karyawan sa on s.pic_struktur = sa.recid_karyawan left join hris.karyawan ba on b.pic_bagian = ba.recid_karyawan where k.recid_karyawan not in (select h.recid_karyawan from hadir_barcode h where tanggal ='$tgl' and h.is_closed = '0' ) and k.sts_aktif = 'aktif' and k.cci = 'Tidak' and k.SPM = 'tidak' and k.tc = '0'  and ($bagian) order by b.indeks_hr, j.indeks_jabatan, k.nama_karyawan asc");
+        $query = $db2->query("SELECT k.*, b.indeks_hr, b.recid_bag, j.indeks_jabatan, j.recid_jbtn, j.sts_jabatan, g.nama_golongan, s.nama_struktur, d.nama_department, sa.nama_karyawan as atasan1, ba.nama_karyawan as atasan2 from hris.karyawan k join hris.bagian b on b.recid_bag = k.recid_bag join hris.jabatan j on j.recid_jbtn = k.recid_jbtn join hris.golongan g on g.recid_golongan = k.recid_golongan join hris.struktur s on s.recid_struktur = b.recid_struktur join hris.department d on d.recid_department = b.recid_department left join hris.karyawan sa on s.pic_struktur = sa.recid_karyawan left join hris.karyawan ba on b.pic_bagian = ba.recid_karyawan where k.recid_karyawan not in (select h.recid_karyawan from hadir_barcode h where tanggal ='$tgl' and h.is_closed = '0' ) and k.sts_aktif = 'aktif'   and ($bagian) order by b.indeks_hr, j.indeks_jabatan, k.nama_karyawan asc");
         return $query;
     }
 
     public function jml_karyawan()
     {
-        $query = $this->db->query("SELECT k.*, b.indeks_hr, j.indeks_jabatan, j.sts_jabatan, g.nama_golongan, s.nama_struktur, d.nama_department, sa.nama_karyawan as atasan1, ba.nama_karyawan as atasan2 FROM karyawan k join bagian b on b.recid_bag = k.recid_bag join jabatan j on j.recid_jbtn = k.recid_jbtn join golongan g on g.recid_golongan = k.recid_golongan join struktur s on s.recid_struktur = b.recid_struktur join department d on d.recid_department = b.recid_department left join karyawan sa on s.pic_struktur = sa.recid_karyawan left join karyawan ba on b.pic_bagian = ba.recid_karyawan where k.sts_aktif='Aktif' and k.spm = 'Tidak' and k.cci = 'Tidak' and k.tc = '0' order by k.sts_aktif, b.indeks_hr, j.indeks_jabatan, k.nama_karyawan asc");
+        $query = $this->db->query("SELECT k.*, b.indeks_hr, j.indeks_jabatan, j.sts_jabatan, g.nama_golongan, s.nama_struktur, d.nama_department, sa.nama_karyawan as atasan1, ba.nama_karyawan as atasan2 FROM karyawan k join bagian b on b.recid_bag = k.recid_bag join jabatan j on j.recid_jbtn = k.recid_jbtn join golongan g on g.recid_golongan = k.recid_golongan join struktur s on s.recid_struktur = b.recid_struktur join department d on d.recid_department = b.recid_department left join karyawan sa on s.pic_struktur = sa.recid_karyawan left join karyawan ba on b.pic_bagian = ba.recid_karyawan where k.sts_aktif='Aktif' order by k.sts_aktif, b.indeks_hr, j.indeks_jabatan, k.nama_karyawan asc");
         return $query;
     }
 
     public function jml_bagian($bagian)
     {
-        $query = $this->db->query("SELECT k.*, b.indeks_hr, j.indeks_jabatan, j.sts_jabatan, g.nama_golongan, s.nama_struktur, d.nama_department, sa.nama_karyawan as atasan1, ba.nama_karyawan as atasan2 FROM karyawan k join bagian b on b.recid_bag = k.recid_bag join jabatan j on j.recid_jbtn = k.recid_jbtn join golongan g on g.recid_golongan = k.recid_golongan join struktur s on s.recid_struktur = b.recid_struktur join department d on d.recid_department = b.recid_department left join karyawan sa on s.pic_struktur = sa.recid_karyawan left join karyawan ba on b.pic_bagian = ba.recid_karyawan where k.sts_aktif='Aktif' and k.spm = 'Tidak' and k.cci = 'Tidak' and k.tc = '0' and ($bagian) order by k.sts_aktif, b.indeks_hr, j.indeks_jabatan, k.nama_karyawan asc");
+        $query = $this->db->query("SELECT k.*, b.indeks_hr, j.indeks_jabatan, j.sts_jabatan, g.nama_golongan, s.nama_struktur, d.nama_department, sa.nama_karyawan as atasan1, ba.nama_karyawan as atasan2 FROM karyawan k join bagian b on b.recid_bag = k.recid_bag join jabatan j on j.recid_jbtn = k.recid_jbtn join golongan g on g.recid_golongan = k.recid_golongan join struktur s on s.recid_struktur = b.recid_struktur join department d on d.recid_department = b.recid_department left join karyawan sa on s.pic_struktur = sa.recid_karyawan left join karyawan ba on b.pic_bagian = ba.recid_karyawan where k.sts_aktif='Aktif' and ($bagian) order by k.sts_aktif, b.indeks_hr, j.indeks_jabatan, k.nama_karyawan asc");
         return $query;
     }
 
     public function jml_bagian_spm($bagian)
     {
-        $query = $this->db->query("SELECT k.*, b.indeks_hr, j.indeks_jabatan, j.sts_jabatan, g.nama_golongan, s.nama_struktur, d.nama_department, sa.nama_karyawan as atasan1, ba.nama_karyawan as atasan2 FROM karyawan k join bagian b on b.recid_bag = k.recid_bag join jabatan j on j.recid_jbtn = k.recid_jbtn join golongan g on g.recid_golongan = k.recid_golongan join struktur s on s.recid_struktur = b.recid_struktur join department d on d.recid_department = b.recid_department left join karyawan sa on s.pic_struktur = sa.recid_karyawan left join karyawan ba on b.pic_bagian = ba.recid_karyawan where k.sts_aktif='Aktif' and k.spm = 'Tidak' and k.cci = 'Tidak' and k.tc = '0' and k.spm = '1' and ($bagian) order by k.sts_aktif, b.indeks_hr, j.indeks_jabatan, k.nama_karyawan asc");
+        $query = $this->db->query("SELECT k.*, b.indeks_hr, j.indeks_jabatan, j.sts_jabatan, g.nama_golongan, s.nama_struktur, d.nama_department, sa.nama_karyawan as atasan1, ba.nama_karyawan as atasan2 FROM karyawan k join bagian b on b.recid_bag = k.recid_bag join jabatan j on j.recid_jbtn = k.recid_jbtn join golongan g on g.recid_golongan = k.recid_golongan join struktur s on s.recid_struktur = b.recid_struktur join department d on d.recid_department = b.recid_department left join karyawan sa on s.pic_struktur = sa.recid_karyawan left join karyawan ba on b.pic_bagian = ba.recid_karyawan where k.sts_aktif='Aktif'  and ($bagian) order by k.sts_aktif, b.indeks_hr, j.indeks_jabatan, k.nama_karyawan asc");
         return $query;
     }
 
     public function jml_all($tgl) // kehadiran semua karyawan (baik hadir maupun tidak hadir)
     {
         $db2 = $this->load->database('absen', TRUE);
-        $query = $db2->query("SELECT k.nik, k.nama_karyawan, k.penempatan, b.indeks_hr, s.nama_struktur, d.nama_department, j.indeks_jabatan, h.*, ja.keterangan, ja.jenis FROM hadir_barcode h 
+        $query = $db2->query("SELECT k.nik, k.nama_karyawan, b.indeks_hr, s.nama_struktur, d.nama_department, j.indeks_jabatan, h.*, ja.keterangan, ja.jenis FROM hadir_barcode h 
 			join jenis_absen ja on ja.recid_jenisabsen = h.status
 			join hris.karyawan k on k.recid_karyawan = h.recid_karyawan
 			join hris.bagian b on b.recid_bag = k.recid_bag
 			join hris.struktur s on s.recid_struktur = b.recid_struktur
 			join hris.department d on d.recid_department = b.recid_department
 			join hris.jabatan j on j.recid_jbtn = k.recid_jbtn
-			where tanggal = '$tgl' and k.cci = 'Tidak' and k.spm = 'Tidak' and k.tc = '0' and k.tc = '0'");
+			where tanggal = '$tgl' ");
         return $query;
     }
 
     public function jml_all_baros($tgl) // kehadiran semua karyawan (baik hadir maupun tidak hadir)
     {
         $db2 = $this->load->database('absen', TRUE);
-        $query = $db2->query("SELECT k.nik, k.nama_karyawan, k.penempatan, b.recid_bag, b.indeks_hr, s.nama_struktur, d.nama_department, j.recid_jbtn, j.indeks_jabatan, h.*, ja.keterangan, ja.jenis, g.nama_golongan FROM hadir_barcode h 
+        $query = $db2->query("SELECT k.nik, k.nama_karyawan, b.recid_bag, b.indeks_hr, s.nama_struktur, d.nama_department, j.recid_jbtn, j.indeks_jabatan, h.*, ja.keterangan, ja.jenis, g.nama_golongan FROM hadir_barcode h 
 			join jenis_absen ja on ja.recid_jenisabsen = h.status
 			join hris.karyawan k on k.recid_karyawan = h.recid_karyawan
 			join hris.bagian b on b.recid_bag = k.recid_bag
@@ -297,28 +297,28 @@ class M_absenbarcode extends CI_Model
 			join hris.department d on d.recid_department = b.recid_department
 			join hris.jabatan j on j.recid_jbtn = k.recid_jbtn
             join hris.golongan g on g.recid_golongan = k.recid_golongan
-			where tanggal = '$tgl' and k.cci = 'Tidak' and k.spm = 'Tidak' and k.tc = '0' and k.tc = '0' and k.penempatan = 'Baros'");
+			where tanggal = '$tgl'  ");
         return $query;
     }
 
     public function jml_all_bagian($tgl, $bagian) // kehadiran semua karyawan (baik hadir maupun tidak hadir)
     {
         $db2 = $this->load->database('absen', TRUE);
-        $query = $db2->query("SELECT k.nik, k.nama_karyawan, k.penempatan, b.indeks_hr, s.nama_struktur, d.nama_department, j.indeks_jabatan, h.*, ja.keterangan, ja.jenis FROM hadir_barcode h 
+        $query = $db2->query("SELECT k.nik, k.nama_karyawan, b.indeks_hr, s.nama_struktur, d.nama_department, j.indeks_jabatan, h.*, ja.keterangan, ja.jenis FROM hadir_barcode h 
 			join jenis_absen ja on ja.recid_jenisabsen = h.status
 			join hris.karyawan k on k.recid_karyawan = h.recid_karyawan
 			join hris.bagian b on b.recid_bag = k.recid_bag
 			join hris.struktur s on s.recid_struktur = b.recid_struktur
 			join hris.department d on d.recid_department = b.recid_department
 			join hris.jabatan j on j.recid_jbtn = k.recid_jbtn
-			where tanggal = '$tgl' and k.cci = 'Tidak' and k.spm = 'Tidak' and k.tc = '0' and k.tc = '0' and ($bagian)");
+			where tanggal = '$tgl'  and ($bagian)");
         return $query;
     }
 
 
     public function jml_karyawan_baros()
     {
-        $query = $this->db->query("SELECT k.*, b.indeks_hr, j.indeks_jabatan, j.sts_jabatan, g.nama_golongan, s.nama_struktur, d.nama_department, sa.nama_karyawan as atasan1, ba.nama_karyawan as atasan2 FROM karyawan k join bagian b on b.recid_bag = k.recid_bag join jabatan j on j.recid_jbtn = k.recid_jbtn join golongan g on g.recid_golongan = k.recid_golongan join struktur s on s.recid_struktur = b.recid_struktur join department d on d.recid_department = b.recid_department left join karyawan sa on s.pic_struktur = sa.recid_karyawan left join karyawan ba on b.pic_bagian = ba.recid_karyawan where k.sts_aktif='Aktif' and k.spm = 'Tidak' and k.cci = 'Tidak' and k.tc = '0' and k.penempatan = 'Baros' order by k.sts_aktif, b.indeks_hr, j.indeks_jabatan, k.nama_karyawan asc");
+        $query = $this->db->query("SELECT k.*, b.indeks_hr, j.indeks_jabatan, j.sts_jabatan, g.nama_golongan, s.nama_struktur, d.nama_department, sa.nama_karyawan as atasan1, ba.nama_karyawan as atasan2 FROM karyawan k join bagian b on b.recid_bag = k.recid_bag join jabatan j on j.recid_jbtn = k.recid_jbtn join golongan g on g.recid_golongan = k.recid_golongan join struktur s on s.recid_struktur = b.recid_struktur join department d on d.recid_department = b.recid_department left join karyawan sa on s.pic_struktur = sa.recid_karyawan left join karyawan ba on b.pic_bagian = ba.recid_karyawan where k.sts_aktif='Aktif'   order by k.sts_aktif, b.indeks_hr, j.indeks_jabatan, k.nama_karyawan asc");
         return $query;
     }
 
@@ -332,59 +332,59 @@ class M_absenbarcode extends CI_Model
 			join hris.struktur s on s.recid_struktur = b.recid_struktur
 			join hris.department d on d.recid_department = b.recid_department
 			join hris.jabatan j on j.recid_jbtn = k.recid_jbtn
-			where tanggal = '$tgl' and k.cci = 'Tidak' and k.spm = 'Ya'");
+			where tanggal = '$tgl' ");
         return $query;
     }
 
     public function jml_by_status($tgl, $status)
     {
         $db2 = $this->load->database('absen', TRUE);
-        $query = $db2->query("SELECT k.nik, k.nama_karyawan, b.indeks_hr, s.nama_struktur, d.nama_department, j.indeks_jabatan, h.*, ja.keterangan, ja.jenis, k.penempatan FROM hadir_barcode h 
+        $query = $db2->query("SELECT k.nik, k.nama_karyawan, b.indeks_hr, s.nama_struktur, d.nama_department, j.indeks_jabatan, h.*, ja.keterangan, ja.jenis FROM hadir_barcode h 
 			join jenis_absen ja on ja.recid_jenisabsen = h.status
 			join hris.karyawan k on k.recid_karyawan = h.recid_karyawan
 			join hris.bagian b on b.recid_bag = k.recid_bag
 			join hris.struktur s on s.recid_struktur = b.recid_struktur
 			join hris.department d on d.recid_department = b.recid_department
-			join hris.jabatan j on j.recid_jbtn = k.recid_jbtn where (tanggal = '$tgl') and (k.cci = 'Tidak' and k.spm = 'Tidak' and k.tc = '0') and ($status)");
+			join hris.jabatan j on j.recid_jbtn = k.recid_jbtn where (tanggal = '$tgl') and ($status)");
         return $query;
     }
 
     public function jml_by_status_spm($tgl, $status)
     {
         $db2 = $this->load->database('absen', TRUE);
-        $query = $db2->query("SELECT k.nik, k.nama_karyawan, b.indeks_hr, s.nama_struktur, d.nama_department, j.indeks_jabatan, h.*, ja.keterangan, ja.jenis, k.penempatan FROM hadir_barcode h 
+        $query = $db2->query("SELECT k.nik, k.nama_karyawan, b.indeks_hr, s.nama_struktur, d.nama_department, j.indeks_jabatan, h.*, ja.keterangan, ja.jenis FROM hadir_barcode h 
 			join jenis_absen ja on ja.recid_jenisabsen = h.status
 			join hris.karyawan k on k.recid_karyawan = h.recid_karyawan
 			join hris.bagian b on b.recid_bag = k.recid_bag
 			join hris.struktur s on s.recid_struktur = b.recid_struktur
 			join hris.department d on d.recid_department = b.recid_department
-			join hris.jabatan j on j.recid_jbtn = k.recid_jbtn where (tanggal = '$tgl') and k.cci = 'Tidak' and k.spm = 'Ya' and ($status)");
+			join hris.jabatan j on j.recid_jbtn = k.recid_jbtn where (tanggal = '$tgl')  and ($status)");
         return $query;
     }
 
     public function jml_by_status_baros($tgl, $status)
     {
         $db2 = $this->load->database('absen', TRUE);
-        $query = $db2->query("SELECT k.nik, k.nama_karyawan, b.indeks_hr, s.nama_struktur, d.nama_department, j.indeks_jabatan, h.*, ja.keterangan, ja.jenis, k.penempatan FROM hadir_barcode h 
+        $query = $db2->query("SELECT k.nik, k.nama_karyawan, b.indeks_hr, s.nama_struktur, d.nama_department, j.indeks_jabatan, h.*, ja.keterangan, ja.jenis FROM hadir_barcode h 
 			join jenis_absen ja on ja.recid_jenisabsen = h.status
 			join hris.karyawan k on k.recid_karyawan = h.recid_karyawan
 			join hris.bagian b on b.recid_bag = k.recid_bag
 			join hris.struktur s on s.recid_struktur = b.recid_struktur
 			join hris.department d on d.recid_department = b.recid_department
-			join hris.jabatan j on j.recid_jbtn = k.recid_jbtn where (tanggal = '$tgl') and k.cci = 'Tidak' and penempatan = 'Baros' and k.spm = 'Tidak' and ($status)");
+			join hris.jabatan j on j.recid_jbtn = k.recid_jbtn where (tanggal = '$tgl') and ($status)");
         return $query;
     }
 
     public function jml_by_status_bagian($tgl, $status, $bagian)
     {
         $db2 = $this->load->database('absen', TRUE);
-        $query = $db2->query("SELECT k.nik, k.nama_karyawan, b.indeks_hr, s.nama_struktur, d.nama_department, j.indeks_jabatan, h.*, ja.keterangan, ja.jenis, k.penempatan FROM hadir_barcode h 
+        $query = $db2->query("SELECT k.nik, k.nama_karyawan, b.indeks_hr, s.nama_struktur, d.nama_department, j.indeks_jabatan, h.*, ja.keterangan, ja.jenis FROM hadir_barcode h 
 			join jenis_absen ja on ja.recid_jenisabsen = h.status
 			join hris.karyawan k on k.recid_karyawan = h.recid_karyawan
 			join hris.bagian b on b.recid_bag = k.recid_bag
 			join hris.struktur s on s.recid_struktur = b.recid_struktur
 			join hris.department d on d.recid_department = b.recid_department
-			join hris.jabatan j on j.recid_jbtn = k.recid_jbtn where (tanggal = '$tgl') and k.cci = 'Tidak' and k.spm = 'Tidak' and k.tc = '0' and ($status) and ($bagian)");
+			join hris.jabatan j on j.recid_jbtn = k.recid_jbtn where (tanggal = '$tgl')  and ($status) and ($bagian)");
         return $query;
     }
 
@@ -397,7 +397,7 @@ class M_absenbarcode extends CI_Model
 			join hris.bagian b on b.recid_bag = k.recid_bag
 			join hris.struktur s on s.recid_struktur = b.recid_struktur
 			join hris.department d on d.recid_department = b.recid_department
-			join hris.jabatan j on j.recid_jbtn = k.recid_jbtn where (tanggal = '$tgl') and k.cci = 'Tidak' and k.spm = 'Ya' and ($status) and ($bagian)");
+			join hris.jabatan j on j.recid_jbtn = k.recid_jbtn where (tanggal = '$tgl')  and ($status) and ($bagian)");
         return $query;
     }
 

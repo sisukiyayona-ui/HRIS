@@ -79,7 +79,7 @@
                     # code...
                   } ?>
                   <?php if ($role == '1' or $role == '5') {
-                    if ($data->spm == 'Ya') { ?>
+                    if (isset($data->spm) && $data->spm == 'Ya') { ?>
                       <tr>
                         <td rowspan="56" width="30%">
                         <?php } else { ?>
@@ -87,7 +87,7 @@
                         <td rowspan="55" width="30%">
                         <?php  } ?>
                         <?php } else {
-                        if ($data->spm == 'Ya') { ?>
+                        if (isset($data->spm) && $data->spm == 'Ya') { ?>
                       <tr>
                         <td rowspan="45" width="30%">
                         <?php } else { ?>
@@ -121,7 +121,7 @@
 
               <td colspan="2" bgcolor="#c0daf5"><a href="<?php echo base_url() ?>Karyawan/export/<?php echo $data->recid_karyawan ?>">
                   <?php echo "<b>$data->sts_aktif (";
-                  if ($data->spm == "Ya") echo "SPM - ";
+                  if (isset($data->spm) && $data->spm == "Ya") echo "SPM - ";
                   echo $data->sts_jabatan;
                   echo ") - $data->nik</b>"; ?>
                   <?php if ($role == '1' or $role == '5') { ?>
@@ -137,11 +137,18 @@
               </tr>
               <tr>
                 <td>Tempat, Tanggal Lahir</td>
-                <td><?php echo "$data->tmp_lahir, "; ?>
-                  <?php echo $newDate = date("d M Y", strtotime($data->tgl_lahir));
-                  foreach ($usia as $umur) {
+                <td><?php echo isset($data->tmp_lahir) ? $data->tmp_lahir . ", " : "-, "; ?>
+                  <?php 
+                  if (isset($data->tgl_lahir) && $data->tgl_lahir) {
+                    echo $newDate = date("d M Y", strtotime($data->tgl_lahir));
+                  } else {
+                    echo "-";
                   }
-                  echo " ($umur->umur thn)"; ?></td>
+                  $umur_thn = "";
+                  foreach ($usia as $umur) {
+                    $umur_thn = " ($umur->umur thn)";
+                  }
+                  echo $umur_thn; ?></td>
               </tr>
               <tr>
                 <td>jenis Kelamin</td>
@@ -227,7 +234,7 @@
               </tr>
               <tr>
                 <td>No Ktp</td>
-                <td><?php echo $data->no_ktp ?></td>
+                <td><?php echo isset($data->no_ktp) ? $data->no_ktp : '-' ?></td>
               </tr>
               <tr>
                 <td>Scan KTP</td>
@@ -257,7 +264,7 @@
               </tr>
               <tr>
                 <td>No Kartu Keluarga</td>
-                <td><?php echo $data->no_kk ?></td>
+                <td><?php echo isset($data->no_kk) ? $data->no_kk : '-' ?></td>
               </tr>
               <tr>
                 <td>Scan Kartu Keluarga</td>
@@ -287,7 +294,7 @@
               </tr>
               <tr>
                 <td>No NPWP</td>
-                <td><?php echo $data->no_npwp ?></td>
+                <td><?php echo isset($data->no_npwp) ? $data->no_npwp : '-' ?></td>
               </tr>
               <tr>
                 <td>Scan NPWP</td>
@@ -319,7 +326,7 @@
                 <td>Nomor Jamsostek</td>
                 <td>
                   <?php
-                  if ($data->no_jamsos == '') {
+                  if (!isset($data->no_jamsos) || $data->no_jamsos == '') {
                     echo "-";
                   } else {
                     echo $data->no_jamsos;
@@ -331,7 +338,7 @@
                 <td>Nomor BPJS Kesehatan</td>
                 <td>
                   <?php
-                  if ($data->no_bpjs_kes == '') {
+                  if (!isset($data->no_bpjs_kes) || $data->no_bpjs_kes == '') {
                     echo "-";
                   } else {
                     echo $data->no_bpjs_kes;
@@ -369,7 +376,7 @@
                 <td>Nomor BPJS Tenaga Kerja</td>
                 <td>
                   <?php
-                  if ($data->no_bpjs_tk == '') {
+                  if (!isset($data->no_bpjs_tk) || $data->no_bpjs_tk == '') {
                     echo "-";
                   } else {
                     echo $data->no_bpjs_tk;
@@ -405,7 +412,7 @@
               </tr>
               <tr>
                 <td>Nomor AIA</td>
-                <td><?php echo $data->no_aia ?></td>
+                <td><?php echo isset($data->no_aia) ? $data->no_aia : '-' ?></td>
               </tr>
               <tr>
                 <td>Scan AIA</td>
@@ -435,7 +442,7 @@
               </tr>
               <tr>
                 <td>Asuransi Kesehatan Lain</td>
-                <td><?php echo $data->no_askes ?></td>
+                <td><?php echo isset($data->no_askes) ? $data->no_askes : '-' ?></td>
               </tr>
               <tr>
                 <td>Scan Asuransi Kesehatan Lain</td>
@@ -443,7 +450,7 @@
                   <div class="col-md-8">
                     <div class="thumbnail">
                       <div class="image view view-first">
-                        <?php if ($data->scan_askes == '') { ?>
+                        <?php if (!isset($data->scan_askes) || $data->scan_askes == '') { ?>
                           <img style="width: 100%; display: block;" src="<?php echo base_url() ?>images/inbox.jpg" alt="image" />
                         <?php } else { ?>
                           <img style="width: 100%; display: block;" src="<?php echo base_url() ?>images/askes/<?php echo $data->scan_askes ?>" alt="image" />
@@ -451,7 +458,7 @@
                       </div>
                       <div class="caption">
                         <?php
-                        if ($data->scan_askes == '') {
+                        if (!isset($data->scan_askes) || $data->scan_askes == '') {
                           echo "<center>-</center>";
                         } else { ?>
                           <center>
@@ -465,11 +472,11 @@
               </tr>
               <tr>
                 <td>Pendidikan</td>
-                <td><?php echo "$data->pendidikan  $data->jurusan"; ?></td>
+                <td><?php echo (isset($data->pendidikan) ? $data->pendidikan : '-') . ' ' . (isset($data->jurusan) ? $data->jurusan : '-') ?></td>
               </tr>
               <tr>
                 <td>Tahun Lulus</td>
-                <td><?php echo "$data->thn_lulus"; ?></td>
+                <td><?php echo isset($data->thn_lulus) ? $data->thn_lulus : '-' ?></td>
               </tr>
               <tr>
                 <td>Scan Ijazah</td>
@@ -477,7 +484,7 @@
                   <div class="col-md-8">
                     <div class="thumbnail">
                       <div class="image view view-first">
-                        <?php if ($data->scan_ijazah == '') { ?>
+                        <?php if (!isset($data->scan_ijazah) || $data->scan_ijazah == '') { ?>
                           <img style="width: 100%; display: block;" src="<?php echo base_url() ?>images/inbox.jpg" alt="image" />
                         <?php } else { ?>
                           <img style="width: 100%; display: block;" src="<?php echo base_url() ?>images/ijazah/<?php echo $data->scan_ijazah ?>" alt="image" />
@@ -485,7 +492,7 @@
                       </div>
                       <div class="caption">
                         <?php
-                        if ($data->scan_ijazah == '') {
+                        if (!isset($data->scan_ijazah) || $data->scan_ijazah == '') {
                           echo "<center>-</center>";
                         } else { ?>
                           <center>
@@ -499,25 +506,25 @@
               </tr>
               <tr>
                 <td>Alamat KTP</td>
-                <td><?php echo "$data->alamat_ktp"; ?></td>
+                <td><?php echo isset($data->alamat_ktp) ? $data->alamat_ktp : '-' ?></td>
               </tr>
               <tr>
                 <td>Alamat Sekarang</td>
-                <td><?php echo "$data->alamat_skrg"; ?></td>
+                <td><?php echo isset($data->alamat_skrg) ? $data->alamat_skrg : '-' ?></td>
               </tr>
               <tr>
                 <td>Telp / HP</td>
-                <td><?php echo "$data->telp1"; ?></td>
+                <td><?php echo isset($data->telp1) ? $data->telp1 : '-' ?></td>
               </tr>
               <tr>
                 <td>IMEI 1</td>
-                <td><?php echo "$data->imei1"; ?></td>
+                <td><?php echo isset($data->imei1) ? $data->imei1 : '-' ?></td>
               </tr>
               <tr>
                 <td>Telp Alternatif (Keluarga)</td>
                 <td>
                   <?php
-                  if ($data->telp2 == '') {
+                  if (!isset($data->telp2) || $data->telp2 == '') {
                     echo "-";
                   } else {
                     echo $data->telp2;
@@ -529,7 +536,7 @@
                 <td>IMEI 2</td>
                 <td>
                   <?php
-                  if ($data->imei2 == '') {
+                  if (!isset($data->imei2) || $data->imei2 == '') {
                     echo "-";
                   } else {
                     echo $data->imei2;
@@ -539,11 +546,11 @@
               </tr>
               <tr>
                 <td>Email</td>
-                <td><?php echo $data->email ?> / <?php echo $data->email_cint ?> </td>
+                <td><?php echo isset($data->email) ? $data->email : '-' ?> / <?php echo isset($data->email_cint) ? $data->email_cint : '-' ?> </td>
               <tr>
                 <td>Hobi</td>
                 <td><?php
-                    if ($data->hobi == '') {
+                    if (!isset($data->hobi) || $data->hobi == '') {
                       echo "-";
                     } else {
                       echo $data->hobi;
@@ -554,9 +561,7 @@
                 <td>Tanggal Masuk Trisula</td>
                 <td>
                   <?php
-                  if ($data->tgl_trisula == null) {
-                    echo "-";
-                  } else if ($data->tgl_trisula == "0000-00-00") {
+                  if (!isset($data->tgl_trisula) || $data->tgl_trisula == null || $data->tgl_trisula == "0000-00-00") {
                     echo "-";
                   } else {
                     echo $newDate = date("d M Y", strtotime($data->tgl_trisula));
@@ -570,15 +575,13 @@
                 <td>Tanggal Mulai Kerja</td>
                 <td>
                   <?php
-                  $mulai_kerja = $data->tgl_trisula;
-                  if ($data->tgl_m_kerja == null) {
-                    echo "-";
-                  } else if ($data->tgl_m_kerja == "0000-00-00") {
+                  $mulai_kerja = isset($data->tgl_trisula) ? $data->tgl_trisula : null;
+                  if (!isset($data->tgl_m_kerja) || $data->tgl_m_kerja == null || $data->tgl_m_kerja == "0000-00-00") {
                     echo "-";
                   } else {
                     echo $newDate = date("d M Y", strtotime($data->tgl_m_kerja));
                     $diff  = date_diff(date_create($data->tgl_m_kerja), date_create());
-                    $diff2  = date_diff(date_create($data->tgl_trisula), date_create());
+                    $diff2  = date_diff(date_create(isset($data->tgl_trisula) ? $data->tgl_trisula : date('Y-m-d')), date_create());
 
                     $masker_tahun = $diff2->format('%y');
                     // echo $masker_tahun;
@@ -606,11 +609,7 @@
                 <td>Tanggal Akhir Kerja</td>
                 <td>
                   <?php
-                  if ($data->tgl_a_kerja == null) {
-                    echo "-";
-                  } else if ($data->tgl_a_kerja == "0000-00-00") {
-                    echo "-";
-                  } else if ($data->tgl_a_kerja == "9999-12-31") {
+                  if (!isset($data->tgl_a_kerja) || $data->tgl_a_kerja == null || $data->tgl_a_kerja == "0000-00-00" || $data->tgl_a_kerja == "9999-12-31") {
                     echo "-";
                   } else {
                     echo $newDate = date("d M Y", strtotime($data->tgl_a_kerja));
@@ -619,15 +618,15 @@
                 </td>
               </tr>
               <?php
-              if ($data->spm == 'Ya') { ?>
+              if (isset($data->spm) && $data->spm == 'Ya') { ?>
                 <tr>
                   <td>Penempatan</td>
-                  <td><?php echo $data->tmp_toko . ' ( ' . $data->tmp_kota . ' )'; ?></td>
+                  <td><?php echo (isset($data->tmp_toko) ? $data->tmp_toko : '-') . ' ( ' . (isset($data->tmp_kota) ? $data->tmp_kota : '-') . ' )'; ?></td>
                 </tr>
               <?php } ?>
               <tr>
                 <td>SIM 1</td>
-                <td><?php echo $data->sim1 ?></td>
+                <td><?php echo isset($data->sim1) ? $data->sim1 : '-' ?></td>
               </tr>
               <tr>
                 <td>Scan SIM 1</td>
@@ -635,7 +634,7 @@
                   <div class="col-md-8">
                     <div class="thumbnail">
                       <div class="image view view-first">
-                        <?php if ($data->scan_sim1 == '') { ?>
+                        <?php if (!isset($data->scan_sim1) || $data->scan_sim1 == '') { ?>
                           <img style="width: 100%; display: block;" src="<?php echo base_url() ?>images/inbox.jpg" alt="image" />
                         <?php } else { ?>
                           <img style="width: 100%; display: block;" src="<?php echo base_url() ?>images/sim/<?php echo $data->scan_sim1 ?>" alt="image" />
@@ -643,7 +642,7 @@
                       </div>
                       <div class="caption">
                         <?php
-                        if ($data->scan_sim1 == '') {
+                        if (!isset($data->scan_sim1) || $data->scan_sim1 == '') {
                           echo "<center>-</center>";
                         } else { ?>
                           <center>
@@ -658,7 +657,7 @@
 
               <tr>
                 <td>SIM 2</td>
-                <td><?php echo $data->sim1 ?></td>
+                <td><?php echo isset($data->sim1) ? $data->sim1 : '-' ?></td>
               </tr>
               <tr>
                 <td>Scan SIM 2</td>
@@ -666,7 +665,7 @@
                   <div class="col-md-8">
                     <div class="thumbnail">
                       <div class="image view view-first">
-                        <?php if ($data->scan_sim2 == '') { ?>
+                        <?php if (!isset($data->scan_sim2) || $data->scan_sim2 == '') { ?>
                           <img style="width: 100%; display: block;" src="<?php echo base_url() ?>images/inbox.jpg" alt="image" />
                         <?php } else { ?>
                           <img style="width: 100%; display: block;" src="<?php echo base_url() ?>images/sim/<?php echo $data->scan_sim2 ?>" alt="image" />
@@ -674,7 +673,7 @@
                       </div>
                       <div class="caption">
                         <?php
-                        if ($data->scan_sim2 == '') {
+                        if (!isset($data->scan_sim2) || $data->scan_sim2 == '') {
                           echo "<center>-</center>";
                         } else { ?>
                           <center>
@@ -688,15 +687,15 @@
               </tr>
               <tr>
                 <td>Profile DISC</td>
-                <td><?php echo $data->profile_disc ?></td>
+                <td><?php echo isset($data->profile_disc) ? $data->profile_disc : '-' ?></td>
               </tr>
               <tr>
                 <td>Pattern Type</td>
-                <td><?php echo $data->pattern_type ?></td>
+                <td><?php echo isset($data->pattern_type) ? $data->pattern_type : '-' ?></td>
               </tr>
               <tr>
                 <td>Profile Personality</td>
-                <td> <?php echo $data->profile_type ?></td>
+                <td> <?php echo isset($data->profile_type) ? $data->profile_type : '-' ?></td>
               </tr>
 
 
@@ -706,63 +705,67 @@
                 </tr>
                 <tr>
                   <td>LSPMI</td>
-                  <td><?php echo $data->lspmi ?></td>
+                  <td><?php echo isset($data->lspmi) ? $data->lspmi : '-' ?></td>
                 </tr>
                 <tr>
                   <td>Tunjangan Pensiun</td>
-                  <td><?php echo $data->pensiun ?></td>
+                  <td><?php echo isset($data->pensiun) ? $data->pensiun : '-' ?></td>
                 </tr>
                 <tr>
                   <td>Gaji Pokok</td>
                   <?php
-                  if ($data->tingkatan == 1) {
+                  if (isset($data->tingkatan) && $data->tingkatan == 1) {
                     if ($masker_tahun < 1) {
-                      $uph_pokok = $data->gapok;
+                      $uph_pokok = isset($data->gapok) ? $data->gapok : 0;
                     } else if ($masker_tahun >= 1 and $masker_tahun < 5) {
-                      $uph_pokok = $data->gapok + 10000;
+                      $uph_pokok = (isset($data->gapok) ? $data->gapok : 0) + 10000;
                     } else if ($masker_tahun >= 5 and $masker_tahun < 10) {
-                      $uph_pokok = $data->gapok + 20000;
+                      $uph_pokok = (isset($data->gapok) ? $data->gapok : 0) + 20000;
                     } else if ($masker_tahun >= 10 and $masker_tahun < 15) {
-                      $uph_pokok = $data->gapok + 30000;
+                      $uph_pokok = (isset($data->gapok) ? $data->gapok : 0) + 30000;
                     } else if ($masker_tahun >= 15 and $masker_tahun < 20) {
-                      $uph_pokok = $data->gapok + 40000;
+                      $uph_pokok = (isset($data->gapok) ? $data->gapok : 0) + 40000;
                     } else {
-                      $uph_pokok = $data->gapok + 50000;
+                      $uph_pokok = (isset($data->gapok) ? $data->gapok : 0) + 50000;
                     }
                   } else {
-                    $uph_pokok = $data->gapok;
+                    $uph_pokok = isset($data->gapok) ? $data->gapok : 0;
                   }
                   ?>
-                  <td>Rp. <?php echo number_format($uph_pokok) ?></td>
+                  <td>Rp. <?php echo isset($uph_pokok) ? number_format($uph_pokok) : '0' ?></td>
                 </tr>
                 <tr>
                   <td>Tunjangan Jabatan</td>
-                  <td>Rp. <?php echo number_format($data->t_jabatan) ?></td>
+                  <td>Rp. <?php echo isset($data->t_jabatan) ? number_format($data->t_jabatan) : '0' ?></td>
                 </tr>
                 <tr>
                   <td>Tunjangan Masa Kerja</td>
                   <td>Rp. <?php
-                          $diff  = date_diff(date_create($data->tgl_m_kerja), date_create());
-                          $masker_tahun = $diff->format('%y');
-                          $t_masker = $masker_tahun * $uph_masker;
-                          echo number_format($t_masker);
+                          if (isset($data->tgl_m_kerja) && $data->tgl_m_kerja) {
+                            $diff  = date_diff(date_create($data->tgl_m_kerja), date_create());
+                            $masker_tahun = $diff->format('%y');
+                            $t_masker = $masker_tahun * $uph_masker;
+                            echo number_format($t_masker);
+                          } else {
+                            echo number_format(0);
+                          }
                           ?></td>
                 </tr>
                 <tr>
                   <td>Tunjangan Jenis Pekerjaan</td>
-                  <td>Rp. <?php echo number_format($data->t_jen_pek) ?></td>
+                  <td>Rp. <?php echo isset($data->t_jen_pek) ? number_format($data->t_jen_pek) : '0' ?></td>
                 </tr>
                 <tr>
                   <td>Jemputan</td>
-                  <td><?php echo $data->ljemputan ?></td>
+                  <td><?php echo isset($data->ljemputan) ? $data->ljemputan : '-' ?></td>
                 </tr>
                 <tr>
                   <td>Akun Bank</td>
-                  <td><?php echo $data->acc_bank ?></td>
+                  <td><?php echo isset($data->acc_bank) ? $data->acc_bank : '-' ?></td>
                 </tr>
                 <tr>
                   <td>Nama Bank</td>
-                  <td><?php echo $data->nama_bank ?></td>
+                  <td><?php echo isset($data->nama_bank) ? $data->nama_bank : '-' ?></td>
                 </tr>
               <?php } ?>
               </table>
@@ -825,16 +828,32 @@
                           <h2 class="title">
                             <p>
                               <?php if ($data->kategori == 'Akhir') {
-                                echo $newDate = date("d-M-Y", strtotime($data->tgl_m_karir));
-                                $flag_masker = $newDate;
+                                if (isset($data->tgl_m_karir) && $data->tgl_m_karir) {
+                                  echo $newDate = date("d-M-Y", strtotime($data->tgl_m_karir));
+                                  $flag_masker = $newDate;
+                                } else {
+                                  echo "-";
+                                  $flag_masker = date('Y-m-d');
+                                }
                               } else { ?>
-                                <?php echo $newDate = date("d-M-Y", strtotime($data->tgl_m_karir)); ?> s/d
+                                <?php 
+                                if (isset($data->tgl_m_karir) && $data->tgl_m_karir) {
+                                  echo $newDate = date("d-M-Y", strtotime($data->tgl_m_karir));
+                                } else {
+                                  echo "-";
+                                }
+                                ?> s/d
                                 <?php if ($data->tgl_a_karir == '' || $data->tgl_a_karir == '0000-00-00') {
                                   echo "Sekarang";
                                   $flag_masker = date('Y-m-d');
                                 } else {
-                                  echo $newDate = date("d-M-Y", strtotime($data->tgl_a_karir));
-                                  $flag_masker = $newDate;
+                                  if (isset($data->tgl_a_karir) && $data->tgl_a_karir) {
+                                    echo $newDate = date("d-M-Y", strtotime($data->tgl_a_karir));
+                                    $flag_masker = $newDate;
+                                  } else {
+                                    echo "-";
+                                    $flag_masker = date('Y-m-d');
+                                  }
                                 } ?> |
                               <?php } ?>
                               <?php if ($role == '1' or $role == '2' or $role == '5') { ?>
@@ -870,17 +889,17 @@
                             <tr>
                               <td>Jenis Karir</td>
                               <td>:</td>
-                              <td><?php echo $data->kategori ?></td>
+                              <td><?php echo isset($data->kategori) ? $data->kategori : '-' ?></td>
                             </tr>
                             <tr>
                               <td>Bagian</td>
                               <td>:</td>
-                              <td><?php echo $data->indeks_hr ?></td>
+                              <td><?php echo isset($data->indeks_hr) ? $data->indeks_hr : '-' ?></td>
                             </tr>
                             <tr>
                               <td>Sub Bagian</td>
                               <td>:</td>
-                              <td><?php echo $data->sub_bag ?></td>
+                              <td><?php echo isset($data->sub_bag) ? $data->sub_bag : '-' ?></td>
                             </tr>
                             <td>Jabatan</td>
                             <td>:</td>
@@ -891,10 +910,18 @@
                               <td>Golongan</td>
                               <td>:</td>
                               <?php
-                              $newDate = date("d M Y", strtotime($mulai_kerja));
+                              if (isset($mulai_kerja) && $mulai_kerja) {
+                                $newDate = date("d M Y", strtotime($mulai_kerja));
+                              } else {
+                                $newDate = date('Y-m-d');
+                              }
                               // $flag_masker = date("Y m d", strtotime($flag_masker));
-                              $diff  = date_diff(date_create($newDate), date_create($flag_masker));
-                              $masker_tahun = $diff->format('%y');
+                              if (isset($newDate) && isset($flag_masker)) {
+                                $diff  = date_diff(date_create($newDate), date_create($flag_masker));
+                                $masker_tahun = $diff->format('%y');
+                              } else {
+                                $masker_tahun = 0;
+                              }
                               // echo $masker_tahun;
                               // $diff->format(' ( %Y tahun %m bulan %d hari )');
                               if ($masker_tahun >= 0 and $masker_tahun < 1) {
@@ -911,16 +938,16 @@
                                 $kat_masker = 'MK 21';
                               }
                               ?>
-                              <td><?php echo $data->nama_golongan ?> (<?php echo $kat_masker ?>)</td>
+                              <td><?php echo isset($data->nama_golongan) ? $data->nama_golongan : '-' ?> (<?php echo isset($kat_masker) ? $kat_masker : '-' ?>)</td>
                             </tr>
                             <tr>
                               <td>Penempatan</td>
                               <td>:</td>
-                              <td><?php echo $data->penempatan ?></td>
+                              <td><?php echo isset($data->penempatan) ? $data->penempatan : '-' ?></td>
                             </tr>
                             <td>Keterangan</td>
                             <td>:</td>
-                            <td><?php echo "$data->note"; ?></td>
+                            <td><?php echo isset($data->note) ? $data->note : '-' ?></td>
                             </tr>
                           </table>
                           </p>
@@ -951,11 +978,22 @@
                           </div>
                           <div class="block_content">
                             <h2 class="title">
-                              <p><?php echo $newDate = date("d-M-Y", strtotime($data->tgl_m_karir)); ?> s/d
+                              <p>
+                              <?php 
+                              if (isset($data->tgl_m_karir) && $data->tgl_m_karir) {
+                                echo $newDate = date("d-M-Y", strtotime($data->tgl_m_karir));
+                              } else {
+                                echo "-";
+                              }
+                              ?> s/d
                                 <?php if ($data->tgl_a_karir == '' || $data->tgl_a_karir == '0000-00-00') {
                                   echo "Sekarang";
                                 } else {
-                                  echo $newDate = date("d-M-Y", strtotime($data->tgl_a_karir));
+                                  if (isset($data->tgl_a_karir) && $data->tgl_a_karir) {
+                                    echo $newDate = date("d-M-Y", strtotime($data->tgl_a_karir));
+                                  } else {
+                                    echo "-";
+                                  }
                                 } ?> |
                                 <?php if ($role == '1' or $role == '2' or $role == '5') { ?>
                                   <a href="<?php echo base_url() ?>index.php/Training/train_acc_update/<?php echo $data->recid_training ?>"><i class="fa fa-edit"></i></a>
@@ -973,22 +1011,22 @@
                               <tr>
                                 <td>Jenis Karir</td>
                                 <td>:</td>
-                                <td><?php echo $data->kategori ?></td>
+                                <td><?php echo isset($data->kategori) ? $data->kategori : '-' ?></td>
                               </tr>
                               <tr>
                                 <td>Topik Training</td>
                                 <td>:</td>
-                                <td><?php echo ucwords($data->judul_training) ?></td>
+                                <td><?php echo isset($data->judul_training) ? ucwords($data->judul_training) : '-' ?></td>
                               </tr>
                               <tr>
                                 <td>Tempat</td>
                                 <td>:</td>
-                                <td><?php echo  ucwords($data->tempat_training) ?></td>
+                                <td><?php echo isset($data->tempat_training) ? ucwords($data->tempat_training) : '-' ?></td>
                               </tr>
                               <tr>
                                 <td>Keterangan</td>
                                 <td>:</td>
-                                <td><?php echo ucwords($data->note) ?></td>
+                                <td><?php echo isset($data->note) ? ucwords($data->note) : '-' ?></td>
                               </tr>
                             </table>
                             </p>
@@ -1018,11 +1056,22 @@
                           </div>
                           <div class="block_content">
                             <h2 class="title">
-                              <p><?php echo $newDate = date("d-M-Y", strtotime($data->tgl_m_karir)); ?> s/d
+                              <p>
+                              <?php 
+                              if (isset($data->tgl_m_karir) && $data->tgl_m_karir) {
+                                echo $newDate = date("d-M-Y", strtotime($data->tgl_m_karir));
+                              } else {
+                                echo "-";
+                              }
+                              ?> s/d
                                 <?php if ($data->tgl_a_karir == '' || $data->tgl_a_karir == '0000-00-00') {
                                   echo "Sekarang";
                                 } else {
-                                  echo $newDate = date("d-M-Y", strtotime($data->tgl_a_karir));
+                                  if (isset($data->tgl_a_karir) && $data->tgl_a_karir) {
+                                    echo $newDate = date("d-M-Y", strtotime($data->tgl_a_karir));
+                                  } else {
+                                    echo "-";
+                                  }
                                 } ?> |
                                 <?php if ($role == '1' or $role == '2' or $role == '5') { ?>
                                   <?php if ($data->no_perjanjian == '') { ?>
@@ -1054,22 +1103,22 @@
                               <tr>
                                 <td>Jenis Sanksi</td>
                                 <td>:</td>
-                                <td><?php echo $data->jenis_sanksi ?></td>
+                                <td><?php echo isset($data->jenis_sanksi) ? $data->jenis_sanksi : '-' ?></td>
                               </tr>
                               <tr>
                                 <td>Bagian</td>
                                 <td>:</td>
-                                <td><?php echo $data->indeks_hr ?></td>
+                                <td><?php echo isset($data->indeks_hr) ? $data->indeks_hr : '-' ?></td>
                               </tr>
                               <td>Jabatan</td>
                               <td>:</td>
-                              <td><?php echo  strtoupper($data->indeks_jabatan) ?>
-                                <!-- - <?php echo  strtoupper($data->sts_jbtn) ?> --> (<?php echo $data->sts_jabatan ?>)
+                              <td><?php echo isset($data->indeks_jabatan) ? strtoupper($data->indeks_jabatan) : '-' ?>
+                                <!-- - <?php echo isset($data->sts_jbtn) ? strtoupper($data->sts_jbtn) : '-' ?> --> (<?php echo isset($data->sts_jabatan) ? $data->sts_jabatan : '-' ?>)
                               </td>
                               </tr>
                               <td>Keterangan</td>
                               <td>:</td>
-                              <td><?php echo "$data->note"; ?></td>
+                              <td><?php echo isset($data->note) ? $data->note : '-' ?></td>
                               </tr>
                             </table>
                             </p>
@@ -1111,10 +1160,42 @@
                 ?>
                 <tr class="even pointer">
                   <td><?php echo $no++; ?></td>
-                  <td><?php echo date('d M Y', strtotime($data->tgl_mulai)); ?></td>
-                  <td><?php echo date('d M Y', strtotime($data->tgl_akhir)); ?></td>
-                  <td><?php echo date('d M Y H:i:s', strtotime($data->created_at)); ?></td>
-                  <td><?php echo date('d M Y H:i:s', strtotime($data->updated_at)); ?></td>
+                  <td>
+                  <?php 
+                  if (isset($data->tgl_mulai) && $data->tgl_mulai) {
+                    echo date('d M Y', strtotime($data->tgl_mulai));
+                  } else {
+                    echo "-";
+                  }
+                  ?>
+                  </td>
+                  <td>
+                  <?php 
+                  if (isset($data->tgl_akhir) && $data->tgl_akhir) {
+                    echo date('d M Y', strtotime($data->tgl_akhir));
+                  } else {
+                    echo "-";
+                  }
+                  ?>
+                  </td>
+                  <td>
+                  <?php 
+                  if (isset($data->created_at) && $data->created_at) {
+                    echo date('d M Y H:i:s', strtotime($data->created_at));
+                  } else {
+                    echo "-";
+                  }
+                  ?>
+                  </td>
+                  <td>
+                  <?php 
+                  if (isset($data->updated_at) && $data->updated_at) {
+                    echo date('d M Y H:i:s', strtotime($data->updated_at));
+                  } else {
+                    echo "-";
+                  }
+                  ?>
+                  </td>
                   <?php if ($role == '1' or $role == '2' or $role == '5') { ?>
                   <td>
                     <button type="button" class="btn btn-info btn-xs" data-toggle="modal" data-target="#editKontrakModal" 

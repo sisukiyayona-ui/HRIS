@@ -132,3 +132,6 @@ $route['employee_import/process_data'] = 'employee_import/process_data';
 $route['employee_import/do_import'] = 'employee_import/do_import';
 $route['employee_import/download_template'] = 'employee_import/download_template';
 
+// Routes for Karyawan Export
+$route['karyawan/export'] = 'karyawan/export';
+

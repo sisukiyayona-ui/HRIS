@@ -10651,4 +10651,212 @@ class Karyawan extends CI_Controller
 		$this->m_hris->docsecre_pupdate($data, $recid_doc);
 		redirect('Karyawan/docsecre_view');
 	}
+	
+public function export($recid_karyawan = null)
+{
+    $this->load->library('session');
+    if ($this->session->userdata('logged_in') != 1) {
+        redirect('Auth/keluar');
+        return;
+    }
+
+    $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+    $sheet       = $spreadsheet->getActiveSheet();
+
+    // Helper merge
+    $v = fn($col) => $sheet->mergeCells("{$col}1:{$col}3");
+
+    // ========================= HEADER =========================
+
+    $sheet->setCellValue('A1','NO');  $v('A');
+    $sheet->setCellValue('B1','NIK'); $v('B');
+    $sheet->setCellValue('C1','NAMA'); $v('C');
+    $sheet->setCellValue('D1','ALAMAT E-MAIL PRIBADI'); $v('D');
+
+    $sheet->setCellValue('E1','JABATAN');  $v('E');
+    $sheet->setCellValue('F1','BAGIAN');   $v('F');
+    $sheet->setCellValue('G1','SUB.BAGIAN'); $v('G');
+    $sheet->setCellValue('H1','DEPARTEMEN'); $v('H');
+    $sheet->setCellValue('I1','STATUS KARYAWAN'); $v('I');
+
+    $sheet->setCellValue('J1','TGL MASUK'); $v('J');
+    $sheet->setCellValue('K1','TGL KELUAR'); $v('K');
+    $sheet->setCellValue('L1','TGL JEDA');   $v('L');
+
+    $sheet->setCellValue('M1','MASA KERJA');
+    $sheet->mergeCells('M1:N1');
+    $sheet->setCellValue('M2','SEJAK AWAL');
+    $sheet->setCellValue('N2','S/D RESIGN');
+    $sheet->mergeCells('M3:N3');
+
+    $sheet->setCellValue('O1','SK KARY TETAP');
+    $sheet->mergeCells('O1:P1');
+    $sheet->setCellValue('O2','NOMOR SK');
+    $sheet->setCellValue('P2','TGL DIANGKAT');
+    $sheet->mergeCells('O3:P3');
+
+    // BPJS
+    $sheet->setCellValue('Q1','BPJS');
+    $sheet->mergeCells('Q1:T1');
+    $sheet->setCellValue('Q2','KETENAGAKERJAAN'); $sheet->mergeCells('Q2:R2');
+    $sheet->setCellValue('S2','KESEHATAN');       $sheet->mergeCells('S2:T2');
+    $sheet->setCellValue('Q3','NO KPJ');          $sheet->mergeCells('Q3:R3');
+    $sheet->setCellValue('S3','NO KARTU DILUAR TRIMAS');
+    $sheet->setCellValue('T3','NO KARTU TRIMAS');
+
+    // Lain-lain
+    $sheet->setCellValue('U1','STATUS PERNIKAHAN'); $v('U');
+    $sheet->setCellValue('V1','TEMPAT LAHIR');      $v('V');
+    $sheet->setCellValue('W1','TGL LAHIR');         $v('W');
+    $sheet->setCellValue('X1','BULAN LAHIR');       $v('X');
+    $sheet->setCellValue('Y1','USIA');              $v('Y');
+
+    $sheet->setCellValue('Z1','ALAMAT KTP');       $v('Z');
+    $sheet->setCellValue('AA1','ALAMAT SEKARANG'); $v('AA');
+    $sheet->setCellValue('AB1','JENIS KELAMIN');   $v('AB');
+    $sheet->setCellValue('AC1','AGAMA');           $v('AC');
+    $sheet->setCellValue('AD1','PENDIDIKAN');      $v('AD');
+
+    $sheet->setCellValue('AE1','NO TELEPON');  $v('AE');
+    $sheet->setCellValue('AF1','NO KK');       $v('AF');
+    $sheet->setCellValue('AG1','NO KTP');      $v('AG');
+
+    // =================== GESER AJ → AH ===================
+
+    $sheet->setCellValue('AH1','NAMA ORANG TUA'); $v('AH');
+    $sheet->setCellValue('AI1','NAMA SUAMI / ISTRI'); $v('AI');
+    $sheet->setCellValue('AJ1','JUMLAH ANAK'); $v('AJ');
+    $sheet->setCellValue('AK1','NAMA ANAK');    $v('AK');
+
+    $sheet->setCellValue('AL1','JUMLAH KONTRAK');  $v('AL');
+    $sheet->setCellValue('AM1','KONTRAK AKHIR');   $v('AM');
+
+    $sheet->setCellValue('AN1','NO REKENING');  $v('AN');
+    $sheet->setCellValue('AO1','TIPE PTKP');    $v('AO');
+    $sheet->setCellValue('AP1','ALASAN KELUAR'); $v('AP');
+    $sheet->setCellValue('AQ1','KETERANGAN');   $v('AQ');
+    $sheet->setCellValue('AR1','LEVEL');        $v('AR');
+    $sheet->setCellValue('AS1','DL/IDL');       $v('AS');
+
+    // ========== HEADER STYLE ==========
+    $sheet->getStyle('A1:AS3')->applyFromArray([
+        'font'=>['bold'=>true],
+        'alignment'=>[
+            'horizontal'=>\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+            'vertical'=>\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+            'wrapText'=>true
+        ],
+        'borders'=>['allBorders'=>['borderStyle'=>\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN]],
+        'fill'=>[
+            'fillType'=>\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+            'startColor'=>['argb'=>'FFFFF7C6']
+        ]
+    ]);
+
+    $sheet->freezePane('A4');
+
+    // QUERY
+    $this->db->select("
+        k.*, b.nama_bag, bs.sub_bag AS subbag_nama,
+        j.nama_jbtn, d.nama_department AS departemen
+    ");
+    $this->db->from("karyawan k");
+    $this->db->join("bagian b","b.recid_bag=k.recid_bag","left");
+    $this->db->join("bagian_sub bs","bs.recid_subbag=k.recid_subbag","left");
+    $this->db->join("jabatan j","j.recid_jbtn=k.recid_jbtn","left");
+    $this->db->join("department d","d.recid_department=b.recid_department","left");
+    $this->db->order_by("k.nama_karyawan","ASC");
+
+    $data = $this->db->get()->result_array();
+
+    // ========================= TULIS DATA =========================
+    $row = 4;
+    $no  = 1;
+
+    $val = fn($x,$k)=> (!empty($x[$k])) ? $x[$k] : "-";
+
+    foreach ($data as $k)
+    {
+        $sheet->setCellValue("A{$row}", $no++);
+        $sheet->setCellValue("B{$row}", $val($k,'nik'));
+        $sheet->setCellValue("C{$row}", $val($k,'nama_karyawan'));
+        $sheet->setCellValue("D{$row}", $val($k,'email_pribadi'));
+
+        $sheet->setCellValue("E{$row}", $val($k,'nama_jbtn'));
+        $sheet->setCellValue("F{$row}", $val($k,'nama_bag'));
+        $sheet->setCellValue("G{$row}", $val($k,'subbag_nama'));
+        $sheet->setCellValue("H{$row}", $val($k,'departemen'));
+        $sheet->setCellValue("I{$row}", $val($k,'sts_aktif'));
+
+        $sheet->setCellValue("J{$row}", $val($k,'tgl_m_kerja'));
+        $sheet->setCellValue("K{$row}", $val($k,'tgl_a_kerja'));
+        $sheet->setCellValue("L{$row}", $val($k,'tgl_jeda'));
+
+        $sheet->setCellValue("M{$row}", $val($k,'masa_kerja_awal'));
+        $sheet->setCellValue("N{$row}", $val($k,'masa_kerja_resign'));
+
+        $sheet->setCellValue("O{$row}", $val($k,'sk_kary_tetap'));
+        $sheet->setCellValue("P{$row}", $val($k,'sk_tgl'));
+
+        $sheet->setCellValue("Q{$row}", $val($k,'no_kpj'));
+        $sheet->setCellValue("R{$row}", $val($k,'no_kpj'));
+        $sheet->setCellValue("S{$row}", $val($k,'no_kartu_diluar_trimas'));
+        $sheet->setCellValue("T{$row}", $val($k,'no_kartu_trimas'));
+
+        $sheet->setCellValue("U{$row}", $val($k,'sts_nikah'));
+        $sheet->setCellValue("V{$row}", $val($k,'tmp_lahir'));
+        $sheet->setCellValue("W{$row}", $val($k,'tgl_lahir'));
+        $sheet->setCellValue("X{$row}", "-");
+        $sheet->setCellValue("Y{$row}", "-");
+
+        $sheet->setCellValue("Z{$row}", $val($k,'alamat_ktp'));
+        $sheet->setCellValue("AA{$row}", $val($k,'alamat_skrg'));
+        $sheet->setCellValue("AB{$row}", $val($k,'jenkel'));
+        $sheet->setCellValue("AC{$row}", $val($k,'agama'));
+        $sheet->setCellValue("AD{$row}", $val($k,'pendidikan'));
+
+        $sheet->setCellValue("AE{$row}", $val($k,'no_telepon'));
+        $sheet->setCellValue("AF{$row}", $val($k,'no_kk'));
+        $sheet->setCellValue("AG{$row}", $val($k,'no_ktp'));
+
+        // AH–AS bergeser, tidak ada kolom kosong
+        $sheet->setCellValue("AH{$row}", $val($k,'nama_orang_tua'));
+        $sheet->setCellValue("AI{$row}", $val($k,'nama_pasangan'));
+        $sheet->setCellValue("AJ{$row}", $val($k,'jumlah_anak'));
+        $sheet->setCellValue("AK{$row}", $val($k,'nama_anak'));
+
+        $sheet->setCellValue("AL{$row}", $val($k,'jumlah_kontrak'));
+        $sheet->setCellValue("AM{$row}", $val($k,'tgl_akhir_kontrak'));
+
+        $sheet->setCellValue("AN{$row}", $val($k,'no_rekening'));
+        $sheet->setCellValue("AO{$row}", $val($k,'sts_penunjang'));
+        $sheet->setCellValue("AP{$row}", $val($k,'alasan_keluar'));
+        $sheet->setCellValue("AQ{$row}", $val($k,'keterangan'));
+        $sheet->setCellValue("AR{$row}", $val($k,'level'));
+        $sheet->setCellValue("AS{$row}", $val($k,'dl_idl'));
+
+        $row++;
+    }
+
+    // ========================= STYLE DATA =========================
+    $sheet->getStyle("A4:AS{$row}")
+        ->applyFromArray([
+            'borders'=>['allBorders'=>['borderStyle'=>\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN]]
+        ]);
+
+    foreach (range('A','AS') as $col) {
+        $sheet->getColumnDimension($col)->setAutoSize(true);
+    }
+
+    // Output
+    $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+    $filename = "DATA_KARYAWAN_" . date('Ymd_His') . ".xlsx";
+
+    header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    header("Content-Disposition: attachment; filename=\"$filename\"");
+    header('Cache-Control: max-age=0');
+
+    $writer->save('php://output');
+}
+
 }

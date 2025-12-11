@@ -40,6 +40,12 @@
                     <th>TGL.DIANGKAT</th>
                     <th>BPJS NO.KPJ</th>
                     <th>NO. KARTU TRIMAS</th>
+                    <th>NO.REKENING</th>
+                    <th>TIPE PTKP</th>
+                    <th>ALASAN KELUAR</th>
+                    <th>KETERANGAN</th>
+                    <th>LEVEL</th>
+                    <th>DL/IDL</th>
                     <th>STATUS PERNIKAHAN</th>
                     <th>TEMPAT LAHIR</th>
                     <th>TGL LAHIR</th>
@@ -78,6 +84,12 @@
                       <td><?php echo isset($employee['TGL_DIANGKAT']) ? htmlspecialchars($employee['TGL_DIANGKAT']) : ''; ?></td>
                       <td><?php echo isset($employee['BPJS_NO_KPJ']) ? htmlspecialchars($employee['BPJS_NO_KPJ']) : ''; ?></td>
                       <td><?php echo isset($employee['NO_KARTU_TRIMAS']) ? htmlspecialchars($employee['NO_KARTU_TRIMAS']) : ''; ?></td>
+                      <td><?php echo isset($employee['NO_REKENING']) ? htmlspecialchars($employee['NO_REKENING']) : ''; ?></td>
+                      <td><?php echo isset($employee['TIPE_PTKP']) ? htmlspecialchars($employee['TIPE_PTKP']) : ''; ?></td>
+                      <td><?php echo isset($employee['ALASAN_KELUAR']) ? htmlspecialchars($employee['ALASAN_KELUAR']) : ''; ?></td>
+                      <td><?php echo isset($employee['KETERANGAN']) ? htmlspecialchars($employee['KETERANGAN']) : ''; ?></td>
+                      <td><?php echo isset($employee['LEVEL']) ? htmlspecialchars($employee['LEVEL']) : ''; ?></td>
+                      <td><?php echo isset($employee['DL_IDL']) ? htmlspecialchars($employee['DL_IDL']) : ''; ?></td>
                       <td><?php echo isset($employee['STATUS_PERNIKAHAN']) ? htmlspecialchars($employee['STATUS_PERNIKAHAN']) : ''; ?></td>
                       <td><?php echo isset($employee['TEMPAT_LAHIR']) ? htmlspecialchars($employee['TEMPAT_LAHIR']) : ''; ?></td>
                       <td><?php echo isset($employee['TGL_LAHIR']) ? htmlspecialchars($employee['TGL_LAHIR']) : ''; ?></td>
