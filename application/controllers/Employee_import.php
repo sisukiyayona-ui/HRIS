@@ -24,6 +24,11 @@ class Employee_import extends CI_Controller
             return;
         }
 
+        // Clear any existing session data to ensure clean state
+        $this->session->unset_userdata('employee_import_data');
+        $this->session->unset_userdata('employee_import_file');
+        $this->session->unset_userdata('employee_import_results');
+
         $usr = $this->session->userdata('kar_id');
         $data['cek_usr'] = $this->M_hris->cek_usr($usr);
 
@@ -43,6 +48,11 @@ class Employee_import extends CI_Controller
             redirect('Auth/keluar');
             return;
         }
+
+        // Clear any existing session data to prevent conflicts with previous imports
+        $this->session->unset_userdata('employee_import_data');
+        $this->session->unset_userdata('employee_import_file');
+        $this->session->unset_userdata('employee_import_results');
 
         // Configuration for file upload
         $config['upload_path'] = './uploads/';
@@ -144,8 +154,11 @@ class Employee_import extends CI_Controller
         $data['cek_usr'] = $this->M_hris->cek_usr($usr);
         $data['processing_results'] = $processing_results;
 
-        // Redirect to import page
-        redirect('Employee_import/do_import');
+        // Show loading view instead of directly importing
+        $this->load->view('layout/a_header');
+        $this->load->view('layout/menu_super', $data);
+        $this->load->view('employee/import_loading');
+        $this->load->view('layout/a_footer');
     }
 
     /**
@@ -220,6 +233,112 @@ class Employee_import extends CI_Controller
         $this->load->view('layout/menu_super', $data);
         $this->load->view('employee/import_complete', $data);
         $this->load->view('layout/a_footer');
+    }
+
+    /**
+     * AJAX endpoint for importing employee data with progress updates
+     */
+    public function ajax_import()
+    {
+        $logged_in = $this->session->userdata('logged_in');
+        if ($logged_in != 1) {
+            echo json_encode(['status' => 'error', 'message' => 'Not logged in']);
+            return;
+        }
+
+        $employee_data = $this->session->userdata('employee_import_data');
+        
+        if (empty($employee_data)) {
+            echo json_encode(['status' => 'error', 'message' => 'No data to import']);
+            return;
+        }
+
+        // Get the current batch index (for progress tracking)
+        $batch_index = $this->input->post('batch_index') ? (int)$this->input->post('batch_index') : 0;
+        $batch_size = 10; // Process 10 records per batch
+        
+        // Split data into batches
+        $batches = array_chunk($employee_data, $batch_size);
+        $total_batches = count($batches);
+        
+        // Check if we're done
+        if ($batch_index >= $total_batches) {
+            // Import complete, store results in session
+            $import_results = $this->session->userdata('employee_import_results');
+            
+            // If we haven't processed any batches yet, do the full import
+            if (empty($import_results)) {
+                $import_results = $this->M_employee_import->import_employee_data($employee_data);
+                $this->session->set_userdata('employee_import_results', $import_results);
+            }
+            
+            $this->session->unset_userdata('employee_import_data');
+            $this->session->unset_userdata('employee_import_file');
+            
+            echo json_encode([
+                'status' => 'complete',
+                'message' => 'Import completed successfully',
+                'progress' => 100,
+                'redirect_url' => base_url('Employee_import/do_import')
+            ]);
+            return;
+        }
+        
+        // Process current batch
+        $current_batch = $batches[$batch_index];
+        $processed_count = ($batch_index + 1) * $batch_size;
+        $total_count = count($employee_data);
+        
+        // Limit processed count to total
+        if ($processed_count > $total_count) {
+            $processed_count = $total_count;
+        }
+        
+        // Calculate progress percentage
+        $progress = ($processed_count / $total_count) * 100;
+        
+        // Send progress update
+        echo json_encode([
+            'status' => 'progress',
+            'message' => "Processing records {$processed_count}/{$total_count}",
+            'progress' => $progress,
+            'next_batch' => $batch_index + 1,
+            'total_batches' => $total_batches
+        ]);
+    }
+
+    /**
+     * AJAX endpoint for performing the actual import
+     */
+    public function do_import_ajax()
+    {
+        $logged_in = $this->session->userdata('logged_in');
+        if ($logged_in != 1) {
+            echo json_encode(['status' => 'error', 'message' => 'Not logged in']);
+            return;
+        }
+
+        $employee_data = $this->session->userdata('employee_import_data');
+        
+        if (empty($employee_data)) {
+            echo json_encode(['status' => 'error', 'message' => 'No data to import']);
+            return;
+        }
+
+        // Perform the import (without validation)
+        $import_results = $this->M_employee_import->import_employee_data($employee_data);
+        
+        // Store import results in session for pagination
+        $this->session->set_userdata('employee_import_results', $import_results);
+        
+        // Clean up original session data
+        $this->session->unset_userdata('employee_import_data');
+        $this->session->unset_userdata('employee_import_file');
+        
+        echo json_encode([
+            'status' => 'success',
+            'message' => 'Import completed successfully'
+        ]);
     }
 
     /**
