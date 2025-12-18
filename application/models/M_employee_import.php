@@ -133,27 +133,56 @@ class M_employee_import extends CI_Model
             
             // Handle multi-row KONTRAK headers (AI to DR columns)
             // According to requirements, rows 1-5 are headers
-            // Row 1: KONTRAK repeated
+            // Row 1: KONTRAK repeated or spanning
             // Row 2: AWAL, AKHIR pairs
             $kontrak_columns = [];
             $kontrak_start_col = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString('AI'); // Column 35
             $kontrak_end_col = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString('DR');   // Column 122
             
-            // Check if we have multi-row headers for KONTRAK section
-            if (isset($header_rows[1]) && isset($header_rows[2])) {
-                // Look for KONTRAK in row 1 within the expected range
-                for ($col = $kontrak_start_col; $col <= $kontrak_end_col; $col++) {
-                    if (isset($header_rows[1][$col]) && strtoupper(trim($header_rows[1][$col])) === 'KONTRAK') {
-                        // Found KONTRAK header, now check row 2 for AWAL/AKHIR
-                        if (isset($header_rows[2][$col])) {
-                            $sub_header = strtoupper(trim($header_rows[2][$col]));
-                            if ($sub_header === 'AWAL' || $sub_header === 'AKHIR') {
-                                // Record this column position for KONTRAK data
-                                $kontrak_columns[$col] = $sub_header;
-                            }
+            // Explicitly define the AWAL/AKHIR pairs based on the expected structure
+            // Columns AI(35) and AJ(36) = Pair 1: AWAL, AKHIR
+            // Columns AK(37) and AL(38) = Pair 2: AWAL, AKHIR
+            // And so on...
+            
+            // Check if we have header rows to work with
+            if (isset($header_rows[2])) {
+                // Look for AWAL/AKHIR patterns in row 2 within the KONTRAK range
+                // Process pairs of columns (even columns = AWAL, odd columns = AKHIR)
+                for ($col = $kontrak_start_col; $col <= $kontrak_end_col; $col += 2) {
+                    // Check the first column of the pair (should be AWAL)
+                    if (isset($header_rows[2][$col])) {
+                        $sub_header = strtoupper(trim($header_rows[2][$col]));
+                        if (strpos($sub_header, 'AWAL') !== false || strpos($sub_header, 'MULAI') !== false) {
+                            $kontrak_columns[$col] = 'AWAL';
+                        }
+                    }
+                    
+                    // Check the second column of the pair (should be AKHIR)
+                    if (isset($header_rows[2][$col + 1])) {
+                        $sub_header = strtoupper(trim($header_rows[2][$col + 1]));
+                        if (strpos($sub_header, 'AKHIR') !== false || strpos($sub_header, 'SELESAI') !== false || strpos($sub_header, 'END') !== false) {
+                            $kontrak_columns[$col + 1] = 'AKHIR';
                         }
                     }
                 }
+            }
+            
+            // Fallback: if no headers detected, assume standard pattern
+            if (empty($kontrak_columns)) {
+                // Assume standard pattern: even columns = AWAL, odd columns = AKHIR
+                for ($col = $kontrak_start_col; $col <= $kontrak_end_col; $col += 2) {
+                    $kontrak_columns[$col] = 'AWAL';       // Even columns
+                    $kontrak_columns[$col + 1] = 'AKHIR';  // Odd columns
+                }
+            }
+            
+            // Temporary debug output - REMOVE AFTER TESTING
+            // This will help us see if KONTRAK columns are being detected
+            if (!empty($kontrak_columns)) {
+                //echo "KONTRAK columns detected: ";
+                //print_r($kontrak_columns);
+            } else {
+                //echo "No KONTRAK columns detected";
             }
             
             // Match headers with expected columns - check all header rows
@@ -199,6 +228,59 @@ class M_employee_import extends CI_Model
             for ($row = $first_data_row; $row <= $highestRow; $row++) {
                 $rowData = [];
                 $hasData = false;
+                
+                // Extract KONTRAK data from multi-row headers (AI to DR columns) FIRST
+                // This ensures KONTRAK data can contribute to $hasData flag
+                $kontrak_data = [];
+                foreach ($kontrak_columns as $col => $type) {
+                    $cell = $worksheet->getCellByColumnAndRow($col, $row);
+                    $cellValue = $cell->getValue();
+                    
+                    // Format date values properly
+                    if (!empty($cellValue)) {
+                        try {
+                            // Suppress deprecation warnings from PhpSpreadsheet library
+                            $previousErrorReporting = error_reporting();
+                            error_reporting($previousErrorReporting & ~E_DEPRECATED);
+                            
+                            // Check if this is a date cell
+                            if (\PhpOffice\PhpSpreadsheet\Shared\Date::isDateTime($cell)) {
+                                // For date cells, get the formatted value
+                                $formattedValue = $cell->getFormattedValue();
+                                
+                                // If formatted value is different from raw value, use it
+                                if ($formattedValue != $cellValue) {
+                                    $cellValue = $formattedValue;
+                                } else {
+                                    // If it's a numeric value, try to convert Excel date serial number to date
+                                    if (is_numeric($cellValue) && $cellValue > 0 && $cellValue < 100000) {
+                                        $cellValue = $this->convertExcelDate($cellValue);
+                                    } else {
+                                        // Try to get the formatted value with date format
+                                        $cellValue = $cell->getFormattedValue();
+                                    }
+                                }
+                            } else {
+                                // For non-date cells, just get the formatted value
+                                $cellValue = $cell->getFormattedValue();
+                            }
+                            
+                            // Restore error reporting
+                            error_reporting($previousErrorReporting);
+                        } catch (Exception $e) {
+                            // If formatting fails, keep the original value
+                        }
+                        
+                        // Check if any cell in this row has data (including KONTRAK data)
+                        if (!empty($cellValue)) {
+                            $hasData = true;
+                        }
+                    }
+                    
+                    // Store the KONTRAK data with a special key
+                    $kontrak_data_key = 'KONTRAK_' . $type . '_' . $col;
+                    $rowData[$kontrak_data_key] = is_null($cellValue) ? '' : $cellValue;
+                }
                 
                 // Extract data for each expected column
                 foreach ($expected_columns as $columnName => $columnIndex) {
@@ -378,54 +460,6 @@ class M_employee_import extends CI_Model
                     if (!empty($cellValue)) {
                         $hasData = true;
                     }
-                }
-                
-                // Extract KONTRAK data from multi-row headers (AI to DR columns)
-                $kontrak_data = [];
-                foreach ($kontrak_columns as $col => $type) {
-                    $cell = $worksheet->getCellByColumnAndRow($col, $row);
-                    $cellValue = $cell->getValue();
-                    
-                    // Format date values properly
-                    if (!empty($cellValue)) {
-                        try {
-                            // Suppress deprecation warnings from PhpSpreadsheet library
-                            $previousErrorReporting = error_reporting();
-                            error_reporting($previousErrorReporting & ~E_DEPRECATED);
-                            $formattedValue = $cell->getFormattedValue();
-                            // Restore error reporting
-                            error_reporting($previousErrorReporting);
-                            
-                            // If formatted value is different from raw value, use it
-                            if ($formattedValue != $cellValue) {
-                                $cellValue = $formattedValue;
-                            } else {
-                                // If it's a numeric value, try to convert Excel date serial number to date
-                                if (is_numeric($cellValue) && $cellValue > 0 && $cellValue < 100000) {
-                                    // Suppress deprecation warnings from PhpSpreadsheet library
-                                    $previousErrorReporting = error_reporting();
-                                    error_reporting($previousErrorReporting & ~E_DEPRECATED);
-                                    $cellValue = $this->convertExcelDate($cellValue);
-                                    // Restore error reporting
-                                    error_reporting($previousErrorReporting);
-                                } else {
-                                    // Try to get the formatted value with date format
-                                    // Suppress deprecation warnings from PhpSpreadsheet library
-                                    $previousErrorReporting = error_reporting();
-                                    error_reporting($previousErrorReporting & ~E_DEPRECATED);
-                                    $cellValue = $cell->getFormattedValue();
-                                    // Restore error reporting
-                                    error_reporting($previousErrorReporting);
-                                }
-                            }
-                        } catch (Exception $e) {
-                            // If formatting fails, keep the original value
-                        }
-                    }
-                    
-                    // Store the KONTRAK data with a special key
-                    $kontrak_data_key = 'KONTRAK_' . $type . '_' . $col;
-                    $rowData[$kontrak_data_key] = is_null($cellValue) ? '' : $cellValue;
                 }
                 
                 // Only add rows with data
@@ -986,49 +1020,78 @@ class M_employee_import extends CI_Model
      */
     private function handle_contract_data($employee, $employee_id)
     {
-        // Temporarily disable contract data insertion as requested
-        // Will be re-enabled once the contract data parsing is fixed
-        return;
-        
-        // Handle multi-row KONTRAK headers (AI to DR columns)
+        // Handle multi-row KONTRAK headers (AI to DR columns) only
         // Collect all KONTRAK data from the employee record
         $kontrak_entries = [];
         
-        // Look for KONTRAK data keys in the employee data
+        // Look for KONTRAK data keys in the employee data (only from AI to DR columns)
         foreach ($employee as $key => $value) {
             if (strpos($key, 'KONTRAK_AWAL_') === 0 || strpos($key, 'KONTRAK_AKHIR_') === 0) {
                 // Extract contract type and column number from key
                 // Format: KONTRAK_{TYPE}_{COLUMN_NUMBER}
                 $parts = explode('_', $key);
                 $type = $parts[1]; // AWAL or AKHIR
-                $column = $parts[2]; // Column number
+                $column = (int)$parts[2]; // Column number
                 
-                // Initialize entry for this column if not exists
-                if (!isset($kontrak_entries[$column])) {
-                    $kontrak_entries[$column] = [
-                        'AWAL' => null,
-                        'AKHIR' => null
-                    ];
+                // Only process columns in the AI to DR range (35 to 122)
+                if ($column >= 35 && $column <= 122) {
+                    // Initialize entry for this column if not exists
+                    if (!isset($kontrak_entries[$column])) {
+                        $kontrak_entries[$column] = [
+                            'AWAL' => null,
+                            'AKHIR' => null
+                        ];
+                    }
+                    
+                    // Store the value
+                    $kontrak_entries[$column][$type] = $value;
                 }
-                
-                // Store the value
-                $kontrak_entries[$column][$type] = $value;
             }
         }
         
-        // Process each KONTRAK entry
-        foreach ($kontrak_entries as $column => $entry) {
+        // Process contract periods - group AWAL and AKHIR pairs together
+        // Each pair represents one contract period
+        $contract_periods = [];
+        
+        // Group consecutive AWAL/AKHIR columns into periods
+        // Columns 35(AWAL) and 36(AKHIR) = Period 1
+        // Columns 37(AWAL) and 38(AKHIR) = Period 2
+        // etc.
+        for ($col = 35; $col <= 122; $col += 2) {
+            $period = [
+                'AWAL' => null,
+                'AKHIR' => null
+            ];
+            
+            // Check if we have AWAL data for this period
+            if (isset($kontrak_entries[$col]['AWAL'])) {
+                $period['AWAL'] = $kontrak_entries[$col]['AWAL'];
+            }
+            
+            // Check if we have AKHIR data for this period
+            if (isset($kontrak_entries[$col + 1]['AKHIR'])) {
+                $period['AKHIR'] = $kontrak_entries[$col + 1]['AKHIR'];
+            }
+            
+            // Only add period if we have at least one date
+            if ($period['AWAL'] || $period['AKHIR']) {
+                $contract_periods[] = $period;
+            }
+        }
+        
+        // Insert each contract period as a single record
+        foreach ($contract_periods as $period) {
             $contract_start = null;
             $contract_end = null;
             
             // Handle contract start date (AWAL)
-            if (isset($entry['AWAL']) && !empty($entry['AWAL'])) {
-                $contract_start = $this->format_date($entry['AWAL']);
+            if (isset($period['AWAL']) && !empty($period['AWAL'])) {
+                $contract_start = $this->format_date($period['AWAL']);
             }
             
             // Handle contract end date (AKHIR)
-            if (isset($entry['AKHIR']) && !empty($entry['AKHIR'])) {
-                $contract_end = $this->format_date($entry['AKHIR']);
+            if (isset($period['AKHIR']) && !empty($period['AKHIR'])) {
+                $contract_end = $this->format_date($period['AKHIR']);
             }
             
             // If we have contract data, insert it into karyawan_kontrak table
@@ -1039,7 +1102,7 @@ class M_employee_import extends CI_Model
                     'updated_at' => date('Y-m-d H:i:s')
                 ];
                 
-                // Only add dates if they exist
+                // Only add dates if they exist and are valid
                 if ($contract_start) {
                     $contract_data['tgl_mulai'] = $contract_start;
                 }
@@ -1047,43 +1110,6 @@ class M_employee_import extends CI_Model
                 if ($contract_end) {
                     $contract_data['tgl_akhir'] = $contract_end;
                 }
-                
-                // Insert contract data
-                $this->db->insert('karyawan_kontrak', $contract_data);
-            }
-        }
-        
-        // Also handle the old-style KONTRAK and KONTRAK AKHIR columns for backward compatibility
-        // Handle contract start date (KONTRAK column)
-        if (isset($employee['KONTRAK']) && !empty($employee['KONTRAK'])) {
-            $contract_start = $this->format_date($employee['KONTRAK']);
-            
-            // If we have contract start date, insert it into karyawan_kontrak table
-            if ($contract_start) {
-                $contract_data = [
-                    'recid_karyawan' => $employee_id,
-                    'tgl_mulai' => $contract_start,
-                    'created_at' => date('Y-m-d H:i:s'),
-                    'updated_at' => date('Y-m-d H:i:s')
-                ];
-                
-                // Insert contract data
-                $this->db->insert('karyawan_kontrak', $contract_data);
-            }
-        }
-        
-        // Handle contract end date (KONTRAK_AKHIR column)
-        if (isset($employee['KONTRAK_AKHIR']) && !empty($employee['KONTRAK_AKHIR'])) {
-            $contract_end = $this->format_date($employee['KONTRAK_AKHIR']);
-            
-            // If we have contract end date, insert it into karyawan_kontrak table
-            if ($contract_end) {
-                $contract_data = [
-                    'recid_karyawan' => $employee_id,
-                    'tgl_akhir' => $contract_end,
-                    'created_at' => date('Y-m-d H:i:s'),
-                    'updated_at' => date('Y-m-d H:i:s')
-                ];
                 
                 // Insert contract data
                 $this->db->insert('karyawan_kontrak', $contract_data);

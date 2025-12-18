@@ -66,9 +66,9 @@
                     <th>JUMLAH ANAK</th>
                     <th>NAMA ANAK</th>
                     
-                    <!-- Contract headers (KONTRAK 1, KONTRAK 2, etc.) - 44 pairs of AWAL/AKHIR = 88 columns -->
+                    <!-- Contract headers (1, 2, 3, etc. instead of KONTRAK 1, KONTRAK 2, etc.) - 44 pairs of AWAL/AKHIR = 88 columns -->
                     <?php for ($i = 1; $i <= 44; $i++): ?>
-                      <th colspan="2">KONTRAK <?php echo $i; ?></th>
+                      <th colspan="2" style="text-align: center;"><?php echo $i; ?></th>
                     <?php endfor; ?>
                     
                     <!-- Other contract-related columns -->
@@ -88,8 +88,8 @@
                     
                     <!-- Contract sub-headers (AWAL/AKHIR pairs) - 44 pairs = 88 columns -->
                     <?php for ($i = 1; $i <= 44; $i++): ?>
-                      <th>AWAL</th>
-                      <th>AKHIR</th>
+                      <th style="text-align: center;">AWAL</th>
+                      <th style="text-align: center;">AKHIR</th>
                     <?php endfor; ?>
                     
                     <!-- Empty cells for other contract columns -->
