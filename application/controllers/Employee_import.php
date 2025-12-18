@@ -237,7 +237,7 @@ class Employee_import extends CI_Controller
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
 
-        // Define column headers
+        // Define column headers - corrected order to match the actual data structure
         $headers = [
             'NIK',
             'NAMA',
@@ -250,21 +250,13 @@ class Employee_import extends CI_Controller
             'TGL. MASUK',
             'TGL. KELUAR',
             'TGL.JEDA',
-            'SEJAK AWAL',
-            'NOMOR SK',
-            'TGL.DIANGKAT',
-            'BPJS NO.KPJ',
+            'MASA KERJA',
+            'SK. KARY TETAP',
+            'BPJS   NO.KPJ',
             'NO. KARTU TRIMAS',
-            'NO.REKENING',
-            'STS PENUNJANG',
-            'ALASAN KELUAR',
-            'KETERANGAN',
-            'LEVEL',
-            'DL/IDL',
             'STATUS PERNIKAHAN',
             'TEMPAT LAHIR',
             'TGL LAHIR',
-            'BULAN LAHIR',
             'USIA',
             'ALAMAT KTP',
             'ALAMAT TINGGAL SEKARANG',
@@ -274,10 +266,18 @@ class Employee_import extends CI_Controller
             'NO. TELEPON',
             'NO. KK',
             'NO. KTP',
+            'GOL DARAH',
             'NAMA ORANG TUA',
             'NAMA SUAMI / ISTRI',
             'JUMLAH ANAK',
-            'NAMA ANAK'
+            'NAMA ANAK',
+            'KONTRAK AKHIR',
+            'NO.REKENING',
+            'TIPE PTKP',
+            'ALASAN KELUAR',
+            'KETERANGAN',
+            'LEVEL',
+            'DL/IDL'
         ];
 
         // Write headers to the first row
@@ -287,10 +287,63 @@ class Employee_import extends CI_Controller
             $column++;
         }
 
+        // Add sample data row to demonstrate proper format
+        $sampleData = [
+            'E3-2000',                           // NIK
+            'AJI RAHMAT',                        // NAMA
+            'aji.rahmat@example.com',            // ALAMAT E-MAIL PRIBADI
+            'STAFF',                             // JABATAN
+            'PRODUKSI',                          // BAGIAN
+            '',                                  // SUB.BAGIAN
+            '',                                  // DEPARTEMEN
+            'TETAP',                             // STATUS KARYAWAN
+            '01-Jan-20',                         // TGL. MASUK
+            '',                                  // TGL. KELUAR
+            '',                                  // TGL.JEDA
+            '113.7',                             // MASA KERJA
+            'No : 746/SK/TSGI/06/12',            // SK. KARY TETAP
+            '1234567890',                        // BPJS   NO.KPJ
+            '0987654321',                        // NO. KARTU TRIMAS
+            'KAWIN',                             // STATUS PERNIKAHAN
+            'JAKARTA',                           // TEMPAT LAHIR
+            '01-Sep-67',                         // TGL LAHIR
+            '30',                                // USIA
+            'Jl. Merdeka No. 1',                 // ALAMAT KTP
+            'Jl. Merdeka No. 1',                 // ALAMAT TINGGAL SEKARANG
+            'L',                                 // JENIS KELAMIN
+            'ISLAM',                             // AGAMA
+            'S1',                                // PENDIDIKAN TERAKHIR
+            '08123456789',                       // NO. TELEPON
+            '1234567890123456',                  // NO. KK
+            '1234567890123456',                  // NO. KTP
+            'O',                                 // GOL DARAH
+            'RAHMAT',                            // NAMA ORANG TUA
+            'SITI',                              // NAMA SUAMI / ISTRI
+            '2',                                 // JUMLAH ANAK
+            'ANI, BUDI',                         // NAMA ANAK
+            '31-Dec-23',                         // KONTRAK AKHIR
+            '1234567890',                        // NO.REKENING
+            'TK',                                // TIPE PTKP
+            'PINDAH KE JAKARTA',                 // ALASAN KELUAR
+            '',                                  // KETERANGAN
+            'STAFF',                             // LEVEL
+            'IDL'                                // DL/IDL
+        ];
+
+        // Write sample data to the second row
+        $column = 1;
+        foreach ($sampleData as $data) {
+            $sheet->setCellValueByColumnAndRow($column, 2, $data);
+            $column++;
+        }
+
         // Set column widths
         foreach (range(1, count($headers)) as $col) {
             $sheet->getColumnDimensionByColumn($col)->setAutoSize(true);
         }
+
+        // Freeze the header row
+        $sheet->freezePane('A2');
 
         // Create Excel file
         $filename = 'employee_import_template.xlsx';

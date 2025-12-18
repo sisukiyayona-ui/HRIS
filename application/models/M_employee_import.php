@@ -10,8 +10,9 @@ class M_employee_import extends CI_Model
     {
         parent::__construct();
         $this->load->model('M_hris');
+        $this->load->database();
     }
-
+    
     /**
      * Convert Excel date serial number to formatted date string
      * 
@@ -71,7 +72,7 @@ class M_employee_import extends CI_Model
             $highestColumn = $worksheet->getHighestColumn();
             $highestColumnIndex = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString($highestColumn);
             
-            // Define expected column mappings (based on user's sample data)
+            // Define expected column mappings (based on corrected template)
             $expected_columns = [
                 'NIK' => 1,
                 'NAMA' => 2,
@@ -84,75 +85,204 @@ class M_employee_import extends CI_Model
                 'TGL. MASUK' => 9,
                 'TGL. KELUAR' => 10,
                 'TGL.JEDA' => 11,
-                'SEJAK AWAL' => 12,
-                'NOMOR SK' => 13,
-                'TGL.DIANGKAT' => 14,
-                'BPJS NO.KPJ' => 15,
-                'NO. KARTU TRIMAS' => 16,
-                'NO.REKENING' => 17,
-                'STS PENUNJANG' => 18,
-                'ALASAN KELUAR' => 19,
-                'KETERANGAN' => 20,
-                'LEVEL' => 21,
-                'DL/IDL' => 22,
-                'STATUS PERNIKAHAN' => 23,
-                'TEMPAT LAHIR' => 24,
-                'TGL LAHIR' => 25,
-                'BULAN LAHIR' => 26,
-                'USIA' => 27,
-                'ALAMAT KTP' => 28,
-                'ALAMAT TINGGAL SEKARANG' => 29,
-                'JENIS KELAMIN' => 30,
-                'AGAMA' => 31,
-                'PENDIDIKAN TERAKHIR' => 32,
-                'NO. TELEPON' => 33,
-                'NO. KK' => 34,
-                'NO. KTP' => 35,
-                'NAMA ORANG TUA' => 36,
-                'NAMA SUAMI / ISTRI' => 37,
-                'JUMLAH ANAK' => 38,
-                'NAMA ANAK' => 39
+                'MASA KERJA' => 12,
+                'SK. KARY TETAP' => 13,
+                'BPJS   NO.KPJ' => 14,
+                'NO. KARTU TRIMAS' => 15,
+                'STATUS PERNIKAHAN' => 16,
+                'TEMPAT LAHIR' => 17,
+                'TGL LAHIR' => 18, // Full birth date
+                'TGL LAHIR HARI' => 19, // Day number only
+                'BULAN LAHIR' => 20, // Month name only
+                'USIA' => 21,
+                'ALAMAT KTP' => 22,
+                'ALAMAT TINGGAL SEKARANG' => 23,
+                'JENIS KELAMIN' => 24,
+                'AGAMA' => 25,
+                'PENDIDIKAN TERAKHIR' => 26,
+                'NO. TELEPON' => 27,
+                'NO. KK' => 28,
+                'NO. KTP' => 29,
+                'GOL DARAH' => 30,
+                'NAMA ORANG TUA' => 31,
+                'NAMA SUAMI / ISTRI' => 32,
+                'JUMLAH ANAK' => 33,
+                'NAMA ANAK' => 34,
+                // Contract columns - based on corrected template
+                'KONTRAK AKHIR' => 123,
+                'NO.REKENING' => 124,
+                'TIPE PTKP' => 125,
+                'ALASAN KELUAR' => 126,
+                'KETERANGAN' => 127,
+                'LEVEL' => 128,
+                'DL/IDL' => 129
             ];
             
-            // Read header row to verify column positions
-            $header_row = [];
-            for ($col = 1; $col <= $highestColumnIndex; $col++) {
-                $cellValue = $worksheet->getCellByColumnAndRow($col, 1)->getValue();
-                $header_row[$col] = trim($cellValue);
+            // Read header rows to verify column positions (handle duplicate/skipped headers)
+            $header_rows = [];
+            // Check first few rows for headers (in case of duplicate headers)
+            $max_header_rows = min(10, $highestRow); // Check up to 10 rows for headers
+            for ($row = 1; $row <= $max_header_rows; $row++) {
+                $header_row = [];
+                for ($col = 1; $col <= $highestColumnIndex; $col++) {
+                    $cellValue = $worksheet->getCellByColumnAndRow($col, $row)->getValue();
+                    $header_row[$col] = is_null($cellValue) ? '' : trim($cellValue);
+                }
+                $header_rows[$row] = $header_row;
             }
             
-            // Match headers with expected columns
+            // Handle multi-row KONTRAK headers (AI to DR columns)
+            // According to requirements, rows 1-5 are headers
+            // Row 1: KONTRAK repeated
+            // Row 2: AWAL, AKHIR pairs
+            $kontrak_columns = [];
+            $kontrak_start_col = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString('AI'); // Column 35
+            $kontrak_end_col = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString('DR');   // Column 122
+            
+            // Check if we have multi-row headers for KONTRAK section
+            if (isset($header_rows[1]) && isset($header_rows[2])) {
+                // Look for KONTRAK in row 1 within the expected range
+                for ($col = $kontrak_start_col; $col <= $kontrak_end_col; $col++) {
+                    if (isset($header_rows[1][$col]) && strtoupper(trim($header_rows[1][$col])) === 'KONTRAK') {
+                        // Found KONTRAK header, now check row 2 for AWAL/AKHIR
+                        if (isset($header_rows[2][$col])) {
+                            $sub_header = strtoupper(trim($header_rows[2][$col]));
+                            if ($sub_header === 'AWAL' || $sub_header === 'AKHIR') {
+                                // Record this column position for KONTRAK data
+                                $kontrak_columns[$col] = $sub_header;
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Match headers with expected columns - check all header rows
             foreach ($expected_columns as $columnName => $expectedPosition) {
                 $found = false;
-                foreach ($header_row as $actualPosition => $actualColumnName) {
-                    if (strtoupper(trim($actualColumnName)) === strtoupper($columnName)) {
-                        $expected_columns[$columnName] = $actualPosition;
-                        $found = true;
-                        break;
+                // Check each header row
+                foreach ($header_rows as $rowIndex => $header_row) {
+                    foreach ($header_row as $actualPosition => $actualColumnName) {
+                        $trimmedActualColumnName = is_null($actualColumnName) ? '' : trim($actualColumnName);
+                        // Check for exact match first
+                        if (strtoupper($trimmedActualColumnName) === strtoupper($columnName)) {
+                            $expected_columns[$columnName] = $actualPosition;
+                            $found = true;
+                            break 2; // Break out of both loops
+                        }
+                        // Check for partial match (in case of extra spaces or formatting)
+                        if (!$found && stripos($trimmedActualColumnName, $columnName) !== false) {
+                            $expected_columns[$columnName] = $actualPosition;
+                            $found = true;
+                            // Continue searching for exact match
+                        }
+                        // Special handling for BPJS columns (which might have extra spaces)
+                        if (!$found && (
+                            (stripos($columnName, 'BPJS') !== false && stripos($trimmedActualColumnName, 'BPJS') !== false) ||
+                            (stripos($columnName, 'NO.KPJ') !== false && stripos($trimmedActualColumnName, 'NO.KPJ') !== false) ||
+                            (stripos($columnName, 'KARTU TRIMAS') !== false && stripos($trimmedActualColumnName, 'KARTU TRIMAS') !== false)
+                        )) {
+                            $expected_columns[$columnName] = $actualPosition;
+                            $found = true;
+                        }
                     }
                 }
                 // If not found, we'll just leave it as is and handle missing data as empty
             }
             
+            // Determine the first data row (skip header rows)
+            $first_data_row = $this->findFirstDataRow($worksheet, $highestRow, $highestColumnIndex);
+            
             // Parse data rows
             $parsed_data = [];
             
-            // Process rows (starting from row 2, skipping header)
-            for ($row = 2; $row <= $highestRow; $row++) {
+            // Process rows (starting from the determined first data row)
+            for ($row = $first_data_row; $row <= $highestRow; $row++) {
                 $rowData = [];
                 $hasData = false;
                 
                 // Extract data for each expected column
                 foreach ($expected_columns as $columnName => $columnIndex) {
                     $cell = $worksheet->getCellByColumnAndRow($columnIndex, $row);
-                    $cellValue = $cell->getValue();
+                    
+                    // Special handling for BULAN LAHIR - get the text value from column T
+                    if (strtoupper($columnName) === 'BULAN LAHIR') {
+                        // For BULAN LAHIR, we want the exact text as it appears in Excel column T
+                        // Try to get the formatted value to get the text representation
+                        // Suppress all errors including deprecation warnings
+                        $previousErrorReporting = error_reporting();
+                        error_reporting(0); // Turn off all error reporting temporarily
+                        try {
+                            $cellValue = $cell->getFormattedValue();
+                        } catch (Exception $e) {
+                            // If formatted value fails, fall back to raw value
+                            $cellValue = $cell->getValue();
+                        }
+                        // Restore error reporting
+                        error_reporting($previousErrorReporting);
+                        
+                        // Ensure it's treated as string
+                        if (!is_null($cellValue)) {
+                            $cellValue = (string)$cellValue;
+                        } else {
+                            $cellValue = '';
+                        }
+                    } else {
+                        // For all other columns, use normal processing
+                        $cellValue = $cell->getValue();
+                    }
                     
                     // Handle date cells properly
-                    if (in_array(strtoupper($columnName), ['TGL. MASUK', 'TGL. KELUAR', 'TGL.JEDA', 'TGL LAHIR', 'TGL.DIANGKAT', 'SEJAK AWAL'])) {
+                    // But exclude BULAN LAHIR as it should be treated as text
+                    if (in_array(strtoupper($columnName), ['TGL. MASUK', 'TGL. KELUAR', 'TGL.JEDA', 'TGL LAHIR', 'TGL.DIANGKAT', 'SEJAK AWAL', 'KONTRAK', 'KONTRAK AKHIR']) && strtoupper($columnName) !== 'BULAN LAHIR') {
                         // For date columns, try to format them properly
                         try {
-                            // Special handling for TGL LAHIR - only show day number
+                            // Special handling for TGL LAHIR - preserve full date
                             if (strtoupper($columnName) === 'TGL LAHIR') {
+                                // For birth date, preserve the full date
+                                if (is_numeric($cellValue)) {
+                                    if ($cellValue == 0) {
+                                        $cellValue = '';
+                                    } else {
+                                        // Try to convert to date and preserve full date
+                                        // Suppress deprecation warnings from PhpSpreadsheet library
+                                        $previousErrorReporting = error_reporting();
+                                        error_reporting($previousErrorReporting & ~E_DEPRECATED);
+                                        $dateObj = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($cellValue);
+                                        // Restore error reporting
+                                        error_reporting($previousErrorReporting);
+                                        $cellValue = $dateObj->format('d-M-y'); // Preserve full date format
+                                    }
+                                } else {
+                                    // For non-numeric values, preserve the date string as is
+                                    if (empty($cellValue) || $cellValue === '00-Jan-00') {
+                                        $cellValue = '';
+                                    }
+                                    // Otherwise keep the original value
+                                }
+                                
+                                // Handle two-digit year format (e.g., convert 67 to 1967)
+                                if (!empty($cellValue) && preg_match('/^\d{1,2}-[A-Za-z]{3}-\d{2}$/', $cellValue)) {
+                                    $date_parts = explode('-', $cellValue);
+                                    if (count($date_parts) == 3) {
+                                        $day = $date_parts[0];
+                                        $month = $date_parts[1];
+                                        $year = $date_parts[2];
+                                        
+                                        // Handle two-digit year (assume 00-29 is 20xx and 30-99 is 19xx)
+                                        if (strlen($year) == 2) {
+                                            $year_num = intval($year);
+                                            if ($year_num >= 30) {
+                                                $full_year = "19" . $year;
+                                            } else {
+                                                $full_year = "20" . $year;
+                                            }
+                                            $cellValue = $day . '-' . $month . '-' . $full_year;
+                                        }
+                                    }
+                                }
+                            }
+                            // Special handling for TGL LAHIR HARI - only show day number
+                            elseif (strtoupper($columnName) === 'TGL LAHIR HARI') {
                                 // For birth day, extract just the day number
                                 if (is_numeric($cellValue)) {
                                     if ($cellValue == 0) {
@@ -174,35 +304,6 @@ class M_employee_import extends CI_Model
                                         $timestamp = strtotime($cellValue);
                                         if ($timestamp !== false) {
                                             $cellValue = date('j', $timestamp);
-                                        }
-                                    } else {
-                                        $cellValue = '';
-                                    }
-                                }
-                            } 
-                            // Special handling for BULAN LAHIR - only show month name
-                            elseif (strtoupper($columnName) === 'BULAN LAHIR') {
-                                // For birth month, extract just the month name
-                                if (is_numeric($cellValue)) {
-                                    if ($cellValue == 0) {
-                                        $cellValue = '';
-                                    } else {
-                                        // Try to convert to date and extract month
-                                        // Suppress deprecation warnings from PhpSpreadsheet library
-                                        $previousErrorReporting = error_reporting();
-                                        error_reporting($previousErrorReporting & ~E_DEPRECATED);
-                                        $dateObj = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($cellValue);
-                                        // Restore error reporting
-                                        error_reporting($previousErrorReporting);
-                                        $cellValue = $dateObj->format('F'); // 'F' gives full month name
-                                    }
-                                } else {
-                                    // For non-numeric values, try to extract month from date string
-                                    if (!empty($cellValue) && $cellValue !== '00-Jan-00') {
-                                        // Try to parse the date and extract month
-                                        $timestamp = strtotime($cellValue);
-                                        if ($timestamp !== false) {
-                                            $cellValue = date('F', $timestamp);
                                         }
                                     } else {
                                         $cellValue = '';
@@ -245,17 +346,86 @@ class M_employee_import extends CI_Model
                         }
                     }
                     
+                    // Handle formula cells for USIA column and other formula-based cells
+                    // But exclude BULAN LAHIR column as it should preserve text values
+                    if ($cell->isFormula() && strtoupper($columnName) !== 'BULAN LAHIR') {
+                        try {
+                            // Get the calculated value instead of the formula
+                            $cellValue = $cell->getCalculatedValue();
+                        } catch (Exception $e) {
+                            // If calculation fails, try to extract numeric value from formula
+                            if (is_string($cellValue) && preg_match('/[\d\.]+/', $cellValue, $matches)) {
+                                $cellValue = $matches[0];
+                            } else {
+                                $cellValue = '';
+                            }
+                        }
+                    } else if (is_string($cellValue) && strpos($cellValue, '=') === 0 && strtoupper($columnName) !== 'BULAN LAHIR') {
+                        // If it's a string that starts with =, it's likely a formula that wasn't processed
+                        // Try to extract numeric value
+                        if (preg_match('/[\d\.]+/', $cellValue, $matches)) {
+                            $cellValue = $matches[0];
+                        } else {
+                            $cellValue = '';
+                        }
+                    }
+                    
                     // Normalize column name: replace spaces, dots, slashes, and hyphens with single underscore
                     $normalizedColumnName = preg_replace('/[\s\.\/\-]+/', '_', $columnName);
-                    $rowData[strtoupper($normalizedColumnName)] = $cellValue;
-                    
-                    // Debug: Log the transformation for troubleshooting
-                    // error_log("Column '{$columnName}' normalized to '" . strtoupper($normalizedColumnName) . "'");
+                    $rowData[strtoupper($normalizedColumnName)] = is_null($cellValue) ? '' : $cellValue;
                     
                     // Check if any cell in this row has data
                     if (!empty($cellValue)) {
                         $hasData = true;
                     }
+                }
+                
+                // Extract KONTRAK data from multi-row headers (AI to DR columns)
+                $kontrak_data = [];
+                foreach ($kontrak_columns as $col => $type) {
+                    $cell = $worksheet->getCellByColumnAndRow($col, $row);
+                    $cellValue = $cell->getValue();
+                    
+                    // Format date values properly
+                    if (!empty($cellValue)) {
+                        try {
+                            // Suppress deprecation warnings from PhpSpreadsheet library
+                            $previousErrorReporting = error_reporting();
+                            error_reporting($previousErrorReporting & ~E_DEPRECATED);
+                            $formattedValue = $cell->getFormattedValue();
+                            // Restore error reporting
+                            error_reporting($previousErrorReporting);
+                            
+                            // If formatted value is different from raw value, use it
+                            if ($formattedValue != $cellValue) {
+                                $cellValue = $formattedValue;
+                            } else {
+                                // If it's a numeric value, try to convert Excel date serial number to date
+                                if (is_numeric($cellValue) && $cellValue > 0 && $cellValue < 100000) {
+                                    // Suppress deprecation warnings from PhpSpreadsheet library
+                                    $previousErrorReporting = error_reporting();
+                                    error_reporting($previousErrorReporting & ~E_DEPRECATED);
+                                    $cellValue = $this->convertExcelDate($cellValue);
+                                    // Restore error reporting
+                                    error_reporting($previousErrorReporting);
+                                } else {
+                                    // Try to get the formatted value with date format
+                                    // Suppress deprecation warnings from PhpSpreadsheet library
+                                    $previousErrorReporting = error_reporting();
+                                    error_reporting($previousErrorReporting & ~E_DEPRECATED);
+                                    $cellValue = $cell->getFormattedValue();
+                                    // Restore error reporting
+                                    error_reporting($previousErrorReporting);
+                                }
+                            }
+                        } catch (Exception $e) {
+                            // If formatting fails, keep the original value
+                        }
+                    }
+                    
+                    // Store the KONTRAK data with a special key
+                    $kontrak_data_key = 'KONTRAK_' . $type . '_' . $col;
+                    $rowData[$kontrak_data_key] = is_null($cellValue) ? '' : $cellValue;
                 }
                 
                 // Only add rows with data
@@ -274,6 +444,26 @@ class M_employee_import extends CI_Model
         }
         
         return $result;
+    }
+    
+    /**
+     * Find the first data row by analyzing the content of rows
+     * 
+     * @param Worksheet $worksheet The worksheet object
+     * @param int $highestRow The highest row number
+     * @param int $highestColumnIndex The highest column index
+     * @return int The first data row number
+     */
+    private function findFirstDataRow($worksheet, $highestRow, $highestColumnIndex) {
+        // According to requirements, rows 1-5 are headers, so start from row 6
+        $first_data_row = 6;
+        
+        // Ensure first_data_row doesn't exceed highestRow
+        if ($first_data_row > $highestRow) {
+            $first_data_row = $highestRow;
+        }
+        
+        return $first_data_row;
     }
 
     /**
@@ -346,15 +536,27 @@ class M_employee_import extends CI_Model
                             'NAMA' => isset($employee['NAMA']) ? $employee['NAMA'] : '',
                             'recid_karyawan' => $existing_employee->recid_karyawan
                         ];
+                        
+                        // Handle contract data for existing employee
+                        $this->handle_contract_data($employee, $existing_employee->recid_karyawan);
                     } else {
                         // Insert new employee
                         $this->M_hris->karyawan_pinsert($employee_data);
                         $import_results['inserted_records']++;
                         
+                        // Get the inserted employee ID directly after insertion
+                        $employee_id = $this->db->insert_id();
+                        
+                        // Handle contract data for newly inserted employee
+                        if ($employee_id) {
+                            $this->handle_contract_data($employee, $employee_id);
+                        }
+                        
                         // Track inserted record details
                         $import_results['inserted_details'][] = [
                             'NIK' => isset($employee['NIK']) ? $employee['NIK'] : '',
-                            'NAMA' => isset($employee['NAMA']) ? $employee['NAMA'] : ''
+                            'NAMA' => isset($employee['NAMA']) ? $employee['NAMA'] : '',
+                            'recid_karyawan' => $employee_id
                         ];
                     }
                     
@@ -415,14 +617,26 @@ class M_employee_import extends CI_Model
             $mapped_data['tmp_lahir'] = $employee['TEMPAT_LAHIR'];
         }
         
+        // Handle TGL LAHIR (complete birth date)
         if (isset($employee['TGL_LAHIR'])) {
             $mapped_data['tgl_lahir'] = $this->format_date($employee['TGL_LAHIR']);
         }
-        
-        if (isset($employee['USIA'])) {
+            
+        // Handle USIA field - calculate age if not provided or invalid
+        if (isset($employee['USIA']) && is_numeric($employee['USIA']) && $employee['USIA'] > 0) {
+            // Use provided age if it's a valid number
             $mapped_data['usia'] = $employee['USIA'];
+        } else {
+            // Calculate age based on birth date if available
+            if (isset($employee['TGL_LAHIR']) && !empty($employee['TGL_LAHIR'])) {
+                $calculated_age = $this->calculate_age($employee['TGL_LAHIR']);
+                if ($calculated_age > 0) {
+                    $mapped_data['usia'] = $calculated_age;
+                }
+            }
         }
         
+        // Handle BULAN LAHIR field
         if (isset($employee['BULAN_LAHIR'])) {
             $mapped_data['bulan_lahir'] = $employee['BULAN_LAHIR'];
         }
@@ -504,6 +718,11 @@ class M_employee_import extends CI_Model
             }
         }
         
+        // Map STATUS KARYAWAN to status_karyawan field
+        if (isset($employee['STATUS_KARYAWAN'])) {
+            $mapped_data['status_karyawan'] = $employee['STATUS_KARYAWAN'];
+        }
+        
         if (isset($employee['NAMA_ORANG_TUA'])) {
             $mapped_data['nama_orang_tua'] = $employee['NAMA_ORANG_TUA'];
         }
@@ -532,16 +751,8 @@ class M_employee_import extends CI_Model
             $mapped_data['tgl_jeda'] = $this->format_date($employee['TGL_JEDA']);
         }
         
-        if (isset($employee['NOMOR_SK'])) {
-            $mapped_data['sk_kary_tetap_nomor'] = $employee['NOMOR_SK'];
-        }
-        
-        if (isset($employee['TGL_DIANGKAT'])) {
-            $mapped_data['sk_kary_tetap_tanggal'] = $this->format_date($employee['TGL_DIANGKAT']);
-        }
-        
-        if (isset($employee['SEJAK_AWAL'])) {
-            $mapped_data['masa_kerja'] = $employee['SEJAK_AWAL'];
+        if (isset($employee['MASA_KERJA'])) {
+            $mapped_data['masa_kerja'] = $employee['MASA_KERJA'];
         }
         
         // Set sts_aktif based on TGL_KELUAR
@@ -551,6 +762,32 @@ class M_employee_import extends CI_Model
         } else {
             // If no TGL_KELUAR or it's empty, set status to Aktif
             $mapped_data['sts_aktif'] = 'Aktif';
+        }
+        
+        if (isset($employee['SK_KARY_TETAP'])) {
+            // Handle SK_KARY_TETAP field which contains both the number and date
+            $sk_value = $employee['SK_KARY_TETAP'];
+            
+            // Try to extract date and number from the field
+            // The format seems to be: "SEJAK AWAL NOMOR SK TGL.DIANGKAT"
+            // But in the data it's just the value
+            $mapped_data['sk_kary_tetap_nomor'] = $sk_value;
+            // We don't have a separate date field for SK, so we won't set sk_kary_tetap_tanggal
+        }
+        
+        // Handle SEJAK AWAL field separately if it exists
+        if (isset($employee['SEJAK_AWAL'])) {
+            $mapped_data['masa_kerja'] = $employee['SEJAK_AWAL'];
+        }
+        
+        // Handle NOMOR SK field separately if it exists
+        if (isset($employee['NOMOR_SK'])) {
+            $mapped_data['sk_kary_tetap_nomor'] = $employee['NOMOR_SK'];
+        }
+        
+        // Handle TGL.DIANGKAT field separately if it exists
+        if (isset($employee['TGL_DIANGKAT'])) {
+            $mapped_data['sk_kary_tetap_tanggal'] = $this->format_date($employee['TGL_DIANGKAT']);
         }
         
         // Map BPJS fields
@@ -563,8 +800,8 @@ class M_employee_import extends CI_Model
         }
         
         // Map sts_penunjang field (replacing tipe_ptkp)
-        if (isset($employee['TIPE_PTKP'])) {
-            $stsPenunjang = strtoupper($employee['TIPE_PTKP']);
+        if (isset($employee['STS_PENUNJANG'])) {
+            $stsPenunjang = strtoupper($employee['STS_PENUNJANG']);
             // Convert L0 to TK
             if ($stsPenunjang === 'L0') {
                 $stsPenunjang = 'TK';
@@ -579,26 +816,29 @@ class M_employee_import extends CI_Model
             }
         }
         
-        if (isset($employee['ALASAN_KELUAR'])) {
-            $mapped_data['alasan_keluar'] = $employee['ALASAN_KELUAR'];
-        }
-        
-        if (isset($employee['KETERANGAN'])) {
-            $mapped_data['keterangan'] = $employee['KETERANGAN'];
-        }
-        
-        if (isset($employee['DL_IDL'])) {
-            $mapped_data['dl_idl'] = $employee['DL_IDL'];
-        }
-        
         // Map LEVEL field
         if (isset($employee['LEVEL'])) {
             $mapped_data['level'] = $employee['LEVEL'];
         }
         
+        // Map DL/IDL field
+        if (isset($employee['DL_IDL'])) {
+            $mapped_data['dl_idl'] = $employee['DL_IDL'];
+        }
+        
+        // Map ALASAN KELUAR field
+        if (isset($employee['ALASAN_KELUAR'])) {
+            $mapped_data['alasan_keluar'] = $employee['ALASAN_KELUAR'];
+        }
+        
+        // Map KETERANGAN field
+        if (isset($employee['KETERANGAN'])) {
+            $mapped_data['keterangan'] = $employee['KETERANGAN'];
+        }
+        
         // Map jabatan name to recid_jbtn and jabatan text field
         if (isset($employee['JABATAN']) && !empty($employee['JABATAN'])) {
-            $jabatan_name = trim($employee['JABATAN']);
+            $jabatan_name = is_null($employee['JABATAN']) ? '' : trim($employee['JABATAN']);
             $jabatan = $this->jabatan_by_name($jabatan_name);
             
             if ($jabatan && isset($jabatan->recid_jbtn)) {
@@ -610,7 +850,7 @@ class M_employee_import extends CI_Model
         
         // Map bagian name to recid_bag and bagian text field
         if (isset($employee['BAGIAN']) && !empty($employee['BAGIAN'])) {
-            $bagian_name = trim($employee['BAGIAN']);
+            $bagian_name = is_null($employee['BAGIAN']) ? '' : trim($employee['BAGIAN']);
             $bagian = $this->bagian_by_name($bagian_name);
             
             if ($bagian && isset($bagian->recid_bag)) {
@@ -622,7 +862,7 @@ class M_employee_import extends CI_Model
         
         // Map sub bagian name to recid_subbag and sub_bagian text field
         if (isset($employee['SUB_BAGIAN']) && !empty($employee['SUB_BAGIAN'])) {
-            $sub_bagian_name = trim($employee['SUB_BAGIAN']);
+            $sub_bagian_name = is_null($employee['SUB_BAGIAN']) ? '' : trim($employee['SUB_BAGIAN']);
             $sub_bagian = $this->sub_bagian_by_name($sub_bagian_name);
             
             if ($sub_bagian && isset($sub_bagian->recid_subbag)) {
@@ -653,8 +893,33 @@ class M_employee_import extends CI_Model
             return null;
         }
         
+        // Handle two-digit year format (e.g., 01-Sep-67)
+        // For two-digit years, we need to handle the century correctly
+        $corrected_date_string = $date_string;
+        
+        // Check if the date string matches the pattern DD-MMM-YY
+        if (preg_match('/^\d{1,2}-[A-Za-z]{3}-\d{2}$/', $date_string)) {
+            $date_parts = explode('-', $date_string);
+            if (count($date_parts) == 3) {
+                $day = $date_parts[0];
+                $month = $date_parts[1];
+                $year = $date_parts[2];
+                
+                // Handle two-digit year (assume 00-29 is 20xx and 30-99 is 19xx)
+                if (strlen($year) == 2) {
+                    $year_num = intval($year);
+                    if ($year_num >= 30) {
+                        $full_year = "19" . $year;
+                    } else {
+                        $full_year = "20" . $year;
+                    }
+                    $corrected_date_string = $day . '-' . $month . '-' . $full_year;
+                }
+            }
+        }
+        
         // Try to parse the date
-        $timestamp = strtotime($date_string);
+        $timestamp = strtotime($corrected_date_string);
         
         if ($timestamp !== false) {
             return date('Y-m-d', $timestamp);
@@ -662,9 +927,171 @@ class M_employee_import extends CI_Model
         
         return null;
     }
+    
+    /**
+     * Calculate age based on birth date
+     * 
+     * @param string $birth_date Birth date string
+     * @return int Age in years
+     */
+    private function calculate_age($birth_date)
+    {
+        if (empty($birth_date) || $birth_date === '00-Jan-00') {
+            return 0;
+        }
+        
+        // Handle two-digit year format (e.g., 01-Sep-67)
+        // For two-digit years, we need to handle the century correctly
+        $corrected_birth_date = $birth_date;
+        
+        // Check if the date string matches the pattern DD-MMM-YY
+        if (preg_match('/^\d{1,2}-[A-Za-z]{3}-\d{2}$/', $birth_date)) {
+            $date_parts = explode('-', $birth_date);
+            if (count($date_parts) == 3) {
+                $day = $date_parts[0];
+                $month = $date_parts[1];
+                $year = $date_parts[2];
+                
+                // Handle two-digit year (assume 00-29 is 20xx and 30-99 is 19xx)
+                if (strlen($year) == 2) {
+                    $year_num = intval($year);
+                    if ($year_num >= 30) {
+                        $full_year = "19" . $year;
+                    } else {
+                        $full_year = "20" . $year;
+                    }
+                    $corrected_birth_date = $day . '-' . $month . '-' . $full_year;
+                }
+            }
+        }
+        
+        // Try to parse the birth date
+        $timestamp = strtotime($corrected_birth_date);
+        
+        if ($timestamp !== false) {
+            $birth_date_obj = new DateTime(date('Y-m-d', $timestamp));
+            $current_date_obj = new DateTime();
+            $interval = $current_date_obj->diff($birth_date_obj);
+            return $interval->y;
+        }
+        
+        return 0;
+    }
+    
+    /**
+     * Handle contract data for an employee
+     * 
+     * @param array $employee Employee data from Excel
+     * @param int $employee_id Employee ID in database
+     */
+    private function handle_contract_data($employee, $employee_id)
+    {
+        // Temporarily disable contract data insertion as requested
+        // Will be re-enabled once the contract data parsing is fixed
+        return;
+        
+        // Handle multi-row KONTRAK headers (AI to DR columns)
+        // Collect all KONTRAK data from the employee record
+        $kontrak_entries = [];
+        
+        // Look for KONTRAK data keys in the employee data
+        foreach ($employee as $key => $value) {
+            if (strpos($key, 'KONTRAK_AWAL_') === 0 || strpos($key, 'KONTRAK_AKHIR_') === 0) {
+                // Extract contract type and column number from key
+                // Format: KONTRAK_{TYPE}_{COLUMN_NUMBER}
+                $parts = explode('_', $key);
+                $type = $parts[1]; // AWAL or AKHIR
+                $column = $parts[2]; // Column number
+                
+                // Initialize entry for this column if not exists
+                if (!isset($kontrak_entries[$column])) {
+                    $kontrak_entries[$column] = [
+                        'AWAL' => null,
+                        'AKHIR' => null
+                    ];
+                }
+                
+                // Store the value
+                $kontrak_entries[$column][$type] = $value;
+            }
+        }
+        
+        // Process each KONTRAK entry
+        foreach ($kontrak_entries as $column => $entry) {
+            $contract_start = null;
+            $contract_end = null;
+            
+            // Handle contract start date (AWAL)
+            if (isset($entry['AWAL']) && !empty($entry['AWAL'])) {
+                $contract_start = $this->format_date($entry['AWAL']);
+            }
+            
+            // Handle contract end date (AKHIR)
+            if (isset($entry['AKHIR']) && !empty($entry['AKHIR'])) {
+                $contract_end = $this->format_date($entry['AKHIR']);
+            }
+            
+            // If we have contract data, insert it into karyawan_kontrak table
+            if ($contract_start || $contract_end) {
+                $contract_data = [
+                    'recid_karyawan' => $employee_id,
+                    'created_at' => date('Y-m-d H:i:s'),
+                    'updated_at' => date('Y-m-d H:i:s')
+                ];
+                
+                // Only add dates if they exist
+                if ($contract_start) {
+                    $contract_data['tgl_mulai'] = $contract_start;
+                }
+                
+                if ($contract_end) {
+                    $contract_data['tgl_akhir'] = $contract_end;
+                }
+                
+                // Insert contract data
+                $this->db->insert('karyawan_kontrak', $contract_data);
+            }
+        }
+        
+        // Also handle the old-style KONTRAK and KONTRAK AKHIR columns for backward compatibility
+        // Handle contract start date (KONTRAK column)
+        if (isset($employee['KONTRAK']) && !empty($employee['KONTRAK'])) {
+            $contract_start = $this->format_date($employee['KONTRAK']);
+            
+            // If we have contract start date, insert it into karyawan_kontrak table
+            if ($contract_start) {
+                $contract_data = [
+                    'recid_karyawan' => $employee_id,
+                    'tgl_mulai' => $contract_start,
+                    'created_at' => date('Y-m-d H:i:s'),
+                    'updated_at' => date('Y-m-d H:i:s')
+                ];
+                
+                // Insert contract data
+                $this->db->insert('karyawan_kontrak', $contract_data);
+            }
+        }
+        
+        // Handle contract end date (KONTRAK_AKHIR column)
+        if (isset($employee['KONTRAK_AKHIR']) && !empty($employee['KONTRAK_AKHIR'])) {
+            $contract_end = $this->format_date($employee['KONTRAK_AKHIR']);
+            
+            // If we have contract end date, insert it into karyawan_kontrak table
+            if ($contract_end) {
+                $contract_data = [
+                    'recid_karyawan' => $employee_id,
+                    'tgl_akhir' => $contract_end,
+                    'created_at' => date('Y-m-d H:i:s'),
+                    'updated_at' => date('Y-m-d H:i:s')
+                ];
+                
+                // Insert contract data
+                $this->db->insert('karyawan_kontrak', $contract_data);
+            }
+        }
+    }
 
     // ################################################### LOOKUP METHODS FOR IMPORT ###################################################################
-
     /**
      * Lookup jabatan by name
      * 
