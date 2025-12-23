@@ -10660,86 +10660,99 @@ public function export($recid_karyawan = null)
         return;
     }
 
+    // Load the contract model to get contract data
+    $this->load->model('M_kontrak');
+
     $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
     $sheet       = $spreadsheet->getActiveSheet();
 
-    // Helper merge
+    // Helper merge functions
     $v = fn($col) => $sheet->mergeCells("{$col}1:{$col}3");
-
+    $merge2 = fn($col1, $col2) => $sheet->mergeCells("{$col1}1:{$col2}1");
+    $merge_row_23 = fn($col) => $sheet->mergeCells("{$col}2:{$col}3");
+    
     // ========================= HEADER =========================
 
-    $sheet->setCellValue('A1','NO');  $v('A');
-    $sheet->setCellValue('B1','NIK'); $v('B');
-    $sheet->setCellValue('C1','NAMA'); $v('C');
-    $sheet->setCellValue('D1','ALAMAT E-MAIL PRIBADI'); $v('D');
+    // Row 1: Main headers with multi-row spans
+    $sheet->setCellValue('A1','NO'); $merge_row_23('A');
+    $sheet->setCellValue('B1','NIK'); $merge_row_23('B');
+    $sheet->setCellValue('C1','NAMA'); $merge_row_23('C');
+    $sheet->setCellValue('D1','ALAMAT E-MAIL PRIBADI'); $merge_row_23('D');
+    $sheet->setCellValue('E1','JABATAN'); $merge_row_23('E');
+    $sheet->setCellValue('F1','BAGIAN'); $merge_row_23('F');
+    $sheet->setCellValue('G1','SUB.BAGIAN'); $merge_row_23('G');
+    $sheet->setCellValue('H1','DEPARTEMEN'); $merge_row_23('H');
+    $sheet->setCellValue('I1','STATUS KARYAWAN'); $merge_row_23('I');
+    $sheet->setCellValue('J1','TGL. MASUK'); $merge_row_23('J');
+    $sheet->setCellValue('K1','TGL. KELUAR'); $merge_row_23('K');
+    $sheet->setCellValue('L1','TGL.JEDA'); $merge_row_23('L');
+    $sheet->setCellValue('M1','MASA KERJA'); $merge_row_23('M');
+    $sheet->setCellValue('N1','SK. KARY TETAP'); $merge_row_23('N');
+    
+    // BPJS section with 3-level headers like import preview
+    // BPJS section - based on import preview structure
+    $sheet->setCellValue('O1','BPJS'); $sheet->mergeCells('O1:P1');
+    $sheet->setCellValue('O2','BPJS NO.KPJ'); $merge_row_23('O');
+    $sheet->setCellValue('P2','NO. KARTU TRIMAS'); $merge_row_23('P');
+    
+    $sheet->setCellValue('Q1','STATUS PERNIKAHAN'); $merge_row_23('Q');
+    $sheet->setCellValue('R1','TEMPAT LAHIR'); $merge_row_23('R');
+    $sheet->setCellValue('S1','TGL LAHIR'); $merge_row_23('S');
+    $sheet->setCellValue('T1','TGL LAHIR HARI'); $merge_row_23('T');
+    $sheet->setCellValue('U1','BULAN LAHIR'); $merge_row_23('U');
+    $sheet->setCellValue('V1','USIA'); $merge_row_23('V');
+    $sheet->setCellValue('W1','ALAMAT KTP'); $merge_row_23('W');
+    $sheet->setCellValue('X1','ALAMAT TINGGAL SEKARANG'); $merge_row_23('X');
+    $sheet->setCellValue('Y1','JENIS KELAMIN'); $merge_row_23('Y');
+    $sheet->setCellValue('Z1','AGAMA'); $merge_row_23('Z');
+    $sheet->setCellValue('AA1','PENDIDIKAN TERAKHIR'); $merge_row_23('AA');
+    $sheet->setCellValue('AB1','NO. TELEPON'); $merge_row_23('AB');
+    $sheet->setCellValue('AC1','NO. KK'); $merge_row_23('AC');
+    $sheet->setCellValue('AD1','NO. KTP'); $merge_row_23('AD');
+    $sheet->setCellValue('AE1','GOL DARAH'); $merge_row_23('AE');
+    $sheet->setCellValue('AF1','NAMA ORANG TUA'); $merge_row_23('AF');
+    $sheet->setCellValue('AG1','NAMA SUAMI / ISTRI'); $merge_row_23('AG');
+    $sheet->setCellValue('AH1','JUMLAH ANAK'); $merge_row_23('AH');
+    $sheet->setCellValue('AI1','NAMA ANAK'); $merge_row_23('AI');
+    
+    // CONTRACT COLUMNS - 44 pairs of AWAL/AKHIR (88 columns total)
+    // Multi-row header structure like import preview
+    $contract_start_col = 'AJ';
+    $contract_end_col = 'DW';
+    $contract_start_index = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString($contract_start_col);
+    
+    // Row 1: KONTRAK spanning 88 columns
+    $sheet->setCellValue('AJ1','KONTRAK'); $sheet->mergeCells('AJ1:DW1');
+    
+    // Row 2: Numbers 1-44 spanning AWAL/AKHIR pairs
+    for ($i = 1; $i <= 44; $i++) {
+        $col_index = $contract_start_index + ($i - 1) * 2;
+        $col_awal = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col_index);
+        $col_akhir = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col_index + 1);
+        $sheet->setCellValue($col_awal . '2', $i);
+        $sheet->mergeCells($col_awal . '2:' . $col_akhir . '2');
+    }
+    
+    // Row 3: AWAL/AKHIR pairs
+    for ($i = 1; $i <= 44; $i++) {
+        $col_index = $contract_start_index + ($i - 1) * 2;
+        $col_awal = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col_index);
+        $col_akhir = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col_index + 1);
+        $sheet->setCellValue($col_awal . '3', 'AWAL');
+        $sheet->setCellValue($col_akhir . '3', 'AKHIR');
+    }
 
-    $sheet->setCellValue('E1','JABATAN');  $v('E');
-    $sheet->setCellValue('F1','BAGIAN');   $v('F');
-    $sheet->setCellValue('G1','SUB.BAGIAN'); $v('G');
-    $sheet->setCellValue('H1','DEPARTEMEN'); $v('H');
-    $sheet->setCellValue('I1','STATUS KARYAWAN'); $v('I');
-
-    $sheet->setCellValue('J1','TGL MASUK'); $v('J');
-    $sheet->setCellValue('K1','TGL KELUAR'); $v('K');
-    $sheet->setCellValue('L1','TGL JEDA');   $v('L');
-
-    $sheet->setCellValue('M1','MASA KERJA');
-    $sheet->mergeCells('M1:N1');
-    $sheet->setCellValue('M2','SEJAK AWAL');
-    $sheet->setCellValue('N2','S/D RESIGN');
-    $sheet->mergeCells('M3:N3');
-
-    $sheet->setCellValue('O1','SK KARY TETAP');
-    $sheet->mergeCells('O1:P1');
-    $sheet->setCellValue('O2','NOMOR SK');
-    $sheet->setCellValue('P2','TGL DIANGKAT');
-    $sheet->mergeCells('O3:P3');
-
-    // BPJS
-    $sheet->setCellValue('Q1','BPJS');
-    $sheet->mergeCells('Q1:T1');
-    $sheet->setCellValue('Q2','KETENAGAKERJAAN'); $sheet->mergeCells('Q2:R2');
-    $sheet->setCellValue('S2','KESEHATAN');       $sheet->mergeCells('S2:T2');
-    $sheet->setCellValue('Q3','NO KPJ');          $sheet->mergeCells('Q3:R3');
-    $sheet->setCellValue('S3','NO KARTU DILUAR TRIMAS');
-    $sheet->setCellValue('T3','NO KARTU TRIMAS');
-
-    // Lain-lain
-    $sheet->setCellValue('U1','STATUS PERNIKAHAN'); $v('U');
-    $sheet->setCellValue('V1','TEMPAT LAHIR');      $v('V');
-    $sheet->setCellValue('W1','TGL LAHIR');         $v('W');
-    $sheet->setCellValue('X1','BULAN LAHIR');       $v('X');
-    $sheet->setCellValue('Y1','USIA');              $v('Y');
-
-    $sheet->setCellValue('Z1','ALAMAT KTP');       $v('Z');
-    $sheet->setCellValue('AA1','ALAMAT SEKARANG'); $v('AA');
-    $sheet->setCellValue('AB1','JENIS KELAMIN');   $v('AB');
-    $sheet->setCellValue('AC1','AGAMA');           $v('AC');
-    $sheet->setCellValue('AD1','PENDIDIKAN');      $v('AD');
-
-    $sheet->setCellValue('AE1','NO TELEPON');  $v('AE');
-    $sheet->setCellValue('AF1','NO KK');       $v('AF');
-    $sheet->setCellValue('AG1','NO KTP');      $v('AG');
-
-    // =================== GESER AJ → AH ===================
-
-    $sheet->setCellValue('AH1','NAMA ORANG TUA'); $v('AH');
-    $sheet->setCellValue('AI1','NAMA SUAMI / ISTRI'); $v('AI');
-    $sheet->setCellValue('AJ1','JUMLAH ANAK'); $v('AJ');
-    $sheet->setCellValue('AK1','NAMA ANAK');    $v('AK');
-
-    $sheet->setCellValue('AL1','JUMLAH KONTRAK');  $v('AL');
-    $sheet->setCellValue('AM1','KONTRAK AKHIR');   $v('AM');
-
-    $sheet->setCellValue('AN1','NO REKENING');  $v('AN');
-    $sheet->setCellValue('AO1','TIPE PTKP');    $v('AO');
-    $sheet->setCellValue('AP1','ALASAN KELUAR'); $v('AP');
-    $sheet->setCellValue('AQ1','KETERANGAN');   $v('AQ');
-    $sheet->setCellValue('AR1','LEVEL');        $v('AR');
-    $sheet->setCellValue('AS1','DL/IDL');       $v('AS');
+    // Remaining columns after contract data
+    $sheet->setCellValue('DX1','KONTRAK AKHIR'); $merge_row_23('DX');
+    $sheet->setCellValue('DY1','NO.REKENING'); $merge_row_23('DY');
+    $sheet->setCellValue('DZ1','TIPE PTKP'); $merge_row_23('DZ');
+    $sheet->setCellValue('EA1','ALASAN KELUAR'); $merge_row_23('EA');
+    $sheet->setCellValue('EB1','KETERANGAN'); $merge_row_23('EB');
+    $sheet->setCellValue('EC1','LEVEL'); $merge_row_23('EC');
+    $sheet->setCellValue('ED1','DL/IDL'); $merge_row_23('ED');
 
     // ========== HEADER STYLE ==========
-    $sheet->getStyle('A1:AS3')->applyFromArray([
+    $sheet->getStyle('A1:ED3')->applyFromArray([
         'font'=>['bold'=>true],
         'alignment'=>[
             'horizontal'=>\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
@@ -10753,7 +10766,7 @@ public function export($recid_karyawan = null)
         ]
     ]);
 
-    $sheet->freezePane('A4');
+    $sheet->freezePane('A4'); // Freeze header rows
 
     // QUERY
     $this->db->select("
@@ -10774,7 +10787,7 @@ public function export($recid_karyawan = null)
     $no  = 1;
 
     $val = fn($x,$k)=> (!empty($x[$k])) ? $x[$k] : "-";
-
+    
     foreach ($data as $k)
     {
         $sheet->setCellValue("A{$row}", $no++);
@@ -10793,58 +10806,72 @@ public function export($recid_karyawan = null)
         $sheet->setCellValue("L{$row}", $val($k,'tgl_jeda'));
 
         $sheet->setCellValue("M{$row}", $val($k,'masa_kerja_awal'));
-        $sheet->setCellValue("N{$row}", $val($k,'masa_kerja_resign'));
+        $sheet->setCellValue("N{$row}", $val($k,'sk_kary_tetap'));
 
-        $sheet->setCellValue("O{$row}", $val($k,'sk_kary_tetap'));
-        $sheet->setCellValue("P{$row}", $val($k,'sk_tgl'));
+        $sheet->setCellValue("O{$row}", $val($k,'no_kpj'));
+        $sheet->setCellValue("P{$row}", $val($k,'no_kartu_trimas'));
 
-        $sheet->setCellValue("Q{$row}", $val($k,'no_kpj'));
-        $sheet->setCellValue("R{$row}", $val($k,'no_kpj'));
-        $sheet->setCellValue("S{$row}", $val($k,'no_kartu_diluar_trimas'));
-        $sheet->setCellValue("T{$row}", $val($k,'no_kartu_trimas'));
+        $sheet->setCellValue("Q{$row}", $val($k,'sts_nikah'));
+        $sheet->setCellValue("R{$row}", $val($k,'tmp_lahir'));
+        $sheet->setCellValue("S{$row}", $val($k,'tgl_lahir'));
+        $sheet->setCellValue("T{$row}", "-"); // TGL LAHIR HARI
+        $sheet->setCellValue("U{$row}", "-"); // BULAN LAHIR
+        $sheet->setCellValue("V{$row}", "-"); // USIA
 
-        $sheet->setCellValue("U{$row}", $val($k,'sts_nikah'));
-        $sheet->setCellValue("V{$row}", $val($k,'tmp_lahir'));
-        $sheet->setCellValue("W{$row}", $val($k,'tgl_lahir'));
-        $sheet->setCellValue("X{$row}", "-");
-        $sheet->setCellValue("Y{$row}", "-");
+        $sheet->setCellValue("W{$row}", $val($k,'alamat_ktp'));
+        $sheet->setCellValue("X{$row}", $val($k,'alamat_skrg'));
+        $sheet->setCellValue("Y{$row}", $val($k,'jenkel'));
+        $sheet->setCellValue("Z{$row}", $val($k,'agama'));
+        $sheet->setCellValue("AA{$row}", $val($k,'pendidikan'));
 
-        $sheet->setCellValue("Z{$row}", $val($k,'alamat_ktp'));
-        $sheet->setCellValue("AA{$row}", $val($k,'alamat_skrg'));
-        $sheet->setCellValue("AB{$row}", $val($k,'jenkel'));
-        $sheet->setCellValue("AC{$row}", $val($k,'agama'));
-        $sheet->setCellValue("AD{$row}", $val($k,'pendidikan'));
+        $sheet->setCellValue("AB{$row}", $val($k,'no_telepon'));
+        $sheet->setCellValue("AC{$row}", $val($k,'no_kk'));
+        $sheet->setCellValue("AD{$row}", $val($k,'no_ktp'));
+        $sheet->setCellValue("AE{$row}", $val($k,'gol_darah'));
+        $sheet->setCellValue("AF{$row}", $val($k,'nama_orang_tua'));
+        $sheet->setCellValue("AG{$row}", $val($k,'nama_pasangan'));
+        $sheet->setCellValue("AH{$row}", $val($k,'jumlah_anak'));
+        $sheet->setCellValue("AI{$row}", $val($k,'nama_anak'));
 
-        $sheet->setCellValue("AE{$row}", $val($k,'no_telepon'));
-        $sheet->setCellValue("AF{$row}", $val($k,'no_kk'));
-        $sheet->setCellValue("AG{$row}", $val($k,'no_ktp'));
+        // CONTRACT DATA - Get contract periods for this employee
+        $contract_data = $this->M_kontrak->get_kontrak_by_karyawan($k['recid_karyawan']);
+        $contract_count = count($contract_data);
+        
+        // Write contract data up to 44 pairs (AWAL/AKHIR)
+        for ($i = 0; $i < 44; $i++) {
+            $col_index = $contract_start_index + $i * 2;
+            $col_awal = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col_index);
+            $col_akhir = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col_index + 1);
+            
+            if (isset($contract_data[$i])) {
+                $sheet->setCellValue($col_awal . "{$row}", $contract_data[$i]->tgl_mulai);
+                $sheet->setCellValue($col_akhir . "{$row}", $contract_data[$i]->tgl_akhir);
+            } else {
+                $sheet->setCellValue($col_awal . "{$row}", '');
+                $sheet->setCellValue($col_akhir . "{$row}", '');
+            }
+        }
 
-        // AH–AS bergeser, tidak ada kolom kosong
-        $sheet->setCellValue("AH{$row}", $val($k,'nama_orang_tua'));
-        $sheet->setCellValue("AI{$row}", $val($k,'nama_pasangan'));
-        $sheet->setCellValue("AJ{$row}", $val($k,'jumlah_anak'));
-        $sheet->setCellValue("AK{$row}", $val($k,'nama_anak'));
-
-        $sheet->setCellValue("AL{$row}", $val($k,'jumlah_kontrak'));
-        $sheet->setCellValue("AM{$row}", $val($k,'tgl_akhir_kontrak'));
-
-        $sheet->setCellValue("AN{$row}", $val($k,'no_rekening'));
-        $sheet->setCellValue("AO{$row}", $val($k,'sts_penunjang'));
-        $sheet->setCellValue("AP{$row}", $val($k,'alasan_keluar'));
-        $sheet->setCellValue("AQ{$row}", $val($k,'keterangan'));
-        $sheet->setCellValue("AR{$row}", $val($k,'level'));
-        $sheet->setCellValue("AS{$row}", $val($k,'dl_idl'));
+        // Continue with remaining columns
+        $sheet->setCellValue("DX{$row}", $val($k,'tgl_akhir_kontrak'));
+        $sheet->setCellValue("DY{$row}", $val($k,'no_rekening'));
+        $sheet->setCellValue("DZ{$row}", $val($k,'sts_penunjang'));
+        $sheet->setCellValue("EA{$row}", $val($k,'alasan_keluar'));
+        $sheet->setCellValue("EB{$row}", $val($k,'keterangan'));
+        $sheet->setCellValue("EC{$row}", $val($k,'level'));
+        $sheet->setCellValue("ED{$row}", $val($k,'dl_idl'));
 
         $row++;
     }
 
     // ========================= STYLE DATA =========================
-    $sheet->getStyle("A4:AS{$row}")
+    $sheet->getStyle("A4:ED{$row}")
         ->applyFromArray([
             'borders'=>['allBorders'=>['borderStyle'=>\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN]]
         ]);
 
-    foreach (range('A','AS') as $col) {
+    // Set column widths
+    foreach (range('A','ED') as $col) {
         $sheet->getColumnDimension($col)->setAutoSize(true);
     }
 
