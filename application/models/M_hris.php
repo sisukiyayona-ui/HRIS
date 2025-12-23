@@ -2206,13 +2206,13 @@ class M_hris extends CI_Model
 
 	public function karyawan_tetap()
 	{
-		$query = $this->db->query("SELECT k.*, b.indeks_hr, bs.sub_bag, s.nama_struktur, d.nama_department, j.indeks_jabatan, j.sts_jabatan, g.nama_golongan,  ba.nama_karyawan as atasan2, sa.nama_karyawan as atasan1 FROM karyawan k join bagian b on k.recid_bag = b.recid_bag left join bagian_sub bs on bs.recid_subbag = k.recid_subbag join struktur s on s.recid_struktur = b.recid_struktur join department d on d.recid_department = b.recid_department  join jabatan j on j.recid_jbtn = k.recid_jbtn left join golongan g on g.recid_golongan = k.recid_golongan left join karyawan sa on s.pic_struktur = sa.recid_karyawan left join karyawan ba on b.pic_bagian = ba.recid_karyawan where sts_jabatan = 'Tetap' and k.sts_aktif='Aktif'")->result();
+		$query = $this->db->query("SELECT k.*, b.indeks_hr, bs.sub_bag, NULL as nama_struktur, NULL as nama_department, j.indeks_jabatan, j.sts_jabatan, g.nama_golongan, NULL as atasan2, NULL as atasan1, NULL as penempatan, NULL as tgl_a_kerja, k.email_tsgi as email_cint FROM karyawan k join bagian b on k.recid_bag = b.recid_bag left join bagian_sub bs on bs.recid_subbag = k.recid_subbag join jabatan j on j.recid_jbtn = k.recid_jbtn left join golongan g on g.recid_golongan = k.recid_golongan where k.sts_aktif='Aktif' AND j.sts_jabatan = 'Tetap'")->result();
 		return $query;
 	}
 
 	public function karyawan_kontrak()
 	{
-		$query = $this->db->query("SELECT k.*, b.indeks_hr, bs.sub_bag, s.nama_struktur, d.nama_department, j.indeks_jabatan, j.sts_jabatan, g.nama_golongan, ba.nama_karyawan as atasan2, sa.nama_karyawan as atasan1 FROM karyawan k join bagian b on k.recid_bag = b.recid_bag  left join bagian_sub bs on bs.recid_subbag = k.recid_subbag join struktur s on s.recid_struktur = b.recid_struktur left join golongan g on g.recid_golongan = k.recid_golongan join department d on d.recid_department = b.recid_department  join jabatan j on j.recid_jbtn = k.recid_jbtn left join karyawan sa on s.pic_struktur = sa.recid_karyawan left join karyawan ba on b.pic_bagian = ba.recid_karyawan where (sts_jabatan = 'kontrak' or sts_jabatan = 'Advisor' or sts_jabatan = 'Project') and k.sts_aktif='Aktif'")->result();
+		$query = $this->db->query("SELECT DISTINCT k.*, b.indeks_hr, bs.sub_bag, NULL as nama_struktur, NULL as nama_department, j.indeks_jabatan, j.sts_jabatan, g.nama_golongan, NULL as atasan2, NULL as atasan1, NULL as penempatan, kk.tgl_akhir as tgl_a_kerja, k.email_tsgi as email_cint FROM karyawan k JOIN karyawan_kontrak kk ON k.recid_karyawan = kk.recid_karyawan join bagian b on k.recid_bag = b.recid_bag left join bagian_sub bs on bs.recid_subbag = k.recid_subbag left join golongan g on g.recid_golongan = k.recid_golongan join jabatan j on j.recid_jbtn = k.recid_jbtn where k.sts_aktif='Aktif'")->result();
 		return $query;
 	}
 
