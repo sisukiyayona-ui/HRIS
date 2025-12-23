@@ -10793,7 +10793,7 @@ public function export($recid_karyawan = null)
         $sheet->setCellValue("A{$row}", $no++);
         $sheet->setCellValue("B{$row}", $val($k,'nik'));
         $sheet->setCellValue("C{$row}", $val($k,'nama_karyawan'));
-        $sheet->setCellValue("D{$row}", $val($k,'email_pribadi'));
+        $sheet->setCellValue("D{$row}", $val($k,'email'));
 
         $sheet->setCellValue("E{$row}", $val($k,'nama_jbtn'));
         $sheet->setCellValue("F{$row}", $val($k,'nama_bag'));
@@ -10802,21 +10802,28 @@ public function export($recid_karyawan = null)
         $sheet->setCellValue("I{$row}", $val($k,'sts_aktif'));
 
         $sheet->setCellValue("J{$row}", $val($k,'tgl_m_kerja'));
-        $sheet->setCellValue("K{$row}", $val($k,'tgl_a_kerja'));
+        $sheet->setCellValue("K{$row}", $val($k,'tgl_keluar')); // TGL. KELUAR
         $sheet->setCellValue("L{$row}", $val($k,'tgl_jeda'));
 
-        $sheet->setCellValue("M{$row}", $val($k,'masa_kerja_awal'));
-        $sheet->setCellValue("N{$row}", $val($k,'sk_kary_tetap'));
+        $sheet->setCellValue("M{$row}", $val($k,'masa_kerja'));
+        $sheet->setCellValue("N{$row}", $val($k,'sk_kary_tetap_nomor'));
 
-        $sheet->setCellValue("O{$row}", $val($k,'no_kpj'));
+        $sheet->setCellValue("O{$row}", $val($k,'no_bpjs_tk'));
         $sheet->setCellValue("P{$row}", $val($k,'no_kartu_trimas'));
 
         $sheet->setCellValue("Q{$row}", $val($k,'sts_nikah'));
         $sheet->setCellValue("R{$row}", $val($k,'tmp_lahir'));
         $sheet->setCellValue("S{$row}", $val($k,'tgl_lahir'));
-        $sheet->setCellValue("T{$row}", "-"); // TGL LAHIR HARI
-        $sheet->setCellValue("U{$row}", "-"); // BULAN LAHIR
-        $sheet->setCellValue("V{$row}", "-"); // USIA
+        // Extract day from tgl_lahir for TGL LAHIR HARI
+        $tgl_lahir = $val($k,'tgl_lahir');
+        $tgl_lahir_hari = '';
+        if ($tgl_lahir && $tgl_lahir !== '-' && $tgl_lahir !== '0000-00-00') {
+            $date = new DateTime($tgl_lahir);
+            $tgl_lahir_hari = $date->format('j'); // Get day without leading zeros
+        }
+        $sheet->setCellValue("T{$row}", $tgl_lahir_hari); // TGL LAHIR HARI - extracted from tgl_lahir
+        $sheet->setCellValue("U{$row}", $val($k,'bulan_lahir')); // BULAN LAHIR
+        $sheet->setCellValue("V{$row}", $val($k,'usia')); // USIA
 
         $sheet->setCellValue("W{$row}", $val($k,'alamat_ktp'));
         $sheet->setCellValue("X{$row}", $val($k,'alamat_skrg'));
@@ -10824,7 +10831,7 @@ public function export($recid_karyawan = null)
         $sheet->setCellValue("Z{$row}", $val($k,'agama'));
         $sheet->setCellValue("AA{$row}", $val($k,'pendidikan'));
 
-        $sheet->setCellValue("AB{$row}", $val($k,'no_telepon'));
+        $sheet->setCellValue("AB{$row}", $val($k,'telp1'));
         $sheet->setCellValue("AC{$row}", $val($k,'no_kk'));
         $sheet->setCellValue("AD{$row}", $val($k,'no_ktp'));
         $sheet->setCellValue("AE{$row}", $val($k,'gol_darah'));
@@ -10853,8 +10860,16 @@ public function export($recid_karyawan = null)
         }
 
         // Continue with remaining columns
-        $sheet->setCellValue("DX{$row}", $val($k,'tgl_akhir_kontrak'));
-        $sheet->setCellValue("DY{$row}", $val($k,'no_rekening'));
+        // For KONTRAK AKHIR, use the end date of the last contract if available, otherwise use tgl_keluar
+        $kontrak_akhir = $val($k,'tgl_keluar');
+        if (!empty($contract_data)) {
+            $last_contract = end($contract_data);
+            if ($last_contract && isset($last_contract->tgl_akhir) && $last_contract->tgl_akhir) {
+                $kontrak_akhir = $last_contract->tgl_akhir;
+            }
+        }
+        $sheet->setCellValue("DX{$row}", $kontrak_akhir); // KONTRAK AKHIR
+        $sheet->setCellValue("DY{$row}", $val($k,'acc_bank')); // NO.REKENING
         $sheet->setCellValue("DZ{$row}", $val($k,'sts_penunjang'));
         $sheet->setCellValue("EA{$row}", $val($k,'alasan_keluar'));
         $sheet->setCellValue("EB{$row}", $val($k,'keterangan'));
