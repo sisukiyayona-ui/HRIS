@@ -2197,7 +2197,10 @@ class M_hris extends CI_Model
 
 	public function karyawan_by_status()
 	{
-		$query = $this->db->query("SELECT COUNT(IF(sts_jabatan = 'Kontrak' or sts_jabatan = 'Advisor' or sts_jabatan = 'Project',1,NULL)) AS 'kontrak', COUNT(IF(sts_jabatan = 'Tetap',1,NULL)) AS 'tetap' FROM (SELECT k.*, d.nama_department, b.indeks_hr, bs.sub_bag, j.indeks_jabatan, s.nama_struktur, j.sts_jabatan FROM karyawan k join jabatan j on j.recid_jbtn = k.recid_jbtn join bagian b on b.recid_bag = k.recid_bag left join bagian_sub bs on bs.recid_subbag = k.recid_subbag join department d on d.recid_department = b.recid_department join struktur s on s.recid_struktur = b.recid_struktur where  k.sts_aktif = 'aktif') as dummy_table")->result();
+		$query = $this->db->query("SELECT 
+			(SELECT COUNT(DISTINCT kk.recid_karyawan) FROM karyawan k JOIN karyawan_kontrak kk ON k.recid_karyawan = kk.recid_karyawan WHERE k.sts_aktif = 'Aktif') AS 'kontrak',
+			(SELECT COUNT(*) FROM karyawan k2 JOIN jabatan j2 ON j2.recid_jbtn = k2.recid_jbtn WHERE k2.sts_aktif = 'Aktif' AND j2.sts_jabatan = 'Tetap') AS 'tetap'
+			")->result();
 		return $query;
 	}
 
