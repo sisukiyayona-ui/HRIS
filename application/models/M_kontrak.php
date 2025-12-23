@@ -83,4 +83,60 @@ class M_kontrak extends CI_Model
         $query = $this->db->query("SELECT * FROM karyawan_kontrak WHERE recid_karyawan = ? ORDER BY tgl_mulai DESC", array($recid_karyawan));
         return $query->result();
     }
+    
+    /**
+     * Update contract status to 'diputus' (terminated)
+     * @param int $recid_kontrak Contract ID
+     * @param string $tgl_resign Resignation date
+     * @param string $alasan_resign Reason for resignation
+     * @return bool Update result
+     */
+    public function update_status_diputus($recid_kontrak, $tgl_resign, $alasan_resign)
+    {
+        $data = array(
+            'status_kontrak' => 'diputus',
+            'tgl_resign' => $tgl_resign,
+            'alasan_resign' => $alasan_resign,
+            'updated_at' => date('Y-m-d H:i:s')
+        );
+        $this->db->where('recid_kontrak', $recid_kontrak);
+        return $this->db->update('karyawan_kontrak', $data);
+    }
+
+    /**
+     * Update contract status to 'selesai' (completed)
+     * @param int $recid_kontrak Contract ID
+     * @return bool Update result
+     */
+    public function update_status_selesai($recid_kontrak)
+    {
+        $data = array(
+            'status_kontrak' => 'selesai',
+            'updated_at' => date('Y-m-d H:i:s')
+        );
+        $this->db->where('recid_kontrak', $recid_kontrak);
+        return $this->db->update('karyawan_kontrak', $data);
+    }
+
+    /**
+     * Get contracts that have ended today or in the past (for automatic status update)
+     * @return array Expired contracts data
+     */
+    public function get_expired_contracts()
+    {
+        $query = $this->db->query("SELECT * FROM karyawan_kontrak WHERE tgl_akhir <= CURDATE() AND status_kontrak = 'aktif'");
+        return $query->result();
+    }
+    
+    /**
+     * Get total number of contracts for a specific employee
+     * @param int $recid_karyawan Employee ID
+     * @return int Total number of contracts
+     */
+    public function get_total_contracts_by_karyawan($recid_karyawan)
+    {
+        $this->db->where('recid_karyawan', $recid_karyawan);
+        $query = $this->db->get('karyawan_kontrak');
+        return $query->num_rows();
+    }
 }

@@ -1146,6 +1146,9 @@
                   <th class="column-title">No</th>
                   <th class="column-title">Tanggal Mulai</th>
                   <th class="column-title">Tanggal Akhir</th>
+                  <th class="column-title">Status</th>
+                  <th class="column-title">Tanggal Resign</th>
+                  <th class="column-title">Alasan Resign</th>
                   <th class="column-title">Created At</th>
                   <th class="column-title">Updated At</th>
                   <?php if ($role == '1' or $role == '2' or $role == '5') { ?>
@@ -1180,6 +1183,57 @@
                   </td>
                   <td>
                   <?php 
+                  if (isset($data->status_kontrak) && $data->status_kontrak) {
+                    $status_label = '';
+                    // Check if contract is expired but still marked as 'aktif'
+                    if ($data->status_kontrak == 'aktif' && $data->tgl_akhir < date('Y-m-d')) {
+                        $status_label = '<span class="label label-warning">Habis Kontrak</span>';
+                    } else {
+                        switch($data->status_kontrak) {
+                            case 'aktif':
+                                $status_label = '<span class="label label-success">Aktif</span>';
+                                break;
+                            case 'selesai':
+                                $status_label = '<span class="label label-default">Selesai</span>';
+                                break;
+                            case 'diputus':
+                                $status_label = '<span class="label label-danger">Diputus</span>';
+                                break;
+                            default:
+                                $status_label = '<span class="label label-warning">'.$data->status_kontrak.'</span>';
+                        }
+                    }
+                    echo $status_label;
+                  } else {
+                    // Check if contract is expired even if status is not set
+                    if ($data->tgl_akhir < date('Y-m-d')) {
+                        echo '<span class="label label-warning">Habis Kontrak</span>';
+                    } else {
+                        echo '<span class="label label-success">Aktif</span>';
+                    }
+                  }
+                  ?>
+                  </td>
+                  <td>
+                  <?php 
+                  if (isset($data->tgl_resign) && $data->tgl_resign) {
+                    echo date('d M Y', strtotime($data->tgl_resign));
+                  } else {
+                    echo "-";
+                  }
+                  ?>
+                  </td>
+                  <td>
+                  <?php 
+                  if (isset($data->alasan_resign) && $data->alasan_resign) {
+                    echo $data->alasan_resign;
+                  } else {
+                    echo "-";
+                  }
+                  ?>
+                  </td>
+                  <td>
+                  <?php 
                   if (isset($data->created_at) && $data->created_at) {
                     echo date('d M Y H:i:s', strtotime($data->created_at));
                   } else {
@@ -1198,13 +1252,29 @@
                   </td>
                   <?php if ($role == '1' or $role == '2' or $role == '5') { ?>
                   <td>
+                    <?php 
+                    // Check if the contract is not terminated and not expired
+                    $can_edit = ($data->status_kontrak != 'diputus' && $data->status_kontrak != 'selesai');
+                    // Also don't allow editing if contract is expired (end date is in the past)
+                    if ($data->tgl_akhir < date('Y-m-d')) {
+                        $can_edit = false;
+                    }
+                    if ($can_edit) { 
+                    ?>
                     <button type="button" class="btn btn-info btn-xs" data-toggle="modal" data-target="#editKontrakModal" 
                             data-id="<?php echo $data->recid_kontrak; ?>" 
                             data-tgl_mulai="<?php echo $data->tgl_mulai; ?>" 
                             data-tgl_akhir="<?php echo $data->tgl_akhir; ?>">
                       <i class="fa fa-edit"></i>
                     </button>
-                    <button type="button" class="btn btn-danger btn-xs" onclick="deleteKontrak(<?php echo $data->recid_kontrak; ?>)">
+                    <button type="button" class="btn btn-warning btn-xs" data-toggle="modal" data-target="#endKontrakModal" 
+                            data-id="<?php echo $data->recid_kontrak; ?>" 
+                            data-tgl_mulai="<?php echo $data->tgl_mulai; ?>" 
+                            data-tgl_akhir="<?php echo $data->tgl_akhir; ?>">
+                      <i class="fa fa-times"></i>
+                    </button>
+                    <?php } ?>
+                    <button type="button" class="btn btn-danger btn-xs" onclick="deleteKontrak(<?php echo $data->recid_kontrak; ?>, '<?php echo $data->status_kontrak; ?>')">
                       <i class="fa fa-trash"></i>
                     </button>
                   </td>
@@ -1307,12 +1377,45 @@
                   <h4 class="modal-title">Konfirmasi</h4>
                 </div>
                 <div class="modal-body">
-                  <p>Yakin ingin menghapus kontrak ini?</p>
+                  <p id="deleteConfirmationText">Yakin ingin menghapus kontrak ini?</p>
                   <input type="hidden" id="delete_recid_kontrak">
                 </div>
                 <div class="modal-footer">
                   <button class="btn btn-default" data-dismiss="modal">Batal</button>
                   <button class="btn btn-danger" id="confirmDeleteKontrak">Hapus</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- End Kontrak Modal -->
+          <div class="modal fade" id="endKontrakModal" tabindex="-1" role="dialog" aria-labelledby="endKontrakModalLabel">
+            <div class="modal-dialog" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                  <h4 class="modal-title" id="endKontrakModalLabel">Akhiri/Resign Kontrak</h4>
+                </div>
+                <div class="modal-body">
+                  <form id="endKontrakForm">
+                    <input type="hidden" id="end_recid_kontrak">
+                    <div class="form-group">
+                      <label>Kontrak:</label>
+                      <p id="contract_info" class="form-control-static"></p>
+                    </div>
+                    <div class="form-group">
+                      <label for="tgl_resign">Tanggal Resign:</label>
+                      <input type="date" class="form-control" id="tgl_resign" required>
+                    </div>
+                    <div class="form-group">
+                      <label for="alasan_resign">Alasan Resign:</label>
+                      <textarea class="form-control" id="alasan_resign" rows="3" required></textarea>
+                    </div>
+                  </form>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-default" data-dismiss="modal">Batal</button>
+                  <button type="button" class="btn btn-warning" id="saveEndKontrak">Simpan</button>
                 </div>
               </div>
             </div>
@@ -1405,20 +1508,41 @@
                   });
               });
 
-              // Confirm Delete
-              $('#confirmDeleteKontrak').click(function() {
-                  var id = $('#delete_recid_kontrak').val();
+
+              
+              // Open End Kontrak Modal
+              $('#endKontrakModal').on('show.bs.modal', function (event) {
+                  var button = $(event.relatedTarget);
+                  var id = button.data('id');
+                  var tgl_mulai = button.data('tgl_mulai');
+                  var tgl_akhir = button.data('tgl_akhir');
+                  
+                  $('#end_recid_kontrak').val(id);
+                  $('#contract_info').text(tgl_mulai + ' - ' + tgl_akhir);
+              });
+              
+              // END KONTRAK
+              $('#saveEndKontrak').click(function() {
+                  var id = $('#end_recid_kontrak').val();
+                  var tgl_resign = $('#tgl_resign').val();
+                  var alasan_resign = $('#alasan_resign').val();
+
+                  if (!tgl_resign || !alasan_resign) {
+                      showToast('Harap isi tanggal resign dan alasan', 'error');
+                      return;
+                  }
 
                   $.ajax({
-                      url: '<?php echo base_url(); ?>Kontrak/delete/' + id,
+                      url: '<?php echo base_url(); ?>Kontrak/end_contract/' + id,
                       type: 'POST',
+                      data: { tgl_resign, alasan_resign },
                       success: function() {
-                          $('#deleteKontrakModal').modal('hide');
-                          showToast("Kontrak berhasil dihapus", "success");
+                          $('#endKontrakModal').modal('hide');
+                          showToast("Kontrak berhasil diakhiri", "success");
                           setTimeout(() => location.reload(), 1500);
                       },
                       error: function() {
-                          showToast("Gagal hapus kontrak", "error");
+                          showToast("Gagal mengakhiri kontrak", "error");
                       }
                   });
               });
@@ -1426,10 +1550,55 @@
           });
 
           // OPEN delete modal
-          function deleteKontrak(id) {
-              $('#delete_recid_kontrak').val(id);
-              $('#deleteKontrakModal').modal('show');
+          function deleteKontrak(id, status) {
+              if (status === 'diputus') {
+                  // Check if this is the only contract for this employee
+                  $.ajax({
+                      url: '<?php echo base_url(); ?>Kontrak/check_single_contract/' + id,
+                      type: 'GET',
+                      success: function(response) {
+                          if (response.is_single_contract) {
+                              $('#delete_recid_kontrak').val(id);
+                              $('#deleteConfirmationText').text('Apakah anda yakin mau hapus data kontrak tersebut yang statusnya diputus? Kontrak ini merupakan satu-satunya kontrak untuk karyawan ini, jika dihapus maka data karyawan (alasan_keluar, tgl_keluar) akan direset dan status karyawan akan kembali menjadi Aktif.');
+                              $('#confirmDeleteKontrak').data('single_contract', true);
+                          } else {
+                              $('#delete_recid_kontrak').val(id);
+                              $('#deleteConfirmationText').text('Yakin ingin menghapus kontrak ini?');
+                              $('#confirmDeleteKontrak').data('single_contract', false);
+                          }
+                          $('#deleteKontrakModal').modal('show');
+                      },
+                      error: function() {
+                          showToast('Gagal memeriksa jumlah kontrak', 'error');
+                      }
+                  });
+              } else {
+                  $('#delete_recid_kontrak').val(id);
+                  $('#deleteConfirmationText').text('Yakin ingin menghapus kontrak ini?');
+                  $('#confirmDeleteKontrak').data('single_contract', false);
+                  $('#deleteKontrakModal').modal('show');
+              }
           }
+          
+          // Update delete confirmation button click handler
+          $('#confirmDeleteKontrak').click(function() {
+              var id = $('#delete_recid_kontrak').val();
+              var is_single_contract = $(this).data('single_contract');
+
+              $.ajax({
+                  url: '<?php echo base_url(); ?>Kontrak/delete/' + id,
+                  type: 'POST',
+                  data: { reset_employee: is_single_contract },
+                  success: function() {
+                      $('#deleteKontrakModal').modal('hide');
+                      showToast("Kontrak berhasil dihapus", "success");
+                      setTimeout(() => location.reload(), 1500);
+                  },
+                  error: function() {
+                      showToast("Gagal hapus kontrak", "error");
+                  }
+              });
+          });
           </script>
 
         </div>

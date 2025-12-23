@@ -3410,4 +3410,16 @@ class M_hris extends CI_Model
 
 		return $this->db->affected_rows() > 0 ? true : false;
 	}
+	
+	/**
+     * Update employee data
+     * @param int $recid_karyawan Employee ID
+     * @param array $data Updated employee data
+     * @return bool Update result
+     */
+    public function update_karyawan($recid_karyawan, $data)
+    {
+        $this->db->where('recid_karyawan', $recid_karyawan);
+        return $this->db->update('karyawan', $data);
+    }
 }
