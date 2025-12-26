@@ -399,8 +399,8 @@ class Absen extends CI_Controller
 							'crt_date'			=> date('Y-m-d h:i:s'),
 							'recid_karyawan'	=> $k->recid_karyawan,
 							'tanggal'			=> $today,
-							'jam_masuk'			=> "07:00:00",
-							'jam_keluar'		=> "16:00:00",
+							'jam_masuk'			=> "07:20:00",
+							'jam_keluar'		=> "17:00:00",
 							'status'			=> 1,
 						);
 						$result = $this->m_absen->generate_absen($data);

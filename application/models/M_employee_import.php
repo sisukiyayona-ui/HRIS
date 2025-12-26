@@ -754,7 +754,7 @@ class M_employee_import extends CI_Model
         
         // Map STATUS KARYAWAN to status_karyawan field
         if (isset($employee['STATUS_KARYAWAN'])) {
-            $mapped_data['status_karyawan'] = $employee['STATUS_KARYAWAN'];
+            $mapped_data['sts_aktif'] = $employee['STATUS_KARYAWAN'];
         }
         
         if (isset($employee['NAMA_ORANG_TUA'])) {
