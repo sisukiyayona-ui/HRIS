@@ -43,39 +43,23 @@
                 
                 <div class="col-md-3">
                   <div class="form-group">
-                    <label class="control-label col-md-3">Bulan:</label>
-                    <div class="col-md-9">
-                      <select class="form-control" id="filterBulan" name="bulan" required>
-                        <option value="01">Januari</option>
-                        <option value="02">Februari</option>
-                        <option value="03">Maret</option>
-                        <option value="04">April</option>
-                        <option value="05">Mei</option>
-                        <option value="06">Juni</option>
-                        <option value="07">Juli</option>
-                        <option value="08">Agustus</option>
-                        <option value="09">September</option>
-                        <option value="10" selected>Oktober</option>
-                        <option value="11">November</option>
-                        <option value="12">Desember</option>
-                      </select>
+                    <label class="control-label col-md-4">Start Date:</label>
+                    <div class="col-md-8">
+                      <input type="date" class="form-control" id="startDate" name="startDate" required>
                     </div>
                   </div>
                 </div>
                 
                 <div class="col-md-3">
                   <div class="form-group">
-                    <label class="control-label col-md-3">Tahun:</label>
-                    <div class="col-md-9">
-                      <select class="form-control" id="filterTahun" name="tahun" required>
-                        <option value="2023">2023</option>
-                        <option value="2024">2024</option>
-                        <option value="2025" selected>2025</option>
-                        <option value="2026">2026</option>
-                      </select>
+                    <label class="control-label col-md-4">End Date:</label>
+                    <div class="col-md-8">
+                      <input type="date" class="form-control" id="endDate" name="endDate" required>
                     </div>
                   </div>
                 </div>
+                
+
                 
                 <div class="col-md-3">
                   <button type="submit" class="btn btn-primary btn-lg">
@@ -162,6 +146,10 @@
               <span class="label label-default">-</span> Libur/Weekend &nbsp;
               <span class="label label-warning">½</span> Izin/Sakit &nbsp;
               <span class="label label-info">C</span> Cuti
+              <div class="form-group" style="margin-top: 10px;">
+                <label><strong>Filter Nama:</strong></label>
+                <input type="text" class="form-control" id="filterNama" placeholder="Masukkan nama karyawan...">
+              </div>
             </div>
             
             <!-- Table wrapper with horizontal scroll -->
@@ -356,11 +344,25 @@ $(document).ready(function() {
   }
   console.log('✅ jQuery version:', jQuery.fn.jquery);
   
-  // Set default to current month/year
+  // Set default to current month - start date as first day, end date as today
   let currentDate = new Date();
-  $('#filterBulan').val(String(currentDate.getMonth() + 1).padStart(2, '0'));
-  $('#filterTahun').val(currentDate.getFullYear());
-  console.log('✅ Default filter set:', $('#filterBulan').val() + '/' + $('#filterTahun').val());
+  let currentYear = currentDate.getFullYear();
+  let currentMonth = currentDate.getMonth(); // Month is 0-indexed
+  
+  // First day of current month
+  let startDate = new Date(currentYear, currentMonth, 1);
+  // Today's date (full date object with current date)
+  let endDate = new Date();
+  
+  // Format dates as YYYY-MM-DD for input[type=date]
+  let pad = function(num) { return (num < 10 ? '0' : '') + num; };
+  let startDateFormatted = currentYear + '-' + pad(currentMonth + 1) + '-01';
+  let endDateFormatted = endDate.getFullYear() + '-' + pad(endDate.getMonth() + 1) + '-' + pad(endDate.getDate());
+  
+  $('#startDate').val(startDateFormatted);
+  $('#endDate').val(endDateFormatted);
+  
+  console.log('✅ Default filter set:', startDateFormatted + ' to ' + endDateFormatted);
   
   // Check if form exists
   if ($('#formFilter').length === 0) {
@@ -387,12 +389,12 @@ $(document).ready(function() {
   
   // Export XLSX for monthly attendance
   $('#btnExportExcel').click(function() {
-    let bulan = $('#filterBulan').val();
-    let tahun = $('#filterTahun').val();
+    let startDate = $('#startDate').val();
+    let endDate = $('#endDate').val();
     let bagian = $('#filterBagian').val();
     const url = '<?php echo base_url('rekap/export_kehadiran_bulanan')?>' +
-                '?bulan=' + encodeURIComponent(bulan) +
-                '&tahun=' + encodeURIComponent(tahun) +
+                '?startDate=' + encodeURIComponent(startDate) +
+                '&endDate=' + encodeURIComponent(endDate) +
                 '&bagian=' + encodeURIComponent(bagian||'');
     window.open(url, '_blank');
   });
@@ -401,11 +403,11 @@ $(document).ready(function() {
 
 // Function definitions (outside document.ready but accessible)
 function loadKehadiranData() {
-  let bulan = $('#filterBulan').val();
-  let tahun = $('#filterTahun').val();
+  let startDate = $('#startDate').val();
+  let endDate = $('#endDate').val();
   let bagian = $('#filterBagian').val();
   
-  console.log('🔍 Loading data for:', bulan + '/' + tahun + ' - Bagian:', bagian || 'Semua');
+  console.log('🔍 Loading data for:', startDate + ' to ' + endDate + ' - Bagian:', bagian || 'Semua');
   
   // Show loading
   $('#loadingSection').show();
@@ -416,7 +418,7 @@ function loadKehadiranData() {
   $.ajax({
     url: '<?php echo base_url('rekap/get_kehadiran_bulanan')?>',
     method: 'POST',
-    data: { bulan: bulan, tahun: tahun, bagian: bagian },
+    data: { startDate: startDate, endDate: endDate, bagian: bagian },
     dataType: 'json',
     success: function(res) {
       console.log('✅ Response received:', res);
@@ -436,8 +438,7 @@ function loadKehadiranData() {
   $('#btnExportExcel').show();
         
         // Update periode dan bagian
-        let namaBulan = $('#filterBulan option:selected').text();
-        $('#periodeTampil').text(namaBulan + ' ' + tahun);
+        $('#periodeTampil').text(startDate + ' s/d ' + endDate);
         $('#bagianTampil').text(res.summary.nama_bagian || 'Semua Bagian');
         
         // Update info boxes
@@ -553,6 +554,31 @@ function renderKehadiranTable(data, dates, summary) {
   $('#tblKehadiran tbody').html(html);
   console.log('✅ Table rendered with ' + data.length + ' rows');
 }
+
+// Function to filter table rows based on name input
+function filterTableByName() {
+  let filter = $('#filterNama').val().toLowerCase();
+  
+  // Get all rows in the table body
+  let rows = $('#tblKehadiran tbody tr');
+  
+  rows.each(function() {
+    let row = $(this);
+    let nameCell = row.find('td:nth-child(3)'); // Third column is the name
+    let nameText = nameCell.text().toLowerCase();
+    
+    if (nameText.includes(filter)) {
+      row.show();
+    } else {
+      row.hide();
+    }
+  });
+}
+
+// Attach real-time filtering to the name input
+$(document).on('keyup', '#filterNama', function() {
+  filterTableByName();
+});
 
 // Global error handler
 $(window).on('error', function(e) {

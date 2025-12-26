@@ -1350,32 +1350,48 @@ class Rekap extends CI_Controller {
     {
         header('Content-Type: application/json');
         
-        $bulan = $this->input->post('bulan');
-        $tahun = $this->input->post('tahun');
+        $startDate = $this->input->post('startDate');
+        $endDate = $this->input->post('endDate');
         $bagian = $this->input->post('bagian'); // Filter bagian (optional)
+        $nama = $this->input->post('nama'); // Filter by name (optional)
         
-        if (empty($bulan) || empty($tahun)) {
-            echo json_encode(['success' => false, 'message' => 'Bulan dan tahun harus diisi']);
+        if (empty($startDate) || empty($endDate)) {
+            echo json_encode(['success' => false, 'message' => 'Tanggal mulai dan tanggal akhir harus diisi']);
+            return;
+        }
+        
+        // Validate date format
+        if (!DateTime::createFromFormat('Y-m-d', $startDate) || !DateTime::createFromFormat('Y-m-d', $endDate)) {
+            echo json_encode(['success' => false, 'message' => 'Format tanggal tidak valid. Gunakan format YYYY-MM-DD']);
+            return;
+        }
+        
+        // Validate that end date is not before start date
+        if (strtotime($endDate) < strtotime($startDate)) {
+            echo json_encode(['success' => false, 'message' => 'Tanggal akhir tidak boleh sebelum tanggal mulai']);
             return;
         }
         
         try {
-            // Get total days in month
-            $total_days = cal_days_in_month(CAL_GREGORIAN, $bulan, $tahun);
-            
-            // Generate dates array
+            // Generate dates array from start to end date
             $dates = [];
             $hari_kerja = 0;
             $day_names = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
             
-            for ($i = 1; $i <= $total_days; $i++) {
-                $date = $tahun . '-' . $bulan . '-' . str_pad($i, 2, '0', STR_PAD_LEFT);
-                $day_num = date('w', strtotime($date));
+            $start = new DateTime($startDate);
+            $end = new DateTime($endDate);
+            $end->modify('+1 day'); // Include end date in range
+            
+            $interval = new DatePeriod($start, new DateInterval('P1D'), $end);
+            
+            foreach ($interval as $date) {
+                $date_str = $date->format('Y-m-d');
+                $day_num = $date->format('w');
                 $day_name = $day_names[$day_num];
                 
                 $dates[] = [
-                    'tanggal' => $i,
-                    'full_date' => $date,
+                    'tanggal' => $date->format('j'),
+                    'full_date' => $date_str,
                     'day_name' => $day_name,
                     'is_weekend' => ($day_num == 0 || $day_num == 6)
                 ];
@@ -1386,7 +1402,7 @@ class Rekap extends CI_Controller {
                 }
             }
             
-            // Get all active employees with optional bagian filter
+            // Get all active employees with optional bagian and name filters
             $this->db->select('recid_karyawan, nik, nama_karyawan, recid_bag')
                      ->where('sts_aktif', 'AKTIF');
             
@@ -1395,13 +1411,18 @@ class Rekap extends CI_Controller {
                 $this->db->where('recid_bag', $bagian);
             }
             
+            // Apply name filter if specified
+            if (!empty($nama)) {
+                $this->db->like('nama_karyawan', $nama, 'both');
+            }
+            
             $karyawan_list = $this->db->order_by('nama_karyawan', 'ASC')
                                       ->get('karyawan')
                                       ->result_array();
             
-            // Get attendance data for the month
-            $start_date = $tahun . '-' . str_pad($bulan, 2, '0', STR_PAD_LEFT) . '-01';
-            $end_date = $tahun . '-' . str_pad($bulan, 2, '0', STR_PAD_LEFT) . '-' . str_pad($total_days, 2, '0', STR_PAD_LEFT);
+            // Use the provided date range
+            $start_date = $startDate;
+            $end_date = $endDate;
             
             $query = "
                 SELECT 
@@ -1521,22 +1542,46 @@ class Rekap extends CI_Controller {
     public function export_kehadiran_bulanan()
     {
         try {
-            $bulan = $this->input->get('bulan') ?: date('m');
-            $tahun = $this->input->get('tahun') ?: date('Y');
+            $startDate = $this->input->get('startDate') ?: date('Y-m-01'); // First day of current month
+            $endDate = $this->input->get('endDate') ?: date('Y-m-t'); // Last day of current month
             $bagian = $this->input->get('bagian'); // optional
+            $nama = $this->input->get('nama'); // Filter by name (optional)
 
-            // Build dates and working days
-            $total_days = cal_days_in_month(CAL_GREGORIAN, intval($bulan), intval($tahun));
+            // Validate dates
+            if (empty($startDate) || empty($endDate)) {
+                throw new Exception('Tanggal mulai dan tanggal akhir harus diisi');
+            }
+
+            // Validate date format
+            if (!DateTime::createFromFormat('Y-m-d', $startDate) || !DateTime::createFromFormat('Y-m-d', $endDate)) {
+                throw new Exception('Format tanggal tidak valid. Gunakan format YYYY-MM-DD');
+            }
+
+            // Validate that end date is not before start date
+            if (strtotime($endDate) < strtotime($startDate)) {
+                throw new Exception('Tanggal akhir tidak boleh sebelum tanggal mulai');
+            }
+
+            // Build dates and working days from start to end date
             $dates = [];
             $hari_kerja = 0;
             $day_names = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
-            for ($i = 1; $i <= $total_days; $i++) {
-                $date = $tahun.'-'.str_pad($bulan,2,'0',STR_PAD_LEFT).'-'.str_pad($i,2,'0',STR_PAD_LEFT);
-                $day_num = date('w', strtotime($date));
+            
+            $start = new DateTime($startDate);
+            $end = new DateTime($endDate);
+            $end->modify('+1 day'); // Include end date in range
+            
+            $interval = new DatePeriod($start, new DateInterval('P1D'), $end);
+            
+            foreach ($interval as $date) {
+                $date_str = $date->format('Y-m-d');
+                $day_num = $date->format('w');
+                $day_name = $day_names[$day_num];
+                
                 $dates[] = [
-                    'tanggal' => $i,
-                    'full_date' => $date,
-                    'day_name' => $day_names[$day_num],
+                    'tanggal' => $date->format('j'),
+                    'full_date' => $date_str,
+                    'day_name' => $day_name,
                     'is_weekend' => ($day_num==0 || $day_num==6)
                 ];
                 if ($day_num != 0 && $day_num != 6) $hari_kerja++;
@@ -1545,11 +1590,12 @@ class Rekap extends CI_Controller {
             // Employees (filtered)
             $this->db->select('recid_karyawan, nik, nama_karyawan, recid_bag')->where('sts_aktif','AKTIF');
             if (!empty($bagian)) $this->db->where('recid_bag', $bagian);
+            if (!empty($nama)) $this->db->like('nama_karyawan', $nama, 'both');
             $karyawan_list = $this->db->order_by('nama_karyawan','ASC')->get('karyawan')->result_array();
 
-            // Attendance map for the month
-            $start_date = $tahun.'-'.str_pad($bulan,2,'0',STR_PAD_LEFT).'-01';
-            $end_date = $tahun.'-'.str_pad($bulan,2,'0',STR_PAD_LEFT).'-'.str_pad($total_days,2,'0',STR_PAD_LEFT);
+            // Use the provided date range
+            $start_date = $startDate;
+            $end_date = $endDate;
             $sql = "
                 SELECT k.recid_karyawan, DATE(a.waktu) AS tanggal_absen
                 FROM hris.karyawan k
@@ -1579,7 +1625,7 @@ class Rekap extends CI_Controller {
 
             // Title
             $sheet->setCellValue('A1', 'Rekap Kehadiran Bulanan');
-            $sheet->setCellValue('A2', 'Periode: '.date('F Y', strtotime($tahun.'-'.$bulan.'-01')).' | Bagian: '.$nama_bag);
+            $sheet->setCellValue('A2', 'Periode: '.$startDate.' s/d '.$endDate.' | Bagian: '.$nama_bag);
             $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
 
             // Header
@@ -1628,7 +1674,7 @@ class Rekap extends CI_Controller {
             // Auto-size columns (limit for performance)
             foreach (range('A','C') as $colL) { $sheet->getColumnDimension($colL)->setAutoSize(true); }
 
-            $filename = 'kehadiran_bulanan_'.$tahun.str_pad($bulan,2,'0',STR_PAD_LEFT).'.xlsx';
+            $filename = 'kehadiran_bulanan_'.$startDate.'_'.$endDate.'.xlsx';
             header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
             header('Content-Disposition: attachment; filename="'.$filename.'"');
             header('Cache-Control: max-age=0, no-cache, no-store, must-revalidate');
