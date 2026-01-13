@@ -3712,462 +3712,541 @@ class Karyawan extends CI_Controller
 		}
 	}
 
-	public function karyawan_pinsert()
-	{
-		$logged_in = $this->session->userdata('logged_in');
-		if ($logged_in == 1) {
-			$nama_karyawan = $this->input->post('nama_karyawan');
-			$tmp_lahir = $this->input->post('tmp_lahir');
-			$tgl_lahir = $this->input->post('tgl_lahir');
-			$tgl_trisula = $this->input->post('tgl_trisula');
-			$jenkel = $this->input->post('jenkel');
-			if ($this->input->post('gol_darah') == '') {
-				$gol_darah	= '-';
-			} else {
-				$gol_darah = $this->input->post('gol_darah');
-			}
-			$no_ktp = $this->input->post('no_ktp');
-			$no_kk = $this->input->post('no_kk');
-			$no_npwp = $this->input->post('no_npwp');
-			$sim1 = $this->input->post('sim1');
-			$sim2 = $this->input->post('sim2');
-			$agama = $this->input->post('agama');
-			$pendidikan = $this->input->post('pendidikan');
-			$thn_lulus = $this->input->post('thn_lulus');
-			$jurusan = $this->input->post('jurusan');
-			$no_jamsos = $this->input->post('no_jamsos');
-			$no_bpjs_kes = $this->input->post('no_bpjs_kes');
-			$no_bpjs_tk = $this->input->post('no_bpjs_tk');
-			$no_aia = $this->input->post('no_aia');
-			$no_askes = $this->input->post('no_askes');
-			$sts_nikah =  $this->input->post('sts_nikah');
-			$alamat_ktp = $this->input->post('alamat_ktp');
-			$alamat_skrg = $this->input->post('alamat_skrg');
-			$sts_nikah = $this->input->post('sts_nikah');
-			$scan_bpjs_kes = $this->input->post('scan_bpjs_kes');
-			$scan_bpjs_tk = $this->input->post('scan_bpjs_tk');
-			$sts_penunjang = $this->input->post('sts_penunjang');
-			$telp1 = $this->input->post('telp1');
-			if ($telp1 == '' or $telp = "'") {
-				$last_counter = $this->m_hris->last_hp_kosong();
-				$telp1	= '11111111';
-			} else {
-				$telp1 = $this->input->post('telp1');
-			}
-			$telp2 = $this->input->post('telp2');
-			$imei1 = $this->input->post('imei1');
-			$imei2 = $this->input->post('imei2');
-			$hobi = $this->input->post('hobi');
-			$email = $this->input->post('email');
-			$spm = $this->input->post('spm');
-			$tmp_toko = $this->input->post('tmp_toko');
-			$tmp_kota = $this->input->post('tmp_kota');
+public function karyawan_pinsert()
+{
+    $logged_in = $this->session->userdata('logged_in');
+    if ($logged_in == 1) {
+        // Data Personal
+        $nama_karyawan = $this->input->post('nama_karyawan');
+        $tmp_lahir = $this->input->post('tmp_lahir');
+        $tgl_lahir = $this->input->post('tgl_lahir');
+        $tgl_trisula = $this->input->post('tgl_trisula');
+        $jenkel = $this->input->post('jenkel');
+        
+        if ($this->input->post('gol_darah') == '') {
+            $gol_darah = '-';
+        } else {
+            $gol_darah = $this->input->post('gol_darah');
+        }
+        
+        $no_ktp = $this->input->post('no_ktp');
+        $no_kk = $this->input->post('no_kk');
+        $no_npwp = $this->input->post('no_npwp');
+        $sim1 = $this->input->post('sim1');
+        $sim2 = $this->input->post('sim2');
+        $agama = $this->input->post('agama');
+        $pendidikan = $this->input->post('pendidikan');
+        $thn_lulus = $this->input->post('thn_lulus');
+        $jurusan = $this->input->post('jurusan');
+        $no_jamsos = $this->input->post('no_jamsos');
+        $no_bpjs_kes = $this->input->post('no_bpjs_kes');
+        $no_bpjs_tk = $this->input->post('no_bpjs_tk');
+        $no_aia = $this->input->post('no_aia');
+        $no_kartu_trimas = $this->input->post('no_kartu_trimas');
+        
+        // Data Keluarga
+        $nama_orang_tua = $this->input->post('nama_orang_tua');
+        $nama_pasangan = $this->input->post('nama_pasangan');
+        $jumlah_anak = $this->input->post('jumlah_anak');
+        $nama_anak = $this->input->post('nama_anak');
+        
+        // Checkbox/Radio values
+        $cek_npwp = $this->input->post('cek_npwp');
+        $cek_bpjs_kes = $this->input->post('cek_bpjs_kes');
+        $cek_no_bpjs_tk = $this->input->post('cek_no_bpjs_tk');
+        
+        // Data Tambahan
+        $nik = $this->input->post('nik');
+        $pin = $this->input->post('pin');
+        $tgl_m_kerja = $this->input->post('tgl_m_kerja');
+        $sts_nikah = $this->input->post('sts_nikah');
+        $sts_penunjang = $this->input->post('sts_penunjang');
+        $alamat_ktp = $this->input->post('alamat_ktp');
+        $kota_ktp = $this->input->post('kota_ktp');
+        $alamat_skrg = $this->input->post('alamat_skrg');
+        $kota_skrg = $this->input->post('kota_skrg');
+        
+        // Kontak
+        $telp1 = $this->input->post('telp1');
+        if ($telp1 == '' or $telp1 == "'") {
+            $last_counter = $this->m_hris->last_hp_kosong();
+            $telp1 = '11111111';
+        }
+        
+        $telp2 = $this->input->post('telp2');
+        $hobi = $this->input->post('hobi');
+        $email = $this->input->post('email');
+        $email_tsgi = $this->input->post('email_tsgi');
+        
+        // Data Tambahan sesuai tabel
+        $sts_aktif = $this->input->post('sts_aktif') ? $this->input->post('sts_aktif') : 'Aktif';
+        $tipe_ptkp = $this->input->post('tipe_ptkp');
+        $efin = $this->input->post('efin');
+        $penyakit = $this->input->post('penyakit');
+        $kat_penyakit = $this->input->post('kat_penyakit');
+        $vaksin_covid = $this->input->post('vaksin_covid') ? $this->input->post('vaksin_covid') : '0';
+        $ukuran_baju = $this->input->post('ukuran_baju');
+        $ukuran_celana = $this->input->post('ukuran_celana');
+        $ukuran_sepatu = $this->input->post('ukuran_sepatu');
+        $note = $this->input->post('note');
+        $keterangan = $this->input->post('keterangan');
+        
+        // Data Upah (hanya untuk role 2 atau 5)
+        if ($this->session->userdata('role_id') == '2' or $this->session->userdata('role_id') == '5') {
+            $gapok = $this->input->post('gapok') ? $this->input->post('gapok') : '0';
+            $lspmi = $this->input->post('lspmi') ? $this->input->post('lspmi') : 'Tidak';
+            $pensiun = $this->input->post('pensiun') ? $this->input->post('pensiun') : 'Tidak';
+            $t_jabatan = $this->input->post('t_jabatan') ? $this->input->post('t_jabatan') : '0';
+            $t_prestasi = $this->input->post('t_prestasi') ? $this->input->post('t_prestasi') : '0';
+            $t_jen_pek = $this->input->post('t_jen_pek') ? $this->input->post('t_jen_pek') : '0';
+            $ljemputan = $this->input->post('ljemputan') ? $this->input->post('ljemputan') : 'Ya';
+            $acc_bank = $this->input->post('acc_bank');
+            $nama_bank = $this->input->post('nama_bank');
+            $bulanan = $this->input->post('bulanan') ? $this->input->post('bulanan') : 'Ya';
+            $kontrak = $this->input->post('kontrak') ? $this->input->post('kontrak') : 'Tidak';
+        } else {
+            $gapok = '0';
+            $lspmi = 'Tidak';
+            $pensiun = 'Tidak';
+            $t_jabatan = '0';
+            $t_prestasi = '0';
+            $t_jen_pek = '0';
+            $ljemputan = 'Ya';
+            $acc_bank = '';
+            $nama_bank = '';
+            $bulanan = 'Tidak';
+            $kontrak = 'Tidak';
+        }
 
-			if ($this->session->userdata('role_id') == '2') {
-				$gapok = '0';
-				$lspmi = 'Tidak';
-				$pensiun = 'Tidak';
-				$t_jabatan = '0';
-				$t_prestasi = '0';
-				$t_jen_pek = '0';
-				$ljemputan = 'Ya';
-				$acc_bank = '';
-				$nama_bank = '';
-				$bulanan = 'Tidak';
-			} else {
-				$gapok = $this->input->post('gapok');
-				$lspmi = $this->input->post('lspmi');
-				$pensiun = $this->input->post('pensiun');
-				$t_jabatan = $this->input->post('t_jabatan');
-				$t_prestasi = $this->input->post('t_prestasi');
-				$t_jen_pek = $this->input->post('t_jen_pek');
-				$ljemputan = $this->input->post('ljemputan');
-				$acc_bank = $this->input->post('acc_bank');
-				$nama_bank = $this->input->post('nama_bank');
-				$bulanan = $this->input->post('bulanan');
-			}
+        // Inisialisasi error handling untuk upload file
+        $err_foto = 0;
+        $err_ktp = 0;
+        $err_kk = 0;
+        $err_npwp = 0;
+        $err_kes = 0;
+        $err_tk = 0;
+        $err_aia = 0;
+        $err_sim1 = 0;
+        $err_sim2 = 0;
+        $err_ijazah = 0;
 
-			$err_foto = 0;
-			$err_ktp = 0;
-			$err_kk = 0;
-			$err_npwp = 0;
-			$err_kes = 0;
-			$err_tk = 0;
-			$err_aia = 0;
-			$err_askes = 0;
-			$err_sim1 = 0;
-			$err_sim2 = 0;
-			$err_ijazah = 0;
+        // Inisialisasi path
+        $path_foto = "";
+        $path_ktp = "";
+        $path_kk = "";
+        $path_npwp = "";
+        $path_bpjs_kes = "";
+        $path_bpjs_tk = "";
+        $path_aia = "";
+        $path_sim = "";
+        $path_ijazah = "";
 
-			$path_foto = "";
-			$path_ktp = "";
-			$path_kk = "";
-			$path_npwp = "";
-			$path_bpjs_kes = "";
-			$path_bpjs_tk = "";
-			$path_aia = "";
-			$path_askes = "";
-			$path_sim1 = "";
-			$path_sim2 = "";
+        // Generate nama file
+        $nama_ft = substr($nama_karyawan, 0, 5);
+        $cnt = date('his');
+        $nama_file_foto = "F-$nama_ft-$cnt";
+        $nama_file_kes = "K-$nama_ft-$cnt";
+        $nama_file_tk = "T-$nama_ft-$cnt";
+        $nama_file_ktp = "KTP-$nama_ft-$cnt";
+        $nama_file_kk = "KK-$nama_ft-$cnt";
+        $nama_file_npwp = "NPWP-$nama_ft-$cnt";
+        $nama_file_aia = "AIA-$nama_ft-$cnt";
+        $nama_file_sim1 = "SIM1-$nama_ft-$cnt";
+        $nama_file_sim2 = "SIM2-$nama_ft-$cnt";
+        $nama_file_ijazah = "I-$nama_ft-$cnt";
 
+        // Upload Foto
+        $saved_foto_name = '';
+        if ($_FILES['foto']['name'] != '') {
+            $config3 = array();
+            $config3['upload_path'] = './images/foto/';
+            $config3['allowed_types'] = 'jpg|png|jpeg';
+            $config3['max_size'] = '2000000';
+            $config3['file_name'] = $nama_file_foto;
+            $config3['encrypt_name'] = TRUE;
+            
+            $this->load->library('upload', $config3, 'sc_foto');
+            $this->sc_foto->initialize($config3);
+            $path_foto = './images/foto/';
+            $upload_foto = $this->sc_foto->do_upload('foto');
+            
+            if (!$upload_foto) {
+                $err_foto = 1;
+            } else {
+                $saved_foto_name = $this->sc_foto->data('file_name');
+                $err_foto = 0;
+            }
+        }
 
-			$nama_ft = substr($nama_karyawan, 0, 5);
-			$foto = $this->input->post('foto');
-			$cnt = date('his');
-			$nama_file_foto = "F-$nama_ft-$cnt";
-			$nama_file_kes = "K-$nama_ft-$cnt";
-			$nama_file_tk = "T-$nama_ft-$cnt";
-			$nama_file_ktp = "KTP-$nama_ft-$cnt";
-			$nama_file_kk = "KK-$nama_ft-$cnt";
-			$nama_file_npwp = "NPWP-$nama_ft-$cnt";
-			$nama_file_aia = "AIA-$nama_ft-$cnt";
-			$nama_file_askes = "ASKES-$nama_ft-$cnt";
-			$nama_file_sim1 = "SIM1-$nama_ft-$cnt";
-			$nama_file_sim2 = "SIM2-$nama_ft-$cnt";
-			$nama_file_ijazah = "I-$nama_ft-$cnt";
+        // Upload KTP
+        $saved_ktp_name = '';
+        if ($_FILES['scan_ktp']['name'] != '') {
+            $config4 = array();
+            $config4['upload_path'] = './images/ktp/';
+            $config4['allowed_types'] = 'jpg|png|jpeg';
+            $config4['max_size'] = '2000000';
+            $config4['file_name'] = $nama_file_ktp;
+            $config4['encrypt_name'] = TRUE;
+            
+            $this->load->library('upload', $config4, 'sc_ktp');
+            $this->sc_ktp->initialize($config4);
+            $path_ktp = './images/ktp/';
+            $upload_ktp = $this->sc_ktp->do_upload('scan_ktp');
+            
+            if (!$upload_ktp) {
+                $err_ktp = 1;
+            } else {
+                $saved_ktp_name = $this->sc_ktp->data('file_name');
+                $err_ktp = 0;
+            }
+        }
 
+        // Upload KK
+        $saved_kk_name = '';
+        if ($_FILES['scan_kk']['name'] != '') {
+            $config5 = array();
+            $config5['upload_path'] = './images/kk/';
+            $config5['allowed_types'] = 'jpg|png|jpeg';
+            $config5['max_size'] = '2000000';
+            $config5['file_name'] = $nama_file_kk;
+            $config5['encrypt_name'] = TRUE;
+            
+            $this->load->library('upload', $config5, 'sc_kk');
+            $this->sc_kk->initialize($config5);
+            $path_kk = './images/kk/';
+            $upload_kk = $this->sc_kk->do_upload('scan_kk');
+            
+            if (!$upload_kk) {
+                $err_kk = 1;
+            } else {
+                $saved_kk_name = $this->sc_kk->data('file_name');
+                $err_kk = 0;
+            }
+        }
 
-			if ($_FILES['foto']['name'] != '') {
-				// Foto Upload
-				$config3 = array();
-				$config3['upload_path'] 		= './images/foto/';
-				$config3['allowed_types'] 		= 'jpg|png|jpeg';
-				$config3['max_size'] 			= '2000000';
-				$config3['file_name'] 	     	= $nama_file_foto;
-				$config3['encrypt_name'] = TRUE;
-				$this->load->library('upload', $config3, 'sc_foto');  // Create custom object for catalog upload
-				$this->sc_foto->initialize($config3);
-				$path_foto = './images/foto/';
-				$upload_foto = $this->sc_foto->do_upload('foto');
-				$saved_foto_name = $this->sc_foto->data('file_name');
-				if (!$upload_foto) {
-					$err_foto = 1;
-				} else {
-					$err_foto = 0;
-				}
-			} else {
-				$saved_foto_name = '';
-			}
+        // Upload NPWP
+        $saved_npwp_name = '';
+        if ($_FILES['scan_npwp']['name'] != '') {
+            $config6 = array();
+            $config6['upload_path'] = './images/npwp/';
+            $config6['allowed_types'] = 'jpg|png|jpeg';
+            $config6['max_size'] = '2000000';
+            $config6['file_name'] = $nama_file_npwp;
+            $config6['encrypt_name'] = TRUE;
+            
+            $this->load->library('upload', $config6, 'sc_npwp');
+            $this->sc_npwp->initialize($config6);
+            $path_npwp = './images/npwp/';
+            $upload_npwp = $this->sc_npwp->do_upload('scan_npwp');
+            
+            if (!$upload_npwp) {
+                $err_npwp = 1;
+            } else {
+                $saved_npwp_name = $this->sc_npwp->data('file_name');
+                $err_npwp = 0;
+            }
+        }
 
-			if ($_FILES['scan_bpjs_kes']['name'] != '') {
-				// BPJS Kesehatan Upload
-				$config = array();
-				$config['upload_path'] 		= './images/bpjs_kes/';
-				$config['allowed_types'] 	= 'jpg|png|jpeg';
-				$config['max_size'] 		= '200000';
-				$config['file_name']      	= $nama_file_kes;
-				$config['encrypt_name'] = TRUE;
-				$this->load->library('upload', $config, 'sc_kes'); // Create custom object for cover upload
-				$this->sc_kes->initialize($config);
-				$upload_kes = $this->sc_kes->do_upload('scan_bpjs_kes');
-				$saved_kes_name = $this->sc_kes->data('file_name');
-				$path_bpjs_kes = './images/bpjs_kes/';
-				if (!$upload_kes) {
-					$err_kes = 1;
-				} else {
-					$err_kes = 0;
-				}
-			} else {
-				$saved_kes_name = '';
-			}
+        // Upload BPJS Kesehatan
+        $saved_kes_name = '';
+        if ($_FILES['scan_bpjs_kes']['name'] != '') {
+            $config = array();
+            $config['upload_path'] = './images/bpjs_kes/';
+            $config['allowed_types'] = 'jpg|png|jpeg';
+            $config['max_size'] = '2000000';
+            $config['file_name'] = $nama_file_kes;
+            $config['encrypt_name'] = TRUE;
+            
+            $this->load->library('upload', $config, 'sc_kes');
+            $this->sc_kes->initialize($config);
+            $path_bpjs_kes = './images/bpjs_kes/';
+            $upload_kes = $this->sc_kes->do_upload('scan_bpjs_kes');
+            
+            if (!$upload_kes) {
+                $err_kes = 1;
+            } else {
+                $saved_kes_name = $this->sc_kes->data('file_name');
+                $err_kes = 0;
+            }
+        }
 
-			if ($_FILES['scan_bpjs_tk']['name'] != '') {
-				// BPJS Tenaga Kerja Upload
-				$config2 = array();
-				$config2['upload_path'] 		= './images/bpjs_tk/';
-				$config2['allowed_types'] 		= 'jpg|png|jpeg';
-				$config2['max_size'] 			= '2000000';
-				$config2['file_name'] 	     	= $nama_file_tk;
-				$config2['encrypt_name'] = TRUE;
-				$this->load->library('upload', $config2, 'sc_tk');  // Create custom object for catalog upload
-				$this->sc_tk->initialize($config2);
-				$upload_tk = $this->sc_tk->do_upload('scan_bpjs_tk');
-				$saved_tk_name = $this->sc_tk->data('file_name');
-				$path_bpjs_tk = './images/bpjs_tk/';
-				if (!$upload_tk) {
-					$err_tk = 1;
-				} else {
-					$err_tk = 0;
-				}
-			} else {
-				$saved_tk_name = '';
-			}
+        // Upload BPJS Tenaga Kerja
+        $saved_tk_name = '';
+        if ($_FILES['scan_bpjs_tk']['name'] != '') {
+            $config2 = array();
+            $config2['upload_path'] = './images/bpjs_tk/';
+            $config2['allowed_types'] = 'jpg|png|jpeg';
+            $config2['max_size'] = '2000000';
+            $config2['file_name'] = $nama_file_tk;
+            $config2['encrypt_name'] = TRUE;
+            
+            $this->load->library('upload', $config2, 'sc_tk');
+            $this->sc_tk->initialize($config2);
+            $path_bpjs_tk = './images/bpjs_tk/';
+            $upload_tk = $this->sc_tk->do_upload('scan_bpjs_tk');
+            
+            if (!$upload_tk) {
+                $err_tk = 1;
+            } else {
+                $saved_tk_name = $this->sc_tk->data('file_name');
+                $err_tk = 0;
+            }
+        }
 
-			if ($_FILES['scan_ktp']['name'] != '') {
-				// KTP Upload
-				$config4 = array();
-				$config4['upload_path'] 		= './images/ktp/';
-				$config4['allowed_types'] 		= 'jpg|png|jpeg';
-				$config4['max_size'] 			= '2000000';
-				$config4['file_name'] 	     	= $nama_file_ktp;
-				$config4['encrypt_name'] = TRUE;
-				$this->load->library('upload', $config4, 'sc_ktp');  // Create custom object for catalog upload
-				$this->sc_ktp->initialize($config4);
-				$upload_ktp = $this->sc_ktp->do_upload('scan_ktp');
-				$saved_ktp_name = $this->sc_ktp->data('file_name');
-				$path_ktp = './images/ktp/';
-				if (!$upload_ktp) {
-					$err_ktp = 1;
-				} else {
-					$err_ktp = 0;
-				}
-			} else {
-				$saved_ktp_name = '';
-			}
+        // Upload AIA
+        $saved_aia_name = '';
+        if ($_FILES['scan_aia']['name'] != '') {
+            $config7 = array();
+            $config7['upload_path'] = './images/aia/';
+            $config7['allowed_types'] = 'jpg|png|jpeg';
+            $config7['max_size'] = '2000000';
+            $config7['file_name'] = $nama_file_aia;
+            $config7['encrypt_name'] = TRUE;
+            
+            $this->load->library('upload', $config7, 'sc_aia');
+            $this->sc_aia->initialize($config7);
+            $path_aia = './images/aia/';
+            $upload_aia = $this->sc_aia->do_upload('scan_aia');
+            
+            if (!$upload_aia) {
+                $err_aia = 1;
+            } else {
+                $saved_aia_name = $this->sc_aia->data('file_name');
+                $err_aia = 0;
+            }
+        }
 
-			if ($_FILES['scan_kk']['name'] != '') {
-				// KK Upload
-				$config5 = array();
-				$config5['upload_path'] 		= './images/kk/';
-				$config5['allowed_types'] 		= 'jpg|png|jpeg';
-				$config5['max_size'] 			= '2000000';
-				$config5['file_name'] 	     	= $nama_file_kk;
-				$config5['encrypt_name'] = TRUE;
-				$this->load->library('upload', $config5, 'sc_kk');  // Create custom object for catalog upload
-				$this->sc_kk->initialize($config5);
-				$upload_kk = $this->sc_kk->do_upload('scan_kk');
-				$saved_kk_name = $this->sc_kk->data('file_name');
-				$path_kk = './images/kk/';
-				if (!$upload_kk) {
-					$err_kk = 1;
-				} else {
-					$err_kk = 0;
-				}
-			} else {
-				$saved_kk_name = '';
-			}
+        // Upload SIM 1
+        $saved_sim1_name = '';
+        if ($_FILES['scan_sim1']['name'] != '') {
+            $config9 = array();
+            $config9['upload_path'] = './images/sim/';
+            $config9['allowed_types'] = 'jpg|png|jpeg';
+            $config9['max_size'] = '2000000';
+            $config9['file_name'] = $nama_file_sim1;
+            $config9['encrypt_name'] = TRUE;
+            
+            $this->load->library('upload', $config9, 'sc_sim1');
+            $this->sc_sim1->initialize($config9);
+            $path_sim = './images/sim/';
+            $upload_sim1 = $this->sc_sim1->do_upload('scan_sim1');
+            
+            if (!$upload_sim1) {
+                $err_sim1 = 1;
+            } else {
+                $saved_sim1_name = $this->sc_sim1->data('file_name');
+                $err_sim1 = 0;
+            }
+        }
 
-			if ($_FILES['scan_npwp']['name'] != '') {
-				// NPWP Upload
-				$config6 = array();
-				$config6['upload_path'] 		= './images/npwp/';
-				$config6['allowed_types'] 		= 'jpg|png|jpeg';
-				$config6['max_size'] 			= '2000000';
-				$config6['file_name'] 	     	= $nama_file_npwp;
-				$config6['encrypt_name'] = TRUE;
-				$this->load->library('upload', $config6, 'sc_npwp');  // Create custom object for catalog upload
-				$this->sc_npwp->initialize($config6);
-				$upload_npwp = $this->sc_npwp->do_upload('scan_npwp');
-				$saved_npwp_name = $this->sc_npwp->data('file_name');
-				$path_npwp = './images/npwp/';
-				if (!$upload_npwp) {
-					$err_npwp = 1;
-				} else {
-					$err_npwp = 0;
-				}
-			} else {
-				$saved_npwp_name = '';
-			}
+        // Upload SIM 2
+        $saved_sim2_name = '';
+        if ($_FILES['scan_sim2']['name'] != '') {
+            $config10 = array();
+            $config10['upload_path'] = './images/sim/';
+            $config10['allowed_types'] = 'jpg|png|jpeg';
+            $config10['max_size'] = '2000000';
+            $config10['file_name'] = $nama_file_sim2;
+            $config10['encrypt_name'] = TRUE;
+            
+            $this->load->library('upload', $config10, 'sc_sim2');
+            $this->sc_sim2->initialize($config10);
+            $upload_sim2 = $this->sc_sim2->do_upload('scan_sim2');
+            
+            if (!$upload_sim2) {
+                $err_sim2 = 1;
+            } else {
+                $saved_sim2_name = $this->sc_sim2->data('file_name');
+                $err_sim2 = 0;
+            }
+        }
 
-			if ($_FILES['scan_aia']['name'] != '') {
-				// AIA Upload
-				$config7 = array();
-				$config7['upload_path'] 		= './images/aia/';
-				$config7['allowed_types'] 		= 'jpg|png|jpeg';
-				$config7['max_size'] 			= '2000000';
-				$config7['file_name'] 	     	= $nama_file_aia;
-				$config7['encrypt_name'] = TRUE;
-				$this->load->library('upload', $config7, 'sc_aia');  // Create custom object for catalog upload
-				$this->sc_aia->initialize($config7);
-				$upload_aia = $this->sc_aia->do_upload('scan_aia');
-				$saved_aia_name = $this->sc_aia->data('file_name');
-				$path_aia = './images/aia/';
-				if (!$upload_aia) {
-					$err_aia = 1;
-				} else {
-					$err_aia = 0;
-				}
-			} else {
-				$saved_aia_name = '';
-			}
+        // Upload Ijazah
+        $saved_ijazah_name = '';
+        if ($_FILES['scan_ijazah']['name'] != '') {
+            $config11 = array();
+            $config11['upload_path'] = './images/ijazah/';
+            $config11['allowed_types'] = 'jpg|png|jpeg|pdf';
+            $config11['max_size'] = '2000000';
+            $config11['file_name'] = $nama_file_ijazah;
+            $config11['encrypt_name'] = TRUE;
+            
+            $this->load->library('upload', $config11, 'sc_ijazah');
+            $this->sc_ijazah->initialize($config11);
+            $upload_ijazah = $this->sc_ijazah->do_upload('scan_ijazah');
+            
+            if (!$upload_ijazah) {
+                $err_ijazah = 1;
+            } else {
+                $saved_ijazah_name = $this->sc_ijazah->data('file_name');
+                $err_ijazah = 0;
+            }
+        }
 
-			if ($_FILES['scan_askes']['name'] != '') {
-				// ASKES Upload
-				$config8 = array();
-				$config8['upload_path'] 		= './images/askes/';
-				$config8['allowed_types'] 		= 'jpg|png|jpeg';
-				$config8['max_size'] 			= '2000000';
-				$config8['file_name'] 	     	= $nama_file_askes;
-				$config8['encrypt_name'] = TRUE;
-				$this->load->library('upload', $config8, 'sc_askes');  // Create custom object for catalog upload
-				$this->sc_askes->initialize($config8);
-				$upload_askes = $this->sc_askes->do_upload('scan_askes');
-				$saved_askes_name = $this->sc_askes->data('file_name');
-				$path_askes = './images/askes/';
-				if (!$upload_askes) {
-					$err_askes = 1;
-				} else {
-					$err_askes = 0;
-				}
-			} else {
-				$saved_askes_name = '';
-			}
-
-			if ($_FILES['scan_sim1']['name'] != '') {
-				// SIM1 Upload
-				$config9 = array();
-				$config9['upload_path'] 		= './images/sim/';
-				$config9['allowed_types'] 		= 'jpg|png|jpeg';
-				$config9['max_size'] 			= '2000000';
-				$config9['file_name'] 	     	= $nama_file_sim1;
-				$config9['encrypt_name'] = TRUE;
-				$this->load->library('upload', $config9, 'sc_sim1');  // Create custom object for catalog upload
-				$this->sc_sim1->initialize($config9);
-				$upload_sim1 = $this->sc_sim1->do_upload('scan_sim1');
-				$saved_sim1_name = $this->sc_sim1->data('file_name');
-				$path_sim1 = './images/sim/';
-				if (!$upload_sim1) {
-					$err_sim1 = 1;
-				} else {
-					$err_sim1 = 0;
-				}
-			} else {
-				$saved_sim1_name = '';
-			}
-
-			if ($_FILES['scan_sim2']['name'] != '') {
-				// SIM2 Upload
-				$config10 = array();
-				$config10['upload_path'] 		= './images/sim/';
-				$config10['allowed_types'] 		= 'jpg|png|jpeg';
-				$config10['max_size'] 			= '2000000';
-				$config10['file_name'] 	     	= $nama_file_sim2;
-				$config10['encrypt_name'] = TRUE;
-				$this->load->library('upload', $config10, 'sc_sim2');  // Create custom object for catalog upload
-				$this->sc_sim2->initialize($config10);
-				$upload_sim2 = $this->sc_sim2->do_upload('scan_sim2');
-				$saved_sim2_name = $this->sc_sim2->data('file_name');
-				$path_sim1 = './images/sim/';
-				if (!$upload_sim2) {
-					$err_sim2 = 1;
-				} else {
-					$err_sim2 = 0;
-				}
-			} else {
-				$saved_sim2_name = '';
-			}
-
-			if ($_FILES['scan_ijazah']['name'] != '') {
-				// Ijazah Upload
-				$config6 = array();
-				$config6['upload_path'] 		= './images/ijazah/';
-				$config6['allowed_types'] 		= 'jpg|png|jpeg|pdf';
-				$config6['max_size'] 			= '2000000';
-				$config6['file_name'] 	     	= $nama_file_ijazah;
-				$config6['encrypt_name'] = TRUE;
-				$this->load->library('upload', $config6, 'sc_ijazah');  // Create custom object for catalog upload
-				$this->sc_ijazah->initialize($config6);
-				$upload_ijazah = $this->sc_ijazah->do_upload('scan_ijazah');
-				$saved_ijazah_name = $this->sc_ijazah->data('file_name');
-				$path_ijazah = './images/ijazah/';
-				if (!$upload_ijazah) {
-					$err_ijazah = 1;
-				} else {
-					$err_ijazah = 0;
-				}
-			} else {
-				$saved_ijazah_name = '';
-			}
-
-
-			if ($err_foto == 1 or $err_kes == 1 or $err_tk == 1 or $err_ktp == 1 or $err_kk == 1 or $err_npwp == 1 or $err_aia == 1 or $err_askes == 1 or $err_sim1 == 1  or $err_sim1 == 1 or $err_ijazah == 1) {
-				if ($err_foto == 1) {
-					echo 'Foto upload Error : ' . $this->sc_foto->display_errors() . '<br/>';
-				} else if ($err_kes == 1) {
-					echo 'Upload BPJS Kesehatan Error : ' . $this->sc_kes->display_errors() . '<br/>';
-				} else if ($err_ktp == 1) {
-					echo 'Upload KTP Error : ' . $this->sc_ktp->display_errors() . '<br/>';
-				} else if ($err_kk == 1) {
-					echo 'Upload KK Error : ' . $this->sc_kk->display_errors() . '<br/>';
-				} else if ($err_npwp == 1) {
-					echo 'Upload NPWP Error : ' . $this->sc_npwp->display_errors() . '<br/>';
-				} else if ($err_aia == 1) {
-					echo 'Upload AIA Error : ' . $this->sc_aia->display_errors() . '<br/>';
-				} else if ($err_askes == 1) {
-					echo 'Upload Asuransi Kesehatan Error : ' . $this->sc_askes->display_errors() . '<br/>';
-				} else if ($err_sim1 == 1) {
-					echo 'Upload SIM 1 Error : ' . $this->sc_sim1->display_errors() . '<br/>';
-				} else if ($err_sim2 == 1) {
-					echo 'Upload SIM 2 Error : ' . $this->sc_sim2->display_errors() . '<br/>';
-				} else if ($err_ijazah == 1) {
-					echo 'Upload Ijazah Error : ' . $this->sc_ijazah->display_errors() . '<br/>';
-				} else {
-					echo 'Upload BPJS Tenaga Kerja Error : ' . $this->sc_tk->display_errors() . '<br/>';
-				}
-			} else {
-				$data = array(
-					'crt_by'			=> $this->session->userdata('kar_id'),
-					'crt_date'			=> date('y-m-d h:i:s'),
-					'nama_karyawan'		=> $nama_karyawan,
-					'tmp_lahir'			=> $tmp_lahir,
-					'tgl_lahir'			=> $tgl_lahir,
-					'tgl_trisula'		=> $tgl_trisula,
-					'jenkel'			=> $jenkel,
-					'gol_darah'			=> $gol_darah,
-					'no_ktp'			=> $no_ktp,
-					'path_ktp'			=> $path_ktp,
-					'scan_ktp'			=> $saved_ktp_name,
-					'no_kk'				=> $no_kk,
-					'path_kk'			=> $path_kk,
-					'scan_kk'			=> $saved_kk_name,
-					'no_npwp'			=> $no_npwp,
-					'path_npwp'			=> $path_npwp,
-					'scan_npwp'			=> $saved_npwp_name,
-					'sim1'				=> $sim1,
-					'path_sim'			=> $path_sim1,
-					'scan_sim1'			=> $saved_sim1_name,
-					'sim2'				=> $sim2,
-					'scan_sim2'			=> $saved_sim2_name,
-					'agama'				=> $agama,
-					'pendidikan'		=> $pendidikan,
-					'thn_lulus'			=> $thn_lulus,
-					'scan_ijazah'		=> $saved_ijazah_name,
-					'jurusan'			=> $jurusan,
-					'no_jamsos'			=> $no_jamsos,
-					'no_bpjs_kes'		=> $no_bpjs_kes,
-					'no_bpjs_tk'		=> $no_bpjs_tk,
-					'no_aia'			=> $no_aia,
-					'path_aia'			=> $path_aia,
-					'scan_aia'			=> $saved_aia_name,
-					'no_askes'			=> $no_askes,
-					'path_askes'		=> $path_askes,
-					'scan_askes'		=> $saved_askes_name,
-					'sts_nikah'			=> $sts_nikah,
-					'alamat_ktp'		=> $alamat_ktp,
-					'alamat_skrg'		=> $alamat_skrg,
-					'telp1'				=> $telp1,
-					'telp2'				=> $telp2,
-					'imei1'				=> $imei1,
-					'imei2'				=> $imei2,
-					'hobi'				=> $hobi,
-					'email'				=> $email,
-					'foto'				=> $saved_foto_name,
-					'scan_bpjs_kes'		=> $saved_kes_name,
-					'path_bpjs_kes'		=> $path_bpjs_kes,
-					'scan_bpjs_tk'		=> $saved_tk_name,
-					'path_bpjs_tk'		=> $path_bpjs_tk,
-					'sts_penunjang'		=> $sts_penunjang,
-					'lspmi'				=> $lspmi,
-					'pensiun'			=> $pensiun,
-					'gapok'				=> $gapok,
-					't_jabatan'			=> $t_jabatan,
-					't_prestasi'		=> $t_prestasi,
-					't_jen_pek'			=> $t_jen_pek,
-					'ljemputan'			=> $ljemputan,
-					'acc_bank'			=> $acc_bank,
-					'nama_bank'			=> $nama_bank,
-					'bulanan'			=> $bulanan,
-					'spm'				=> $spm,
-					'tmp_toko'			=> $tmp_toko,
-					'tmp_kota'			=> $tmp_kota,
-				);
-				$this->m_hris->karyawan_pinsert($data);
-				redirect('Karyawan/karyawan_viewbeta');
-			}
-		} else {
-			echo "Session Anda Habis, Silakan Login Kembali";
-		}
-	}
+        // Cek jika ada error upload
+        if ($err_foto == 1 or $err_kes == 1 or $err_tk == 1 or $err_ktp == 1 or 
+            $err_kk == 1 or $err_npwp == 1 or $err_aia == 1 or $err_sim1 == 1 or 
+            $err_sim2 == 1 or $err_ijazah == 1) {
+            
+            if ($err_foto == 1) {
+                echo 'Foto upload Error : ' . $this->sc_foto->display_errors() . '<br/>';
+            } 
+            if ($err_kes == 1) {
+                echo 'Upload BPJS Kesehatan Error : ' . $this->sc_kes->display_errors() . '<br/>';
+            } 
+            if ($err_tk == 1) {
+                echo 'Upload BPJS Tenaga Kerja Error : ' . $this->sc_tk->display_errors() . '<br/>';
+            } 
+            if ($err_ktp == 1) {
+                echo 'Upload KTP Error : ' . $this->sc_ktp->display_errors() . '<br/>';
+            } 
+            if ($err_kk == 1) {
+                echo 'Upload KK Error : ' . $this->sc_kk->display_errors() . '<br/>';
+            } 
+            if ($err_npwp == 1) {
+                echo 'Upload NPWP Error : ' . $this->sc_npwp->display_errors() . '<br/>';
+            } 
+            if ($err_aia == 1) {
+                echo 'Upload AIA Error : ' . $this->sc_aia->display_errors() . '<br/>';
+            } 
+            if ($err_sim1 == 1) {
+                echo 'Upload SIM 1 Error : ' . $this->sc_sim1->display_errors() . '<br/>';
+            } 
+            if ($err_sim2 == 1) {
+                echo 'Upload SIM 2 Error : ' . $this->sc_sim2->display_errors() . '<br/>';
+            } 
+            if ($err_ijazah == 1) {
+                echo 'Upload Ijazah Error : ' . $this->sc_ijazah->display_errors() . '<br/>';
+            }
+            
+            echo '<a href="' . base_url() . 'Karyawan/karyawan_viewbeta">Kembali</a>';
+            
+        } else {
+            // Prepare data untuk disimpan ke database
+            $data = array(
+                // Data dasar
+                'crt_by' => $this->session->userdata('kar_id'),
+                'crt_date' => date('Y-m-d H:i:s'),
+                'nama_karyawan' => $nama_karyawan,
+                'tmp_lahir' => $tmp_lahir,
+                'tgl_lahir' => $tgl_lahir,
+                'tgl_trisula' => $tgl_trisula,
+                'jenkel' => $jenkel,
+                'gol_darah' => $gol_darah,
+                
+                // KTP
+                'no_ktp' => $no_ktp,
+                'path_ktp' => $path_ktp,
+                'scan_ktp' => $saved_ktp_name,
+                
+                // KK
+                'no_kk' => $no_kk,
+                'path_kk' => $path_kk,
+                'scan_kk' => $saved_kk_name,
+                
+                // Data keluarga
+                'nama_orang_tua' => $nama_orang_tua,
+                'nama_pasangan' => $nama_pasangan,
+                'jumlah_anak' => $jumlah_anak,
+                'nama_anak' => $nama_anak,
+                
+                // NPWP
+                'cek_npwp' => $cek_npwp,
+                'no_npwp' => $no_npwp,
+                'path_npwp' => $path_npwp,
+                'scan_npwp' => $saved_npwp_name,
+                
+                // Pendidikan
+                'agama' => $agama,
+                'pendidikan' => $pendidikan,
+                'jurusan' => $jurusan,
+                'thn_lulus' => $thn_lulus,
+                'scan_ijazah' => $saved_ijazah_name,
+                
+                // Data perusahaan
+                'nik' => $nik,
+                'pin' => $pin,
+                'tgl_m_kerja' => $tgl_m_kerja,
+                
+                // Jamsostek & BPJS
+                'no_jamsos' => $no_jamsos,
+                'cek_bpjs_kes' => $cek_bpjs_kes,
+                'no_bpjs_kes' => $no_bpjs_kes,
+                'path_bpjs_kes' => $path_bpjs_kes,
+                'scan_bpjs_kes' => $saved_kes_name,
+                'cek_no_bpjs_tk' => $cek_no_bpjs_tk,
+                'no_bpjs_tk' => $no_bpjs_tk,
+                'path_bpjs_tk' => $path_bpjs_tk,
+                'scan_bpjs_tk' => $saved_tk_name,
+                'no_kartu_trimas' => $no_kartu_trimas,
+                
+                // AIA
+                'no_aia' => $no_aia,
+                'path_aia' => $path_aia,
+                'scan_aia' => $saved_aia_name,
+                
+                // SIM
+                'sim1' => $sim1,
+                'path_sim' => $path_sim,
+                'scan_sim1' => $saved_sim1_name,
+                'sim2' => $sim2,
+                'scan_sim2' => $saved_sim2_name,
+                
+                // Status
+                'sts_nikah' => $sts_nikah,
+                'sts_penunjang' => $sts_penunjang,
+                'sts_aktif' => $sts_aktif,
+                
+                // Alamat
+                'alamat_ktp' => $alamat_ktp,
+                'kota_ktp' => $kota_ktp,
+                'alamat_skrg' => $alamat_skrg,
+                'kota_skrg' => $kota_skrg,
+                
+                // Kontak
+                'telp1' => $telp1,
+                'telp2' => $telp2,
+                'hobi' => $hobi,
+                'email' => $email,
+                'email_tsgi' => $email_tsgi,
+                
+                // Foto
+                'foto' => $saved_foto_name,
+                
+                // Data tambahan
+                'tipe_ptkp' => $tipe_ptkp,
+                'efin' => $efin,
+                'penyakit' => $penyakit,
+                'kat_penyakit' => $kat_penyakit,
+                'vaksin_covid' => $vaksin_covid,
+                'ukuran_baju' => $ukuran_baju,
+                'ukuran_celana' => $ukuran_celana,
+                'ukuran_sepatu' => $ukuran_sepatu,
+                'note' => $note,
+                'keterangan' => $keterangan,
+                
+                // Data upah
+                'gapok' => $gapok,
+                't_jabatan' => $t_jabatan,
+                't_prestasi' => $t_prestasi,
+                't_jen_pek' => $t_jen_pek,
+                'lspmi' => $lspmi,
+                'pensiun' => $pensiun,
+                'ljemputan' => $ljemputan,
+                'acc_bank' => $acc_bank,
+                'nama_bank' => $nama_bank,
+                'bulanan' => $bulanan,
+                'kontrak' => $kontrak
+            );
+            
+            // Simpan data ke database
+            $this->m_hris->karyawan_pinsert($data);
+            redirect('Karyawan/karyawan_viewbeta');
+        }
+    } else {
+        echo "Session Anda Habis, Silakan Login Kembali";
+    }
+}
 
 	public function karyawan_updatebeta()
 	{
