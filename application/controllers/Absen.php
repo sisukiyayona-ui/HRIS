@@ -8690,3 +8690,5 @@ class Absen extends CI_Controller
 		}
 	}
 }
+ 
+ 

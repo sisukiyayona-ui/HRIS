@@ -568,7 +568,7 @@ class M_hris extends CI_Model
 	//all data
 	public function karyawan_views()
 	{
-		$query = $this->db->query("SELECT k.*, b.*, j.*, g.*, bs.*, d.nama_department as departemen, kk.tgl_mulai as tgl_m_kerja, k.tgl_keluar as tgl_a_kerja, kk.tgl_akhir as tgl_akhir_kontrak from karyawan k left join bagian b on k.recid_bag = b.recid_bag left join jabatan j on k.recid_jbtn = j.recid_jbtn left join golongan g on g.recid_golongan = k.recid_golongan left join bagian_sub bs on bs.recid_subbag = k.recid_subbag left join department d on d.recid_department = b.recid_department left join (SELECT recid_karyawan, tgl_mulai, tgl_akhir FROM karyawan_kontrak kk1 WHERE kk1.tgl_akhir = (SELECT MAX(tgl_akhir) FROM karyawan_kontrak kk2 WHERE kk2.recid_karyawan = kk1.recid_karyawan)) kk ON k.recid_karyawan = kk.recid_karyawan order by sts_aktif, b.indeks_hr, j.indeks_jabatan, k.nama_karyawan asc")->result();
+		$query = $this->db->query("SELECT k.*, b.*, j.*, g.*, bs.*, d.nama_department as departemen, kk.tgl_mulai as tgl_m_kerja, k.tgl_keluar as tgl_a_kerja, kk.tgl_akhir as tgl_akhir_kontrak FROM karyawan k LEFT JOIN bagian b ON k.recid_bag = b.recid_bag LEFT JOIN jabatan j ON k.recid_jbtn = j.recid_jbtn LEFT JOIN golongan g ON g.recid_golongan = k.recid_golongan LEFT JOIN bagian_sub bs ON bs.recid_subbag = k.recid_subbag LEFT JOIN department d ON d.recid_department = b.recid_department LEFT JOIN (SELECT recid_karyawan, tgl_mulai, tgl_akhir FROM karyawan_kontrak kt WHERE kt.recid_kontrak = (SELECT MAX(recid_kontrak) FROM karyawan_kontrak kt2 WHERE kt2.recid_karyawan = kt.recid_karyawan)) kk ON k.recid_karyawan = kk.recid_karyawan ORDER BY sts_aktif, b.indeks_hr, j.indeks_jabatan, k.nama_karyawan ASC")->result();
 		return $query;
 	}
 

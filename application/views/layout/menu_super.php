@@ -403,6 +403,12 @@ if ($as_user == "CINT") {
                       <li><a href="<?php echo base_url() ?>rekap/jadwal_shift"><i class="fa fa-clock-o"></i> Jadwal Shift</a></li>
                       <li><a href="<?php echo base_url() ?>rekap/izin_log"><i class="fa fa-list"></i> Log Izin (Finger)</a></li>
                       <li><a href="<?php echo base_url() ?>rekap/statistik_bagian"><i class="fa fa-pie-chart"></i> Rekap Statistik Bagian</a></li>
+                      <li><a><i class="fa fa-bar-chart"></i> Report Absen <span class="fa fa-chevron-down"></span></a>
+                        <ul class="nav child_menu">
+                          <li><a href="<?php echo base_url()?>Reports/daily_attendance_report">Laporan Kehadiran Harian</a></li>
+                          <li><a href="<?php echo base_url()?>Reports/monthly_percentage_attendance_report">REKAP PERSENTASE ABSENSI HARIAN</a></li>
+                        </ul>
+                      </li>
                         <li><a href="<?php echo base_url() ?>rekap/mapping_ui" style="color: #888;"><i class="fa fa-link"></i> Mapping Device</a></li>
                     </ul>
                   </li>
