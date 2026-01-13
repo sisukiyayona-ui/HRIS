@@ -91,12 +91,13 @@ class M_kontrak extends CI_Model
      * @param string $alasan_resign Reason for resignation
      * @return bool Update result
      */
-    public function update_status_diputus($recid_kontrak, $tgl_resign, $alasan_resign)
+    public function update_status_diputus($recid_kontrak, $tgl_resign, $alasan_resign, $jenis_non_aktif = null)
     {
         $data = array(
             'status_kontrak' => 'diputus',
             'tgl_resign' => $tgl_resign,
             'alasan_resign' => $alasan_resign,
+            'jenis_non_aktif' => $jenis_non_aktif, // Add the new field
             'updated_at' => date('Y-m-d H:i:s')
         );
         $this->db->where('recid_kontrak', $recid_kontrak);

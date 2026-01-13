@@ -1147,6 +1147,7 @@
                   <th class="column-title">Tanggal Mulai</th>
                   <th class="column-title">Tanggal Akhir</th>
                   <th class="column-title">Status</th>
+                  <th class="column-title">Jenis Non Aktif</th>
                   <th class="column-title">Tanggal Resign</th>
                   <th class="column-title">Alasan Resign</th>
                   <th class="column-title">Created At</th>
@@ -1216,6 +1217,15 @@
                   </td>
                   <td>
                   <?php 
+                  if (isset($data->jenis_non_aktif) && $data->jenis_non_aktif) {
+                    echo $data->jenis_non_aktif;
+                  } else {
+                    echo "-";
+                  }
+                  ?>
+                  </td>
+                  <td>
+                  <?php 
                   if (isset($data->tgl_resign) && $data->tgl_resign) {
                     echo date('d M Y', strtotime($data->tgl_resign));
                   } else {
@@ -1267,7 +1277,7 @@
                             data-tgl_akhir="<?php echo $data->tgl_akhir; ?>">
                       <i class="fa fa-edit"></i>
                     </button>
-                    <button type="button" class="btn btn-warning btn-xs" data-toggle="modal" data-target="#endKontrakModal" 
+                    <button type="button" class="btn btn-warning btn-xs" data-toggle="modal" data-target="#nonAktifModal" 
                             data-id="<?php echo $data->recid_kontrak; ?>" 
                             data-tgl_mulai="<?php echo $data->tgl_mulai; ?>" 
                             data-tgl_akhir="<?php echo $data->tgl_akhir; ?>">
@@ -1388,34 +1398,45 @@
             </div>
           </div>
           
-          <!-- End Kontrak Modal -->
-          <div class="modal fade" id="endKontrakModal" tabindex="-1" role="dialog" aria-labelledby="endKontrakModalLabel">
+          <!-- Non Aktif Modal -->
+          <div class="modal fade" id="nonAktifModal" tabindex="-1" role="dialog" aria-labelledby="nonAktifModalLabel">
             <div class="modal-dialog" role="document">
               <div class="modal-content">
                 <div class="modal-header">
                   <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                  <h4 class="modal-title" id="endKontrakModalLabel">Akhiri/Resign Kontrak</h4>
+                  <h4 class="modal-title" id="nonAktifModalLabel">Non Aktif Karyawan</h4>
                 </div>
                 <div class="modal-body">
-                  <form id="endKontrakForm">
-                    <input type="hidden" id="end_recid_kontrak">
+                  <form id="nonAktifForm">
+                    <input type="hidden" id="non_aktif_recid_kontrak">
                     <div class="form-group">
                       <label>Kontrak:</label>
-                      <p id="contract_info" class="form-control-static"></p>
+                      <p id="non_aktif_contract_info" class="form-control-static"></p>
                     </div>
                     <div class="form-group">
-                      <label for="tgl_resign">Tanggal Resign:</label>
-                      <input type="date" class="form-control" id="tgl_resign" required>
+                      <label for="jenis_non_aktif">Jenis Non Aktif:</label>
+                      <select class="form-control" id="jenis_non_aktif" required>
+                        <option value="">Pilih Jenis Non Aktif</option>
+                        <option value="Habis Kontrak">Habis Kontrak</option>
+                        <option value="Resign">Resign</option>
+                        <option value="Diputus Perusahaan">Diputus Perusahaan</option>
+                        <option value="Pensiun">Pensiun</option>
+                        <option value="Lainnya">Lainnya</option>
+                      </select>
                     </div>
                     <div class="form-group">
-                      <label for="alasan_resign">Alasan Resign:</label>
-                      <textarea class="form-control" id="alasan_resign" rows="3" required></textarea>
+                      <label for="tgl_non_aktif">Tanggal Non Aktif:</label>
+                      <input type="date" class="form-control" id="tgl_non_aktif" required>
+                    </div>
+                    <div class="form-group">
+                      <label for="keterangan_non_aktif">Keterangan:</label>
+                      <textarea class="form-control" id="keterangan_non_aktif" rows="3" required placeholder="Jelaskan alasan status non aktif"></textarea>
                     </div>
                   </form>
                 </div>
                 <div class="modal-footer">
                   <button type="button" class="btn btn-default" data-dismiss="modal">Batal</button>
-                  <button type="button" class="btn btn-warning" id="saveEndKontrak">Simpan</button>
+                  <button type="button" class="btn btn-warning" id="saveNonAktif">Simpan</button>
                 </div>
               </div>
             </div>
@@ -1510,39 +1531,43 @@
 
 
               
-              // Open End Kontrak Modal
-              $('#endKontrakModal').on('show.bs.modal', function (event) {
+              // Open Non Aktif Modal
+              $('#nonAktifModal').on('show.bs.modal', function (event) {
                   var button = $(event.relatedTarget);
                   var id = button.data('id');
                   var tgl_mulai = button.data('tgl_mulai');
                   var tgl_akhir = button.data('tgl_akhir');
                   
-                  $('#end_recid_kontrak').val(id);
-                  $('#contract_info').text(tgl_mulai + ' - ' + tgl_akhir);
+                  $('#non_aktif_recid_kontrak').val(id);
+                  $('#non_aktif_contract_info').text(tgl_mulai + ' - ' + tgl_akhir);
+                  $('#jenis_non_aktif').val(''); // Reset dropdown
+                  $('#tgl_non_aktif').val(''); // Reset date
+                  $('#keterangan_non_aktif').val(''); // Reset textarea
               });
               
-              // END KONTRAK
-              $('#saveEndKontrak').click(function() {
-                  var id = $('#end_recid_kontrak').val();
-                  var tgl_resign = $('#tgl_resign').val();
-                  var alasan_resign = $('#alasan_resign').val();
+              // NON AKTIF KARYAWAN
+              $('#saveNonAktif').click(function() {
+                  var id = $('#non_aktif_recid_kontrak').val();
+                  var jenis_non_aktif = $('#jenis_non_aktif').val();
+                  var tgl_non_aktif = $('#tgl_non_aktif').val();
+                  var keterangan_non_aktif = $('#keterangan_non_aktif').val();
 
-                  if (!tgl_resign || !alasan_resign) {
-                      showToast('Harap isi tanggal resign dan alasan', 'error');
+                  if (!jenis_non_aktif || !tgl_non_aktif || !keterangan_non_aktif) {
+                      showToast('Harap lengkapi semua field', 'error');
                       return;
                   }
 
                   $.ajax({
-                      url: '<?php echo base_url(); ?>Kontrak/end_contract/' + id,
+                      url: '<?php echo base_url(); ?>Kontrak/non_aktif/' + id,
                       type: 'POST',
-                      data: { tgl_resign, alasan_resign },
+                      data: { jenis_non_aktif, tgl_non_aktif, keterangan_non_aktif },
                       success: function() {
-                          $('#endKontrakModal').modal('hide');
-                          showToast("Kontrak berhasil diakhiri", "success");
+                          $('#nonAktifModal').modal('hide');
+                          showToast("Status karyawan berhasil diubah menjadi non aktif", "success");
                           setTimeout(() => location.reload(), 1500);
                       },
                       error: function() {
-                          showToast("Gagal mengakhiri kontrak", "error");
+                          showToast("Gagal mengubah status karyawan", "error");
                       }
                   });
               });
