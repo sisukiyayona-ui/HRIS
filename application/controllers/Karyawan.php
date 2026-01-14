@@ -1354,6 +1354,25 @@ class Karyawan extends CI_Controller
 	}
 
 
+public function user_delete($recid_karyawan)
+{
+    $logged_in = $this->session->userdata('logged_in');
+    if ($logged_in == 1) {
+        // Langsung hapus berdasarkan recid_karyawan
+        $delete_result = $this->m_hris->user_delete($recid_karyawan);
+        
+        if($delete_result) {
+            $this->session->set_flashdata('message', 'User deleted successfully');
+        } else {
+            $this->session->set_flashdata('error', 'Failed to delete user');
+        }
+        
+        redirect('Karyawan/user_view');
+    } else {
+        redirect('Auth/keluar');
+    }
+}
+
 	// ################################################### USER ###################################################################
 	public function user_view()
 	{
@@ -1506,6 +1525,19 @@ class Karyawan extends CI_Controller
 
 						echo "$text";
 						//Update Data
+						$data2 = array(
+							'recid_karyawan' => $recid_karyawan,
+							'username'		=> $username2, // Keep original username to prevent accidental changes
+							'recid_role'	=> $recid_role,
+							'mdf_by'		=> $this->session->userdata('kar_id'),
+							'mdf_date'		=> date('y-m-d h:i:s'),
+						);
+						
+						// Only update username if it has actually changed
+						if ($username != $username2) {
+							$data2['username'] = $username;
+						}
+						
 						if ($password <> '') {
 							$data3 = array(
 								'crt_by'		=> $this->session->userdata('kar_id'),
@@ -1517,25 +1549,9 @@ class Karyawan extends CI_Controller
 							$this->m_hris->insert_histori_pwd($data3);
 
 							$password = do_hash(($password), 'md5');
-							$data2 = array(
-								'recid_karyawan' => $recid_karyawan,
-								'username'		=> $username,
-								'password'		=> $password,
-								'recid_role'	=> $recid_role,
-								'mdf_by'		=> $this->session->userdata('kar_id'),
-								'mdf_date'		=> date('y-m-d h:i:s'),
-							);
+							$data2['password'] = $password;
 						} else {
-							$data2 = array(
-								'crt_by'		=> $this->session->userdata('kar_id'),
-								'crt_date'		=> date('y-m-d h:i:s'),
-								'recid_karyawan' => $recid_karyawan,
-								'username'		=> $username,
-								'password'		=> $password2,
-								'recid_role'	=> $recid_role,
-								'mdf_by'		=> $this->session->userdata('kar_id'),
-								'mdf_date'		=> date('y-m-d h:i:s'),
-							);
+							$data2['password'] = $password2;
 						}
 						$this->m_hris->user_update($data2, $recid_login);
 						//Insert Log
@@ -1589,6 +1605,19 @@ class Karyawan extends CI_Controller
 
 					echo "$text";
 					//Update Data
+					$data2 = array(
+						'recid_karyawan' => $recid_karyawan,
+						'username'		=> $username2, // Keep original username to prevent accidental changes
+						'recid_role'	=> $recid_role,
+						'mdf_by'		=> $this->session->userdata('kar_id'),
+						'mdf_date'		=> date('y-m-d h:i:s'),
+					);
+											
+					// Only update username if it has actually changed
+					if ($username != $username2) {
+						$data2['username'] = $username;
+					}
+											
 					if ($password <> '') {
 						$data3 = array(
 							'crt_by'		=> $this->session->userdata('kar_id'),
@@ -1598,27 +1627,11 @@ class Karyawan extends CI_Controller
 							'password'		=> md5($password)
 						);
 						$this->m_hris->insert_histori_pwd($data3);
-
+					
 						$password = do_hash(($password), 'md5');
-						$data2 = array(
-							'recid_karyawan' => $recid_karyawan,
-							'username'		=> $username,
-							'password'		=> $password,
-							'recid_role'	=> $recid_role,
-							'mdf_by'		=> $this->session->userdata('kar_id'),
-							'mdf_date'		=> date('y-m-d h:i:s'),
-						);
+						$data2['password'] = $password;
 					} else {
-						$data2 = array(
-							'crt_by'		=> $this->session->userdata('kar_id'),
-							'crt_date'		=> date('y-m-d h:i:s'),
-							'recid_karyawan' => $recid_karyawan,
-							'username'		=> $username,
-							'password'		=> $password2,
-							'recid_role'	=> $recid_role,
-							'mdf_by'		=> $this->session->userdata('kar_id'),
-							'mdf_date'		=> date('y-m-d h:i:s'),
-						);
+						$data2['password'] = $password2;
 					}
 					$this->m_hris->user_update($data2, $recid_login);
 					//Insert Log
@@ -6595,7 +6608,6 @@ public function karyawan_pinsert()
 			$recid_subbag = $this->input->post('recid_subbag');
 			$recid_jbtn = $this->input->post('recid_jbtn');
 			$recid_golongan = $this->input->post('recid_golongan');
-			$penempatan = $this->input->post('penempatan');
 			// $sts_jbtn = $this->input->post('sts_jbtn');
 			$sts_aktif = $this->input->post('sts_aktif');
 			$kategori = $this->input->post('jenis');
@@ -6613,7 +6625,6 @@ public function karyawan_pinsert()
 				'recid_subbag'			=> $recid_subbag,
 				'recid_jbtn'		=> $recid_jbtn,
 				'recid_golongan'		=> $recid_golongan,
-				'penempatan'		=> $penempatan,
 				// 'bulanan'			=> $bulanan,
 				'note'				=> $note,
 				'mdf_by'			=> $this->session->userdata('kar_id'),

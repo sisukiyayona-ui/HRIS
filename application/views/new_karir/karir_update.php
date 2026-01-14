@@ -183,17 +183,8 @@
               <div class="item form-group">
                 <label for="agama" class="control-label col-md-3">Penempatan<span class="required">*</span></label>
                 <div class="col-md-6 col-sm-6 col-xs-12">
-                  <select name="penempatan" class="form-control col-md-7 col-xs-12" required="required">
-                    <?php
-                    $tempat = ["Industri", "Baros", "Jakarta", "Pavilliun 14", "Kebon Jeruk", "SPM"];
-                    for ($i = 0; $i < count($tempat); $i++) {
-                      if ($tempat[$i] == $data->penempatan) {
-                        echo "<option value='$tempat[$i]' selected='selected'>$tempat[$i]</option>";
-                      } else {
-                        echo "<option value='$tempat[$i]'>$tempat[$i]</option>";
-                      }
-                    }
-                    ?>
+                  <select name="penempatan" class="form-control col-md-7 col-xs-12">
+                    <option value="">-</option>
                   </select>
                 </div>
               </div>

@@ -943,7 +943,7 @@
                             <tr>
                               <td>Penempatan</td>
                               <td>:</td>
-                              <td><?php echo isset($data->penempatan) ? $data->penempatan : '-' ?></td>
+                              <td>-</td>
                             </tr>
                             <td>Keterangan</td>
                             <td>:</td>

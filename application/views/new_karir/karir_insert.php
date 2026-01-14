@@ -183,9 +183,10 @@
                 </div>
               </div>
               <div class="item form-group akhir">
-                <label for="jabatan" class="control-label col-md-3">Penempatan<span class="required" style="color: red">*</span></label>
+                <label for="jabatan" class="control-label col-md-3">Penempatan</label>
                 <div class="col-md-6 col-sm-6 col-xs-12">
                   <select name="penempatan" id="penempatan" class="selectpicker form-control  col-md-12 col-xs-12" data-live-search="true">
+                                      <option value="">-</option>
                     <option value="Industri">Industri</option>
                     <option value="Baros">Baros</option>
                     <option value="Jakarta">Jakarta</option>
