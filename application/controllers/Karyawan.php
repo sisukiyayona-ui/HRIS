@@ -10203,6 +10203,13 @@ public function karyawan_pinsert()
 			$usr = $this->session->userdata('kar_id');
 			$cek_usr = $this->m_hris->cek_usr($usr);
 			$role = $this->session->userdata('role_id');
+			// Initialize variables to prevent undefined variable errors
+			$nama = '';
+			$bagian = '';
+			$jabatan = '';
+			$tingkatan = '';
+			$struktur = '';
+			$dept_group = '';
 			foreach ($cek_usr as $user) {
 				$nama = $user->nama_karyawan;
 				$bagian = $user->indeks_hr;

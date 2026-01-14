@@ -47,9 +47,7 @@
                     <th>
                       <center>Golongan</center>
                     </th>
-                    <th>
-                      <center>Penempatan</center>
-                    </th>
+                    
                     <?php if ($role != '30') { ?>
                       <th>
                         <center>Atasan1</center>
@@ -218,7 +216,6 @@
                       <td><?php echo $golongan ?></td>
                     <?php }
                     ?>
-                    <td><?php echo $data->penempatan ?></td>
                     <?php if ($role != '30') { ?>
                       <td><?php echo $data->atasan1 ?></td>
                       <td><?php echo $data->atasan2 ?></td>
@@ -251,7 +248,7 @@
                       <td><?php echo $data->alamat_ktp ?></td>
                       <td><?php echo $data->alamat_skrg ?></td>
                       <td><?php echo $data->email ?></td>
-                      <td><?php echo $data->email_cint ?></td>
+                      <td><?php echo $data->email_tsgi ?></td>
                       <td><?php echo $data->telp1 . " / " . $data->telp2  ?></td>
                       <td><?php echo $data->profile_disc ?></td>
                       <td><?php echo $data->pattern_type ?></td>
