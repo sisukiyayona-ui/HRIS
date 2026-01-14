@@ -1553,7 +1553,7 @@ public function user_delete($recid_karyawan)
 						} else {
 							$data2['password'] = $password2;
 						}
-						$this->m_hris->user_update($data2, $recid_login);
+						$this->m_hris->user_update($data2, $recid_karyawan);
 						//Insert Log
 						$data2 = array(
 							'mdf_by'		=> $this->session->userdata('kar_id'),
@@ -1633,7 +1633,7 @@ public function user_delete($recid_karyawan)
 					} else {
 						$data2['password'] = $password2;
 					}
-					$this->m_hris->user_update($data2, $recid_login);
+					$this->m_hris->user_update($data2, $recid_karyawan);
 					//Insert Log
 					$data2 = array(
 						'mdf_by'		=> $this->session->userdata('kar_id'),
@@ -1743,7 +1743,7 @@ public function user_delete($recid_karyawan)
 								'mdf_date'		=> date('y-m-d h:i:s'),
 							);
 						}
-						$this->m_hris->user_update($data2, $recid_login);
+						$this->m_hris->user_update($data2, $recid_karyawan);
 						//Insert Log
 						$data2 = array(
 							'mdf_by'		=> $this->session->userdata('kar_id'),
@@ -1823,7 +1823,7 @@ public function user_delete($recid_karyawan)
 							'mdf_date'		=> date('y-m-d h:i:s'),
 						);
 					}
-					$this->m_hris->user_update($data2, $recid_login);
+					$this->m_hris->user_update($data2, $recid_karyawan);
 					//Insert Log
 					$data2 = array(
 						'mdf_by'		=> $this->session->userdata('kar_id'),
@@ -1927,7 +1927,7 @@ public function user_delete($recid_karyawan)
 								'mdf_date'		=> date('y-m-d h:i:s'),
 							);
 						}
-						$this->m_hris->user_update($data2, $recid_login);
+						$this->m_hris->user_update($data2, $recid_karyawan);
 						//Insert Log
 						$data2 = array(
 							'mdf_by'		=> $this->session->userdata('kar_id'),
@@ -2007,7 +2007,7 @@ public function user_delete($recid_karyawan)
 							'mdf_date'		=> date('y-m-d h:i:s'),
 						);
 					}
-					$this->m_hris->user_update($data2, $recid_login);
+					$this->m_hris->user_update($data2, $recid_karyawan);
 					//Insert Log
 					$data2 = array(
 						'mdf_by'		=> $this->session->userdata('kar_id'),
