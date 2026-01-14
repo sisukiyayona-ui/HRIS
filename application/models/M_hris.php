@@ -40,7 +40,7 @@ class M_hris extends CI_Model
 
 	public function user_update($data, $id)
 	{
-		$this->db->where('recid_login', $id);
+		$this->db->where('recid_karyawan', $id);
 		$this->db->update('login', $data);
 	}
 
@@ -750,7 +750,7 @@ public function user_delete($recid_karyawan)
 
 	public function karyawan_by_nik($nik)
 	{
-		$query = $this->db->query("SELECT * from karyawan  where nik = '$nik'")->result();
+		$query = $this->db->query("SELECT * from karyawan  where nik = '$nik' ");
 		return $query;
 	}
 

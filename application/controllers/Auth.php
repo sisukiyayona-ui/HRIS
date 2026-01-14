@@ -175,94 +175,124 @@ class Auth extends CI_Controller
 
 	public function user_change()
 	{
+		$nik = $this->input->post('nik');
 		$username = $this->input->post('username');
 		$password = $this->input->post('password');
-		//Get Data By Id
-		$cek = $this->m_hris->user_by_username($username);
-		if ($cek->num_rows() == 0) {
+		
+		// First, check if the employee exists in karyawan table using NIK
+		$karyawan = $this->m_hris->karyawan_by_nik($nik);
+		if ($karyawan->num_rows() == 0) {
 		?>
 			<script type="text/javascript">
-				alert('Username Tidak Ditemukan!');
+				alert('NIK Karyawan Tidak Ditemukan!');
 				window.location.href = "<?php echo base_url(); ?>Auth/ganti_password";
 			</script>
 			<?php
 		} else {
-			foreach ($cek->result() as $c) {
-				$recid_login = $c->recid_login;
-				$recid_karyawan = $c->recid_karyawan;
-				$username2 = $c->username;
-				$password2 = $c->password;
-				$recid_role = $c->recid_role;
-			}
-
-			$histori = $this->m_hris->histori_pwd_user($recid_login, md5($password));
-			if ($histori->num_rows() > 0) {
+			// Get the employee's recid_karyawan
+			$karyawan_data = $karyawan->row();
+			$recid_karyawan = $karyawan_data->recid_karyawan;
+			
+			// Now find the login record associated with this employee
+			// Use a direct query since the method might not exist yet
+			$cek = $this->db->query("SELECT * from login where recid_karyawan = '$recid_karyawan'");
+			if ($cek->num_rows() == 0) {
 			?>
 				<script type="text/javascript">
-					alert('Gagal Merubah Akun! Password Sudah Pernah Digunakan!');
+					alert('Akun Login untuk Karyawan Ini Tidak Ditemukan!');
 					window.location.href = "<?php echo base_url(); ?>Auth/ganti_password";
 				</script>
 			<?php
 			} else {
-				$text = "";
-				//Comparing All Data with New Data record
+				foreach ($cek->result() as $c) {
+					$recid_login = $c->recid_login;
+					$username2 = $c->username;
+					$password2 = $c->password;
+					$recid_role = $c->recid_role;
+				}
+
+				// Check if the submitted username matches the one in the database
 				if ($username != $username2) {
-					$text = "$text, $username2 -> $username ";
-				} else {
-					$text = $text;
+				?>
+					<script type="text/javascript">
+						alert('Username Tidak Cocok Dengan Data Karyawan!');
+						window.location.href = "<?php echo base_url(); ?>Auth/ganti_password";
+					</script>
+				<?php
+					return;
 				}
 
-				if ($password != $password2) {
-					$text = "$text, password changed, ";
+				$histori = $this->m_hris->histori_pwd_user($recid_login, md5($password));
+				if ($histori->num_rows() > 0) {
+				?>
+					<script type="text/javascript">
+						alert('Gagal Merubah Akun! Password Sudah Pernah Digunakan!');
+						window.location.href = "<?php echo base_url(); ?>Auth/ganti_password";
+					</script>
+				<?php
 				} else {
-					$text = $text;
-				}
+					$text = "";
+					//Comparing All Data with New Data record
+					if ($username != $username2) {
+						$text = "$text, $username2 -> $username ";
+					} else {
+						$text = $text;
+					}
 
-				// echo "$text";
-				//Update Data
-				if ($password <> '') {
-					$data3 = array(
-						'crt_by'		=> $recid_karyawan,
-						'crt_date'		=> date('y-m-d h:i:s'),
-						'tgl_ubah'		=> date('Y-m-d'),
-						'recid_login'	=> $recid_login,
-						'password'		=> md5($password)
-					);
-					$this->m_hris->insert_histori_pwd($data3);
+					if ($password != $password2) {
+						$text = "$text, password changed, ";
+					} else {
+						$text = $text;
+					}
 
-					$password = do_hash(($password), 'md5');
-					$data2 = array(
-						'username'		=> $username,
-						'password'		=> $password,
-						'mdf_by'		=> $recid_karyawan,
-						'mdf_date'		=> date('y-m-d h:i:s'),
-						'last_pwd_change'	=> date('Y-m-d')
-					);
-				} else {
-					$data2 = array(
-						'crt_by'		=>  $recid_karyawan,
-						'crt_date'		=> date('y-m-d h:i:s'),
-						'username'		=> $username,
-						'password'		=> $password2,
+					// echo "$text";
+					//Update Data
+					if ($password <> '') {
+						$data3 = array(
+							'crt_by'		=> $recid_karyawan,
+							'crt_date'		=> date('y-m-d h:i:s'),
+							'tgl_ubah'		=> date('Y-m-d'),
+							'recid_login'	=> $recid_login,
+							'password'		=> md5($password)
+						);
+						$this->m_hris->insert_histori_pwd($data3);
+
+						$password = do_hash(($password), 'md5');
+						$data2 = array(
+							'username'		=> $username,
+							'password'		=> $password,
+							'mdf_by'		=> $recid_karyawan,
+							'mdf_date'		=> date('y-m-d h:i:s'),
+							'last_pwd_change'	=> date('Y-m-d')
+						);
+					} else {
+						$data2 = array(
+							'crt_by'		=>  $recid_karyawan,
+							'crt_date'		=> date('y-m-d h:i:s'),
+							'username'		=> $username,
+							'password'		=> $password2,
+							'mdf_by'		=>  $recid_karyawan,
+							'mdf_date'		=> date('y-m-d h:i:s'),
+						);
+					}
+					// Update using direct query with recid_karyawan to avoid mass update issue
+					$this->db->where('recid_karyawan', $recid_karyawan);
+					$this->db->update('login', $data2);
+					//Insert Log
+					$data_log = array(
 						'mdf_by'		=>  $recid_karyawan,
 						'mdf_date'		=> date('y-m-d h:i:s'),
+						'changed'		=> $text,
+						'identity'		=> $recid_login,
 					);
-				}
-				$this->m_hris->user_update($data2, $recid_login);
-				//Insert Log
-				$data2 = array(
-					'mdf_by'		=>  $recid_karyawan,
-					'mdf_date'		=> date('y-m-d h:i:s'),
-					'changed'		=> $text,
-					'identity'		=> $recid_login,
-				);
-				$this->m_hris->user_linsert($data2);
-			?>
-				<script type="text/javascript">
-					alert('Password Berhasil Diubah, Silahkan Login Kembali');
-					window.location.href = "<?php echo base_url(); ?>";
-				</script>
+					$this->m_hris->user_linsert($data_log);
+				?>
+					<script type="text/javascript">
+						alert('Password Berhasil Diubah, Silahkan Login Kembali');
+						window.location.href = "<?php echo base_url(); ?>";
+					</script>
 <?php
+				}
 			}
 		}
 	}

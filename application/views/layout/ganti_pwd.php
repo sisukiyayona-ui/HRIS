@@ -184,7 +184,10 @@
             <form method="post" action="<?php echo base_url()?>Auth/user_change">
               <h1>Ganti Password</h1>
               <div>
-                <input type="text" class="form-control" name="username" placeholder="Masukan Username yang Terdaftar" required="" autofocus="autofocus" autocomplete="off" />
+                <input type="text" class="form-control" name="nik" placeholder="Masukan NIK Karyawan" required="" autofocus="autofocus" autocomplete="off" />
+              </div>
+              <div>
+                <input type="text" class="form-control" name="username" placeholder="Masukan Username yang Terdaftar" required="" autocomplete="off" />
               </div>
               <div class="input-group">
                     <input type="password" name="password" id="epassword" placeholder="Password" class="form-control password-input2">
