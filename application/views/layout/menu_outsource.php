@@ -61,7 +61,7 @@ if ($as_user == "CINT") {
                                 <li><a href="<?php echo base_url() ?>Karyawan/dash"><i class="fa fa-dashboard"></i> Dashboard </a></li>
                                 <li><a><i class="fa fa-barcode"></i> Absen Barcode <span class="fa fa-chevron-down"></span></a>
                                 <ul class="nav child_menu">
-                                <?php 
+                                <?php /* 
                                 $nama = $this->session->userdata('nama');
                                 if($nama == "Outsource Keamanan 2")
                                 {?>
@@ -73,7 +73,7 @@ if ($as_user == "CINT") {
                                 <?php }
                                 ?>
                                 </ul>
-                            </li>
+                            </li> */ ?>
                             <li><a><i class="fa fa-shield"></i> Validasi Keamanan <span class="fa fa-chevron-down"></span></a>
                                 <ul class="nav child_menu">
                                 <li><a href="<?php echo base_url() ?>AbsenBarcode/list_validasi_siang">Validasi Masuk Terlambat</a></li>

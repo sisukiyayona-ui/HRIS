@@ -300,7 +300,7 @@ if ($as_user == "CINT") {
 
                   </ul>
                 </li>
-                <?php if ($role == '1' or $role == '2' or $role == '5' or $role == '25') { ?>
+                <?php /* if ($role == '1' or $role == '2' or $role == '5' or $role == '25') { ?>
                   <li><a><i class="fa fa-bullhorn"></i> Recruitment <span class="fa fa-chevron-down"></span></a>
                     <ul class="nav child_menu">
                       <?php
@@ -314,8 +314,8 @@ if ($as_user == "CINT") {
                       <?php } ?>
                     </ul>
                   </li>
-                <?php } ?>
-                <?php if ($tingkatan >= 6 or $role == '1' or $role == '2' or $role == '25') { ?>
+                <?php } */ ?>
+                <?php /* if ($tingkatan >= 6 or $role == '1' or $role == '2' or $role == '25') { ?>
                   <li><a><i class="fa fa-star"></i> Training <span class="fa fa-chevron-down"></span></a>
                     <ul class="nav child_menu">
                       <li><a href="<?php echo base_url() ?>index.php/Training">Training Karyawan</a></li>
@@ -327,10 +327,10 @@ if ($as_user == "CINT") {
                       ?>
                     </ul>
                   </li>
-                <?php } ?>
+                <?php } */ ?>
 
 
-                <?php if ($role == '1' or $role == '3' or $role == '2' or $role == '5' or $role == '23' or $role == '25' or $role == '26' or $role == '29' or $role == '30'  or $role == '31' or $role == '32' or $role == '34' or $role == '35' or  $role == '37' or $role == '41') { ?>
+                <?php /* if ($role == '1' or $role == '3' or $role == '2' or $role == '5' or $role == '23' or $role == '25' or $role == '26' or $role == '29' or $role == '30'  or $role == '31' or $role == '32' or $role == '34' or $role == '35' or  $role == '37' or $role == '41') { ?>
                   <li><a><i class="fa fa-barcode"></i> Absen Barcode <span class="fa fa-chevron-down"></span></a>
                     <ul class="nav child_menu">
                       <li><a href="<?php echo base_url() ?>AbsenBarcode/dashboard">Dashboard Kehadiran</a></li>
@@ -391,7 +391,7 @@ if ($as_user == "CINT") {
                       </li>
                     </ul>
                   </li>
-                <?php } ?>
+                <?php } */ ?>
 
                 <?php if ($role == '1' or $role == '3' or $role == '2' or $role == '5' or $role == '23' or $role == '25' or $role == '26' or $role == '29' or $role == '30'  or $role == '31' or $role == '32' or $role == '34' or $role == '35' or  $role == '37' or $role == '41') { ?>
                   <li><a><i class="fa fa-fingerprint"></i> Absen Finger <span class="fa fa-chevron-down"></span></a>
@@ -414,7 +414,7 @@ if ($as_user == "CINT") {
                   </li>
                 <?php } ?>
 
-                <?php if ($role == '1' or $role == '3' or $role == '5' or $role == '25') { ?>
+                <?php /* if ($role == '1' or $role == '3' or $role == '5' or $role == '25') { ?>
                   <li><a><i class="fa fa-cutlery"></i> Kantin <span class="fa fa-chevron-down"></span></a>
                     <ul class="nav child_menu">
                       <li><a href="<?php echo base_url() ?>Kantin">Dashboard</a></li>
@@ -434,7 +434,7 @@ if ($as_user == "CINT") {
                       </li>
                     </ul>
                   </li>
-                <?php } ?>
+                <?php } */ ?>
 
                 <?php if ($role == '1' or $role == '4' or $role == '5'  or $role == '34' or $role == '25') { ?>
                   <li><a><i class="fa fa-legal"></i> Legal <span class="fa fa-chevron-down"></span></a>
@@ -538,7 +538,7 @@ if ($as_user == "CINT") {
                     </ul>
                   </li>
                 <?php } ?>
-                <?php if ($role == '1') { ?>
+                <?php /* if ($role == '1') { ?>
                   <li><a><i class="fa fa-medkit"></i> Medical Reimburst <span class="fa fa-chevron-down"></span></a>
                     <ul class="nav child_menu">
                       <li><a href="<?php echo base_url() ?>Medical/plafon">Plafon</a></li>
@@ -546,7 +546,7 @@ if ($as_user == "CINT") {
                       <li><a href="<?php echo base_url() ?>Medical/sisa_plafon">Sisa Plafon</a></li>
                     </ul>
                   </li>
-                <?php } ?>
+                <?php } */ ?>
                 <?php if ($role == '1' or $role == '3' or $role == '5' or $role == '32') { ?>
                   <li><a><i class="fa fa-shield"></i> Validasi Keamanan <span class="fa fa-chevron-down"></span></a>
                     <ul class="nav child_menu">
