@@ -4288,6 +4288,13 @@ public function karyawan_pinsert()
 			$recid_karyawan = $this->uri->segment(3);
 			$data['karyawan'] = $this->m_hris->karyawan_by_recid($recid_karyawan);
 			$data['atasan_k'] = $this->m_hris->karyawan_view();
+			// Master data untuk dropdown (Struktur / Department / Golongan)
+			$data['sub_bagian_list'] = $this->m_hris->sub_bagian_view();
+			// Ambil dari tabel master department (bukan DISTINCT dari karyawan aktif)
+			$data['department_list'] = $this->m_hris->department_view();
+			$data['bagian_list'] = $this->m_hris->bagian_view();
+			$data['jabatan_list'] = $this->m_hris->jabatan_view();
+			$data['golongan_list'] = $this->m_hris->golongan_view()->result();
 			$usr = $this->session->userdata('kar_id');
 			$data['cek_usr'] = $this->m_hris->cek_usr($usr);
 			$this->load->view('layout/a_header');
@@ -4355,14 +4362,14 @@ public function karyawan_pinsert()
 			$pendidikan = $this->input->post('pendidikan');
 			$jurusan = $this->input->post('jurusan');
 			$tgl_m_kerja = $this->input->post('tgl_m_kerja');
-			$tgl_a_kerja = $this->input->post('tgl_a_kerja');
+			$tgl_a_kerja = $this->input->post('tgl_a_kerja') ?: null;
 			$recid_bag = $this->input->post('recid_bag');
 			$recid_jbtn = $this->input->post('recid_jbtn');
 			$no_jamsos = $this->input->post('no_jamsos');
 			$no_bpjs_kes = $this->input->post('no_bpjs_kes');
 			$no_bpjs_tk = $this->input->post('no_bpjs_tk');
 			$no_aia = $this->input->post('no_aia');
-			$no_askes = $this->input->post('no_askes');
+			$no_askes = $this->input->post('no_askes') ?: null;
 			$sim1 = $this->input->post('sim1');
 			$sim2 = $this->input->post('sim2');
 			$sts_nikah =  $this->input->post('sts_nikah');
@@ -4375,13 +4382,13 @@ public function karyawan_pinsert()
 				$sts_aktif2 = $this->input->post('sts_aktif');
 			}
 			$sts_penunjang = $this->input->post('sts_penunjang');
-			$spm = $this->input->post('spm');
-			$tmp_toko = $this->input->post('tmp_toko');
-			$tmp_kota = $this->input->post('tmp_kota');
+			$spm = $this->input->post('spm') ?: null;
+			$tmp_toko = $this->input->post('tmp_toko') ?: null;
+			$tmp_kota = $this->input->post('tmp_kota') ?: null;
 			$telp1 = $this->input->post('telp1');
 			$telp2 = $this->input->post('telp2');
-			$imei1 = $this->input->post('imei1');
-			$imei2 = $this->input->post('imei2');
+			$imei1 = $this->input->post('imei1') ?: null;
+			$imei2 = $this->input->post('imei2') ?: null;
 			$hobi = $this->input->post('hobi');
 			$email = $this->input->post('email');
 			$gapok = $this->input->post('gapok');
@@ -4408,7 +4415,7 @@ public function karyawan_pinsert()
 			$scan_npwp2 = $this->input->post('scan_npwp2'); // default db
 			$scan_aia = $this->input->post('scan_aia');
 			$scan_aia2 = $this->input->post('scan_aia2'); // default db
-			$scan_askes = $this->input->post('scan_askes');
+			$scan_askes = $this->input->post('scan_askes') ?: null;
 			$scan_askes2 = $this->input->post('scan_askes2'); // default db
 			$scan_sim1 = $this->input->post('scan_sim1');
 			$scan_sim12 = $this->input->post('scan_sim12'); // default db
@@ -4705,7 +4712,7 @@ public function karyawan_pinsert()
 					'nama_karyawan'		=> $nama_karyawan,
 					'tmp_lahir'			=> $tmp_lahir,
 					'tgl_lahir'			=> $tgl_lahir,
-					'tgl_trisula'		=> $tgl_trisula,
+					
 					'jenkel'			=> $jenkel,
 					'gol_darah'			=> $gol_darah,
 					'no_ktp'			=> $no_ktp,
@@ -4720,7 +4727,7 @@ public function karyawan_pinsert()
 					'agama'				=> $agama,
 					'pendidikan'		=> $pendidikan,
 					'jurusan'			=> $jurusan,
-					'tgl_m_kerja'		=> $tgl_m_kerja,
+					
 					'tgl_a_kerja'		=> $tgl_a_kerja,
 					'sts_aktif'			=> "Aktif",
 					'no_jamsos'			=> $no_jamsos,
@@ -4786,20 +4793,20 @@ public function karyawan_pinsert()
 			$no_bpjs_kes = $this->input->post('no_bpjs_kes');
 			$no_bpjs_tk = $this->input->post('no_bpjs_tk');
 			$no_aia = $this->input->post('no_aia');
-			$no_askes = $this->input->post('no_askes');
+			$no_askes = $this->input->post('no_askes') ?: null;
 			$sim1 = $this->input->post('sim1');
 			$sim2 = $this->input->post('sim2');
 			$sts_nikah =  $this->input->post('sts_nikah');
 			$alamat_ktp = $this->input->post('alamat_ktp');
 			$alamat_skrg = $this->input->post('alamat_skrg');
 			$sts_penunjang = $this->input->post('sts_penunjang');
-			$spm = $this->input->post('spm');
-			$tmp_toko = $this->input->post('tmp_toko');
-			$tmp_kota = $this->input->post('tmp_kota');
+			$spm = $this->input->post('spm') ?: null;
+			$tmp_toko = $this->input->post('tmp_toko') ?: null;
+			$tmp_kota = $this->input->post('tmp_kota') ?: null;
 			$telp1 = $this->input->post('telp1');
 			$telp2 = $this->input->post('telp2');
-			$imei1 = $this->input->post('imei1');
-			$imei2 = $this->input->post('imei2');
+			$imei1 = $this->input->post('imei1') ?: null;
+			$imei2 = $this->input->post('imei2') ?: null;
 			$hobi = $this->input->post('hobi');
 			$email = $this->input->post('email');
 			$gapok = $this->input->post('gapok');
@@ -4818,7 +4825,7 @@ public function karyawan_pinsert()
 			$scan_npwp2 = $this->input->post('scan_npwp2'); // default db
 			$scan_aia = $this->input->post('scan_aia');
 			$scan_aia2 = $this->input->post('scan_aia2'); // default db
-			$scan_askes = $this->input->post('scan_askes');
+			$scan_askes = $this->input->post('scan_askes') ?: null;
 			$scan_askes2 = $this->input->post('scan_askes2'); // default db
 			$scan_sim1 = $this->input->post('scan_sim1');
 			$scan_sim12 = $this->input->post('scan_sim12'); // default db
@@ -5093,7 +5100,7 @@ public function karyawan_pinsert()
 					'nama_karyawan'		=> $nama_karyawan,
 					'tmp_lahir'			=> $tmp_lahir,
 					'tgl_lahir'			=> $tgl_lahir,
-					'tgl_trisula'		=> $tgl_trisula,
+					
 					'jenkel'			=> $jenkel,
 					'gol_darah'			=> $gol_darah,
 					'no_ktp'			=> $no_ktp,
@@ -5165,7 +5172,7 @@ public function karyawan_pinsert()
 			$pendidikan = $this->input->post('pendidikan');
 			$jurusan = $this->input->post('jurusan');
 			$tgl_m_kerja = $this->input->post('tgl_m_kerja');
-			$tgl_a_kerja = $this->input->post('tgl_a_kerja');
+			$tgl_a_kerja = $this->input->post('tgl_a_kerja') ?: null;
 			$recid_bag = $this->input->post('recid_bag');
 			$recid_jbtn = $this->input->post('recid_jbtn');
 			// $sts_jbtn = $this->input->post('sts_jbtn');
@@ -5173,7 +5180,7 @@ public function karyawan_pinsert()
 			$no_bpjs_kes = $this->input->post('no_bpjs_kes');
 			$no_bpjs_tk = $this->input->post('no_bpjs_tk');
 			$no_aia = $this->input->post('no_aia');
-			$no_askes = $this->input->post('no_askes');
+			$no_askes = $this->input->post('no_askes') ?: null;
 			$sim1 = $this->input->post('sim1');
 			$sim2 = $this->input->post('sim2');
 			$sts_nikah =  $this->input->post('sts_nikah');
@@ -5186,13 +5193,13 @@ public function karyawan_pinsert()
 				$sts_aktif2 = $this->input->post('sts_aktif');
 			}
 			$sts_penunjang = $this->input->post('sts_penunjang');
-			$spm = $this->input->post('spm');
-			$tmp_toko = $this->input->post('tmp_toko');
-			$tmp_kota = $this->input->post('tmp_kota');
+			$spm = $this->input->post('spm') ?: null;
+			$tmp_toko = $this->input->post('tmp_toko') ?: null;
+			$tmp_kota = $this->input->post('tmp_kota') ?: null;
 			$telp1 = $this->input->post('telp1');
 			$telp2 = $this->input->post('telp2');
-			$imei1 = $this->input->post('imei1');
-			$imei2 = $this->input->post('imei2');
+			$imei1 = $this->input->post('imei1') ?: null;
+			$imei2 = $this->input->post('imei2') ?: null;
 			$hobi = $this->input->post('hobi');
 			$email = $this->input->post('email');
 			$gapok = $this->input->post('gapok');
@@ -5219,7 +5226,7 @@ public function karyawan_pinsert()
 			$scan_npwp2 = $this->input->post('scan_npwp2'); // default db
 			$scan_aia = $this->input->post('scan_aia');
 			$scan_aia2 = $this->input->post('scan_aia2'); // default db
-			$scan_askes = $this->input->post('scan_askes');
+			$scan_askes = $this->input->post('scan_askes') ?: null;
 			$scan_askes2 = $this->input->post('scan_askes2'); // default db
 			$scan_sim1 = $this->input->post('scan_sim1');
 			$scan_sim12 = $this->input->post('scan_sim12'); // default db
@@ -5536,7 +5543,7 @@ public function karyawan_pinsert()
 				'nama_karyawan'		=> $nama_karyawan,
 				'tmp_lahir'			=> $tmp_lahir,
 				'tgl_lahir'			=> $tgl_lahir,
-				'tgl_trisula'		=> $tgl_trisula,
+				
 				'jenkel'			=> $jenkel,
 				'gol_darah'			=> $gol_darah,
 				'no_ktp'			=> $no_ktp,
@@ -5551,7 +5558,7 @@ public function karyawan_pinsert()
 				'agama'				=> $agama,
 				'pendidikan'		=> $pendidikan,
 				'jurusan'			=> $jurusan,
-				'tgl_m_kerja'		=> $tgl_m_kerja,
+				
 				'tgl_a_kerja'		=> $tgl_a_kerja,
 				'recid_bag'			=> $recid_bag,
 				'recid_jbtn'		=> $recid_jbtn,
@@ -5790,7 +5797,6 @@ public function karyawan_pinsert()
 			$nama_karyawan = $this->input->post('nama_karyawan');
 			$tmp_lahir = $this->input->post('tmp_lahir');
 			$tgl_lahir = $this->input->post('tgl_lahir');
-			$tgl_trisula = $this->input->post('tgl_trisula');
 			$jenkel = $this->input->post('jenkel');
 			$gol_darah = $this->input->post('gol_darah');
 			$no_ktp = $this->input->post('no_ktp');
@@ -5801,8 +5807,6 @@ public function karyawan_pinsert()
 			$pendidikan = $this->input->post('pendidikan');
 			$jurusan = $this->input->post('jurusan');
 			$thn_lulus = $this->input->post('thn_lulus');
-			$tgl_m_kerja = $this->input->post('tgl_m_kerja');
-			$tgl_a_kerja = $this->input->post('tgl_a_kerja');
 			$recid_bag = $this->input->post('recid_bag');
 			$recid_jbtn = $this->input->post('recid_jbtn');
 			$no_jamsos = $this->input->post('no_jamsos');
@@ -5815,18 +5819,11 @@ public function karyawan_pinsert()
 			$sts_penunjang = $this->input->post('sts_penunjang');
 			$telp1 = $this->input->post('telp1');
 			$telp2 = $this->input->post('telp2');
-			$imei1 = $this->input->post('imei1');
-			$imei2 = $this->input->post('imei2');
 			$sim1 = $this->input->post('sim1');
 			$sim2 = $this->input->post('sim2');
 			$no_aia = $this->input->post('no_aia');
-			$no_askes = $this->input->post('no_askes');
 			$hobi = $this->input->post('hobi');
 			$email = $this->input->post('email');
-			$email_cint = $this->input->post('email_cint');
-			$spm = $this->input->post('spm');
-			$tmp_toko = $this->input->post('tmp_toko');
-			$tmp_kota = $this->input->post('tmp_kota');
 			$gapok = $this->input->post('gapok');
 			$lspmi = $this->input->post('lspmi');
 			$pensiun = $this->input->post('pensiun');
@@ -5846,13 +5843,45 @@ public function karyawan_pinsert()
 			$profile_type = $this->input->post('profile_type');
 			$kat_penyakit = $this->input->post('kat_penyakit');
 			$penyakit = $this->input->post('penyakit');
+			$email_tsgi = $this->input->post('email_tsgi');
+			$sk_kary_tetap_nomor = $this->input->post('sk_kary_tetap_nomor');
+			$sk_kary_tetap_tanggal = $this->input->post('sk_kary_tetap_tanggal');
+			$nama_orang_tua = $this->input->post('nama_orang_tua');
+			$nama_pasangan = $this->input->post('nama_pasangan');
+			$jumlah_anak = $this->input->post('jumlah_anak');
+			$nama_anak = $this->input->post('nama_anak');
+			$kota_ktp = $this->input->post('kota_ktp');
+			$kota_skrg = $this->input->post('kota_skrg');
+			$kota = $this->input->post('kota');
+			$telp2 = $this->input->post('telp2');
+			$ukuran_baju = $this->input->post('ukuran_baju');
+			$ukuran_celana = $this->input->post('ukuran_celana');
+			$ukuran_sepatu = $this->input->post('ukuran_sepatu');
+			$keterangan_seragam = $this->input->post('keterangan_seragam');
+			$tipe_ptkp = $this->input->post('tipe_ptkp');
+			$alasan_keluar = $this->input->post('alasan_keluar');
+			$keterangan = $this->input->post('keterangan');
+			$dl_idl = $this->input->post('dl_idl');
+			$level = $this->input->post('level');
+			$efin = $this->input->post('efin');
+			$recid_subbag = $this->input->post('recid_subbag');
+			$sub_bagian = $this->input->post('sub_bagian');
+			$departemen = $this->input->post('departemen');
+			$recid_golongan = $this->input->post('recid_golongan');
+			$cek_no_bpjs_tk = $this->input->post('cek_no_bpjs_tk');
+			$no_kartu_diluar_trimas = $this->input->post('no_kartu_diluar_trimas');
+			$no_kartu_trimas = $this->input->post('no_kartu_trimas');
+			$recid_atasan = $this->input->post('recid_atasan');
+			$hk_before = $this->input->post('hk_before');
+			$covid_uname = $this->input->post('covid_uname');
+			$covid_pwd = $this->input->post('covid_pwd');
+			$covid_role = $this->input->post('covid_role');
 			// echo $recid_atasan;
 			$foto = $this->input->post('foto');
 			$foto2 = $this->input->post('foto2'); // default db
 			$cek_bpjs_kes = $this->input->post('cek_bpjs_kes');
 			$scan_bpjs_kes = $this->input->post('scan_bpjs_kes');
 			$scan_bpjs_kes2 = $this->input->post('scan_bpjs_kes2'); // default db
-			$cek_bpjs_tk = $this->input->post('cek_bpjs_tk');
 			$scan_bpjs_tk = $this->input->post('scan_bpjs_tk');
 			$scan_bpjs_tk2 = $this->input->post('scan_bpjs_tk2'); // default db
 			$scan_ktp = $this->input->post('scan_ktp');
@@ -5863,8 +5892,6 @@ public function karyawan_pinsert()
 			$scan_npwp2 = $this->input->post('scan_npwp2'); // default db
 			$scan_aia = $this->input->post('scan_aia');
 			$scan_aia2 = $this->input->post('scan_aia2'); // default db
-			$scan_askes = $this->input->post('scan_askes');
-			$scan_askes2 = $this->input->post('scan_askes2'); // default db
 			$scan_sim1 = $this->input->post('scan_sim1');
 			$scan_sim12 = $this->input->post('scan_sim12'); // default db
 			$scan_sim2 = $this->input->post('scan_sim2');
@@ -5879,7 +5906,6 @@ public function karyawan_pinsert()
 			$err_kes = 0;
 			$err_tk = 0;
 			$err_aia = 0;
-			$err_askes = 0;
 			$err_sim1 = 0;
 			$err_sim2 = 0;
 			$err_ijazah = 0;
@@ -5891,7 +5917,6 @@ public function karyawan_pinsert()
 			$path_bpjs_kes = "";
 			$path_bpjs_tk = "";
 			$path_aia = "";
-			$path_askes = "";
 			$path_sim1 = "";
 			$path_sim2 = "";
 
@@ -5906,7 +5931,6 @@ public function karyawan_pinsert()
 			$nama_file_kk = "KK-$nik-$cnt";
 			$nama_file_npwp = "NPWP-$nik-$cnt";
 			$nama_file_aia = "AIA-$nik-$cnt";
-			$nama_file_askes = "ASKES-$nik-$cnt";
 			$nama_file_sim1 = "SIM1-$nik-$cnt";
 			$nama_file_sim2 = "SIM2-$nik-$cnt";
 			$nama_file_ijazah = "I-$nik-$cnt";
@@ -6074,28 +6098,6 @@ public function karyawan_pinsert()
 				$saved_aia_name = $scan_aia2;
 			}
 
-			if ($_FILES['scan_askes']['name'] != '') {
-				// ASKES Upload
-				$config8 = array();
-				$config8['upload_path'] 		= './images/askes/';
-				$config8['allowed_types'] 		= 'jpg|png|jpeg';
-				$config8['max_size'] 			= '2000000';
-				$config8['file_name'] 	     	= $nama_file_askes;
-				$config8['encrypt_name'] = TRUE;
-				$this->load->library('upload', $config8, 'sc_askes');  // Create custom object for catalog upload
-				$this->sc_askes->initialize($config8);
-				$upload_askes = $this->sc_askes->do_upload('scan_askes');
-				$saved_askes_name = $this->sc_askes->data('file_name');
-				$path_askes = './images/askes/';
-				if (!$upload_askes) {
-					$err_askes = 1;
-				} else {
-					$err_askes = 0;
-				}
-			} else {
-				$saved_askes_name = $scan_askes2;
-			}
-
 			if ($_FILES['scan_sim1']['name'] != '') {
 				// SIM1 Upload
 				$config9 = array();
@@ -6163,7 +6165,7 @@ public function karyawan_pinsert()
 			}
 
 
-			if ($err_foto == 1 or $err_kes == 1 or $err_tk == 1 or $err_ktp == 1 or $err_kk == 1 or $err_npwp == 1 or $err_aia == 1 or $err_askes == 1 or $err_sim1 == 1  or $err_sim1 == 1 or $err_ijazah == 1) {
+			if ($err_foto == 1 or $err_kes == 1 or $err_tk == 1 or $err_ktp == 1 or $err_kk == 1 or $err_npwp == 1 or $err_aia == 1 or $err_sim1 == 1  or $err_sim1 == 1 or $err_ijazah == 1) {
 				if ($err_foto == 1) {
 					echo 'Foto upload Error : ' . $this->sc_foto->display_errors() . '<br/>';
 				} else if ($err_kes == 1) {
@@ -6176,8 +6178,6 @@ public function karyawan_pinsert()
 					echo 'Upload NPWP Error : ' . $this->sc_npwp->display_errors() . '<br/>';
 				} else if ($err_aia == 1) {
 					echo 'Upload AIA Error : ' . $this->sc_aia->display_errors() . '<br/>';
-				} else if ($err_askes == 1) {
-					echo 'Upload Asuransi Kesehatan Error : ' . $this->sc_askes->display_errors() . '<br/>';
 				} else if ($err_sim1 == 1) {
 					echo 'Upload SIM 1 Error : ' . $this->sc_sim1->display_errors() . '<br/>';
 				} else if ($err_sim2 == 1) {
@@ -6197,9 +6197,6 @@ public function karyawan_pinsert()
 						'nama_karyawan'		=> $nama_karyawan,
 						'tmp_lahir'			=> $tmp_lahir,
 						'tgl_lahir'			=> $tgl_lahir,
-						'tgl_m_kerja'		=> $tgl_m_kerja,
-						'tgl_a_kerja'		=> $tgl_a_kerja,
-						'tgl_trisula'		=> $tgl_trisula,
 						'jenkel'			=> $jenkel,
 						'gol_darah'			=> $gol_darah,
 						'no_ktp'			=> $no_ktp,
@@ -6225,24 +6222,17 @@ public function karyawan_pinsert()
 						'no_jamsos'			=> $no_jamsos,
 						'cek_bpjs_kes'		=> $cek_bpjs_kes,
 						'no_bpjs_kes'		=> $no_bpjs_kes,
-						'cek_bpjs_tk'		=> $cek_bpjs_tk,
 						'no_bpjs_tk'		=> $no_bpjs_tk,
 						'no_aia'			=> $no_aia,
 						'path_aia'			=> $path_aia,
 						'scan_aia'			=> $saved_aia_name,
-						'no_askes'			=> $no_askes,
-						'path_askes'		=> $path_askes,
-						'scan_askes'		=> $saved_askes_name,
 						'sts_nikah'			=> $sts_nikah,
 						'alamat_ktp'		=> $alamat_ktp,
 						'alamat_skrg'		=> $alamat_skrg,
 						'telp1'				=> $telp1,
 						'telp2'				=> $telp2,
-						'imei1'				=> $imei1,
-						'imei2'				=> $imei2,
 						'hobi'				=> $hobi,
 						'email'				=> $email,
-						'email_cint'		=> $email_cint,
 						'sts_aktif'			=> $sts_aktif,
 						'vaksin_covid'		=> $vaksin_covid,
 						'profile_disc'		=> $profile_disc,
@@ -6250,6 +6240,39 @@ public function karyawan_pinsert()
 						'profile_type'		=> $profile_type,
 						'kat_penyakit'		=> $kat_penyakit,
 						'penyakit'		=> $penyakit,
+						'email_tsgi'		=> $email_tsgi,
+						'sk_kary_tetap_nomor'		=> $sk_kary_tetap_nomor,
+						'sk_kary_tetap_tanggal'		=> $sk_kary_tetap_tanggal,
+						'nama_orang_tua'		=> $nama_orang_tua,
+						'nama_pasangan'		=> $nama_pasangan,
+						'jumlah_anak'		=> $jumlah_anak,
+						'nama_anak'		=> $nama_anak,
+						'kota_ktp'		=> $kota_ktp,
+						'kota_skrg'		=> $kota_skrg,
+						'kota'		=> $kota,
+						'telp2'		=> $telp2,
+						'ukuran_baju'		=> $ukuran_baju,
+						'ukuran_celana'		=> $ukuran_celana,
+						'ukuran_sepatu'		=> $ukuran_sepatu,
+						'keterangan_seragam'		=> $keterangan_seragam,
+						'tipe_ptkp'		=> $tipe_ptkp,
+						'alasan_keluar'		=> $alasan_keluar,
+						'keterangan'		=> $keterangan,
+						'dl_idl'		=> $dl_idl,
+						'level'		=> $level,
+						'efin'		=> $efin,
+						'recid_subbag'		=> $recid_subbag,
+						'sub_bagian'		=> $sub_bagian,
+						'departemen'		=> $departemen,
+						'recid_golongan'		=> $recid_golongan,
+						'cek_no_bpjs_tk'		=> $cek_no_bpjs_tk,
+						'no_kartu_diluar_trimas'		=> $no_kartu_diluar_trimas,
+						'no_kartu_trimas'		=> $no_kartu_trimas,
+						'recid_atasan'		=> $recid_atasan,
+						'hk_before'		=> $hk_before,
+						'covid_uname'		=> $covid_uname,
+						'covid_pwd'		=> $covid_pwd,
+						'covid_role'		=> $covid_role,
 						'foto'				=> $saved_foto_name,
 						'scan_bpjs_kes'		=> $saved_kes_name,
 						'path_bpjs_kes'		=> $path_bpjs_kes,
@@ -6267,9 +6290,6 @@ public function karyawan_pinsert()
 						'nama_bank'			=> $nama_bank,
 						'bulanan'			=> $bulanan,
 						'kontrak'			=> $kontrak,
-						'spm'				=> $spm,
-						'tmp_toko'			=> $tmp_toko,
-						'tmp_kota'			=> $tmp_kota,
 						'mdf_by'			=> $this->session->userdata('kar_id'),
 						'mdf_date'			=> date('y-m-d h:i:s')
 					);
@@ -6280,9 +6300,6 @@ public function karyawan_pinsert()
 						'nama_karyawan'		=> $nama_karyawan,
 						'tmp_lahir'			=> $tmp_lahir,
 						'tgl_lahir'			=> $tgl_lahir,
-						'tgl_m_kerja'		=> $tgl_m_kerja,
-						'tgl_a_kerja'		=> $tgl_a_kerja,
-						'tgl_trisula'		=> $tgl_trisula,
 						'jenkel'			=> $jenkel,
 						'gol_darah'			=> $gol_darah,
 						'no_ktp'			=> $no_ktp,
@@ -6311,19 +6328,13 @@ public function karyawan_pinsert()
 						'no_aia'			=> $no_aia,
 						'path_aia'			=> $path_aia,
 						'scan_aia'			=> $saved_aia_name,
-						'no_askes'			=> $no_askes,
-						'path_askes'		=> $path_askes,
-						'scan_askes'		=> $saved_askes_name,
 						'sts_nikah'			=> $sts_nikah,
 						'alamat_ktp'		=> $alamat_ktp,
 						'alamat_skrg'		=> $alamat_skrg,
 						'telp1'				=> $telp1,
 						'telp2'				=> $telp2,
-						'imei1'				=> $imei1,
-						'imei2'				=> $imei2,
 						'hobi'				=> $hobi,
 						'email'				=> $email,
-						'email_cint'		=> $email_cint,
 						'sts_aktif'			=> $sts_aktif,
 						'vaksin_covid'		=> $vaksin_covid,
 						'profile_disc'		=> $profile_disc,
@@ -6331,15 +6342,45 @@ public function karyawan_pinsert()
 						'profile_type'		=> $profile_type,
 						'kat_penyakit'		=> $kat_penyakit,
 						'penyakit'			=> $penyakit,
+						'email_tsgi'		=> $email_tsgi,
+						'sk_kary_tetap_nomor'		=> $sk_kary_tetap_nomor,
+						'sk_kary_tetap_tanggal'		=> $sk_kary_tetap_tanggal,
+						'nama_orang_tua'		=> $nama_orang_tua,
+						'nama_pasangan'		=> $nama_pasangan,
+						'jumlah_anak'		=> $jumlah_anak,
+						'nama_anak'		=> $nama_anak,
+						'kota_ktp'		=> $kota_ktp,
+						'kota_skrg'		=> $kota_skrg,
+						'kota'		=> $kota,
+						'telp2'		=> $telp2,
+						'ukuran_baju'		=> $ukuran_baju,
+						'ukuran_celana'		=> $ukuran_celana,
+						'ukuran_sepatu'		=> $ukuran_sepatu,
+						'keterangan_seragam'		=> $keterangan_seragam,
+						'tipe_ptkp'		=> $tipe_ptkp,
+						'alasan_keluar'		=> $alasan_keluar,
+						'keterangan'		=> $keterangan,
+						'dl_idl'		=> $dl_idl,
+						'level'		=> $level,
+						'efin'		=> $efin,
+						'recid_subbag'		=> $recid_subbag,
+						'sub_bagian'		=> $sub_bagian,
+						'departemen'		=> $departemen,
+						'recid_golongan'		=> $recid_golongan,
+						'cek_no_bpjs_tk'		=> $cek_no_bpjs_tk,
+						'no_kartu_diluar_trimas'		=> $no_kartu_diluar_trimas,
+						'no_kartu_trimas'		=> $no_kartu_trimas,
+						'recid_atasan'		=> $recid_atasan,
+						'hk_before'		=> $hk_before,
+						'covid_uname'		=> $covid_uname,
+						'covid_pwd'		=> $covid_pwd,
+						'covid_role'		=> $covid_role,
 						'foto'				=> $saved_foto_name,
 						'scan_bpjs_kes'		=> $saved_kes_name,
 						'path_bpjs_kes'		=> $path_bpjs_kes,
 						'scan_bpjs_tk'		=> $saved_tk_name,
 						'path_bpjs_tk'		=> $path_bpjs_tk,
 						'sts_penunjang'		=> $sts_penunjang,
-						'spm'				=> $spm,
-						'tmp_toko'			=> $tmp_toko,
-						'tmp_kota'			=> $tmp_kota,
 						'mdf_by'			=> $this->session->userdata('kar_id'),
 						'mdf_date'			=> date('y-m-d h:i:s')
 					);
@@ -6355,7 +6396,6 @@ public function karyawan_pinsert()
 					$agama2 = $cek->agama;
 					$pendidikan2 = $cek->pendidikan;
 					$tgl_m_kerja2 = $cek->tgl_m_kerja;
-					$tgl_a_kerja2 = $cek->tgl_a_kerja;
 					$recid_bag2 = $cek->recid_bag;
 					$recid_jbtn2 = $cek->recid_jbtn;
 					$sts_nikah2 = $cek->sts_nikah;
@@ -6388,12 +6428,6 @@ public function karyawan_pinsert()
 
 				if ($tgl_m_kerja != $tgl_m_kerja2) {
 					$text = "$text, tgl_m_kerja : $tgl_m_kerja";
-				} else {
-					$text = $text;
-				}
-
-				if ($tgl_a_kerja != $tgl_a_kerja2) {
-					$text = "$text, tgl_a_kerja : $tgl_a_kerja";
 				} else {
 					$text = $text;
 				}
