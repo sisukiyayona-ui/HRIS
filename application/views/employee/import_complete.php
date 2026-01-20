@@ -442,7 +442,7 @@
               <a href="<?php echo base_url('Employee_import'); ?>" class="btn btn-primary">
                 <i class="fa fa-upload"></i> Import Another File
               </a>
-              <a href="<?php echo base_url('Karyawan/index'); ?>" class="btn btn-default">
+              <a href="<?php echo base_url('Karyawan/karyawan_viewbeta'); ?>" class="btn btn-default">
                 <i class="fa fa-list"></i> View Employees
               </a>
             </div>
