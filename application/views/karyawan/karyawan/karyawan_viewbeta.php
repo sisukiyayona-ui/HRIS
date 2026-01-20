@@ -30,13 +30,13 @@
               <a class="btn btn-warning btn-sm" href="<?php echo base_url() ?>Karyawan/tunjangan_insert">
                 <i class="fa fa-plus"></i> | Tanggungan
               </a>
-              <a class="btn btn-default btn-sm" href="<?php echo base_url() ?>Karyawan/renew">
+              <a class="btn btn-default btn-sm disabled" href="#" onclick="return false;">
                 <i class="fa fa-plus"></i> | Renew Data
               </a>
-              <a class="btn btn-danger btn-sm" href="<?php echo base_url() ?>Karyawan/karyawan_listupdate">
+              <a class="btn btn-danger btn-sm disabled" href="#" onclick="return false;">
                 <i class="fa fa-plus"></i> | Updating Data (<?php echo $notif_edit ?>)
               </a>
-              <a class="btn btn-info btn-sm" href="<?php echo base_url() ?>index.php/Karir/email_expedisi">
+              <a class="btn btn-info btn-sm disabled" href="#" onclick="return false;">
                 <i class="fa fa-upload"></i> | Ekspedisi Berkas
               </a>
 
