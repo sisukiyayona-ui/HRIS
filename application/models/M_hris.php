@@ -662,6 +662,7 @@ public function user_delete($recid_karyawan)
 	public function karyawan_pinsert($data)
 	{
 		$this->db->insert('karyawan', $data);
+		return $this->db->insert_id();
 	}
 
 	public function temp_karyawan_pinsert($data)
@@ -672,7 +673,8 @@ public function user_delete($recid_karyawan)
 	public function karyawan_update($data, $id)
 	{
 		$this->db->where('recid_karyawan', $id);
-		$this->db->update('karyawan', $data);
+		$result = $this->db->update('karyawan', $data);
+		return $result;
 	}
 
 	public function temp_karyawan_pupdate($data, $id)

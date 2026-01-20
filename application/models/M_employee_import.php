@@ -554,44 +554,60 @@ class M_employee_import extends CI_Model
                     $existing_employee = null;
                     if (isset($employee['NIK']) && !empty($employee['NIK'])) {
                         $existing_employees = $this->M_hris->karyawan_by_nik($employee['NIK']);
-                        if (!empty($existing_employees) && is_array($existing_employees)) {
-                            $existing_employee = $existing_employees[0]; // Get the first match
+                        if ($existing_employees && $existing_employees->num_rows() > 0) {
+                            $existing_employee = $existing_employees->row(); // Get the first match
                         }
                     }
                     
                     if ($existing_employee && isset($existing_employee->recid_karyawan)) {
                         // Update existing employee
-                        $this->M_hris->karyawan_update($employee_data, $existing_employee->recid_karyawan);
-                        $import_results['updated_records']++;
-                        
-                        // Track updated record details
-                        $import_results['updated_details'][] = [
-                            'NIK' => isset($employee['NIK']) ? $employee['NIK'] : '',
-                            'NAMA' => isset($employee['NAMA']) ? $employee['NAMA'] : '',
-                            'recid_karyawan' => $existing_employee->recid_karyawan
-                        ];
+                        $update_result = $this->M_hris->karyawan_update($employee_data, $existing_employee->recid_karyawan);
+                        if ($update_result) {
+                            $import_results['updated_records']++;
+                            
+                            // Track updated record details
+                            $import_results['updated_details'][] = [
+                                'NIK' => isset($employee['NIK']) ? $employee['NIK'] : '',
+                                'NAMA' => isset($employee['NAMA']) ? $employee['NAMA'] : '',
+                                'recid_karyawan' => $existing_employee->recid_karyawan
+                            ];
+                        } else {
+                            // If update failed, treat as error
+                            $import_results['failed_imports']++;
+                            $import_results['errors'][] = [
+                                'NIK' => isset($employee['NIK']) ? $employee['NIK'] : '',
+                                'NAMA' => isset($employee['NAMA']) ? $employee['NAMA'] : '',
+                                'error_message' => 'Failed to update existing employee'
+                            ];
+                            continue; // Skip to next record
+                        }
                         
                         // Handle contract data for existing employee
                         $this->handle_contract_data($employee, $existing_employee->recid_karyawan);
                     } else {
                         // Insert new employee
-                        $this->M_hris->karyawan_pinsert($employee_data);
-                        $import_results['inserted_records']++;
-                        
-                        // Get the inserted employee ID directly after insertion
-                        $employee_id = $this->db->insert_id();
-                        
-                        // Handle contract data for newly inserted employee
+                        $employee_id = $this->M_hris->karyawan_pinsert($employee_data);
                         if ($employee_id) {
+                            $import_results['inserted_records']++;
+                            
+                            // Handle contract data for newly inserted employee
                             $this->handle_contract_data($employee, $employee_id);
+                            
+                            // Track inserted record details
+                            $import_results['inserted_details'][] = [
+                                'NIK' => isset($employee['NIK']) ? $employee['NIK'] : '',
+                                'NAMA' => isset($employee['NAMA']) ? $employee['NAMA'] : '',
+                                'recid_karyawan' => $employee_id
+                            ];
+                        } else {
+                            // If insert failed, treat as error
+                            $import_results['failed_imports']++;
+                            $import_results['errors'][] = [
+                                'NIK' => isset($employee['NIK']) ? $employee['NIK'] : '',
+                                'NAMA' => isset($employee['NAMA']) ? $employee['NAMA'] : '',
+                                'error_message' => 'Failed to insert new employee'
+                            ];
                         }
-                        
-                        // Track inserted record details
-                        $import_results['inserted_details'][] = [
-                            'NIK' => isset($employee['NIK']) ? $employee['NIK'] : '',
-                            'NAMA' => isset($employee['NAMA']) ? $employee['NAMA'] : '',
-                            'recid_karyawan' => $employee_id
-                        ];
                     }
                     
                     $import_results['successful_imports']++;
