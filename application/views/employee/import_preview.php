@@ -170,14 +170,14 @@
             </div>
             
             <!-- Debug: Show raw data structure -->
-            <div class="panel panel-default">
+            <!-- <div class="panel panel-default">
               <div class="panel-heading">
                 <h3 class="panel-title">Raw Data Debug (First Record)</h3>
               </div>
               <div class="panel-body">
                 <pre><?php echo isset($preview_data[0]) ? print_r($preview_data[0], true) : 'No data available'; ?></pre>
               </div>
-            </div>
+            </div> -->
             
             <div class="form-group">
               <a href="<?php echo base_url('Employee_import/process_data'); ?>" class="btn btn-success">
