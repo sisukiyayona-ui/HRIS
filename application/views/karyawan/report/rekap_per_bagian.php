@@ -897,7 +897,7 @@
 </div>
 <footer>
   <div class="pull-right">
-    Gentelella - Bootstrap Admin Template by <a href="https://colorlib.com">Colorlib</a>
+    Copyright © <a href="https://sittv2.trimas-sgi.com/">Sistem HRIS Trimas</a> <?php echo date('Y'); ?>
   </div>
   <div class="clearfix"></div>
 </footer>

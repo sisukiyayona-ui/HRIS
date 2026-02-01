@@ -568,7 +568,7 @@ if($role == '1' or $role == '2' or $role == '5' or $role == '27' or $role == '29
 
 <footer>
   <div class="pull-right">
-    Gentelella - Bootstrap Admin Template by <a href="https://colorlib.com">Colorlib</a>
+    Copyright © <a href="https://sittv2.trimas-sgi.com/">Sistem HRIS Trimas</a> <?php echo date('Y'); ?>
   </div>
   <div class="clearfix"></div>
 </footer>
