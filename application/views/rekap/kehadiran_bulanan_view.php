@@ -78,7 +78,7 @@
 
     <!-- Info Panel -->
     <div class="row" id="infoPanel" style="display:none;">
-      <div class="col-md-3 col-sm-6 col-xs-12">
+      <div class="col-md-2 col-sm-4 col-xs-6">
         <div class="info-box bg-green">
           <span class="info-box-icon"><i class="fa fa-users"></i></span>
           <div class="info-box-content">
@@ -88,7 +88,7 @@
         </div>
       </div>
       
-      <div class="col-md-3 col-sm-6 col-xs-12">
+      <div class="col-md-2 col-sm-4 col-xs-6">
         <div class="info-box bg-blue">
           <span class="info-box-icon"><i class="fa fa-calendar"></i></span>
           <div class="info-box-content">
@@ -98,7 +98,7 @@
         </div>
       </div>
       
-      <div class="col-md-3 col-sm-6 col-xs-12">
+      <div class="col-md-2 col-sm-4 col-xs-6">
         <div class="info-box bg-yellow">
           <span class="info-box-icon"><i class="fa fa-check-circle"></i></span>
           <div class="info-box-content">
@@ -108,12 +108,42 @@
         </div>
       </div>
       
-      <div class="col-md-3 col-sm-6 col-xs-12">
+      <div class="col-md-2 col-sm-4 col-xs-6">
         <div class="info-box bg-red">
           <span class="info-box-icon"><i class="fa fa-times-circle"></i></span>
           <div class="info-box-content">
             <span class="info-box-text">Total Absen</span>
             <span class="info-box-number" id="totalAbsen">0</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-2 col-sm-4 col-xs-6">
+        <div class="info-box bg-purple">
+          <span class="info-box-icon"><i class="fa fa-medkit"></i></span>
+          <div class="info-box-content">
+            <span class="info-box-text">Total Sakit</span>
+            <span class="info-box-number" id="totalSakit">0</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-2 col-sm-4 col-xs-6">
+        <div class="info-box bg-aqua">
+          <span class="info-box-icon"><i class="fa fa-file-text-o"></i></span>
+          <div class="info-box-content">
+            <span class="info-box-text">Total Izin</span>
+            <span class="info-box-number" id="totalIzin">0</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-2 col-sm-4 col-xs-6">
+        <div class="info-box bg-teal">
+          <span class="info-box-icon"><i class="fa fa-plane"></i></span>
+          <div class="info-box-content">
+            <span class="info-box-text">Total Cuti</span>
+            <span class="info-box-number" id="totalCuti">0</span>
           </div>
         </div>
       </div>
@@ -320,6 +350,9 @@
 .bg-blue { background: #3c8dbc !important; color: white; }
 .bg-yellow { background: #f39c12 !important; color: white; }
 .bg-red { background: #dd4b39 !important; color: white; }
+.bg-purple { background: #9b59b6 !important; color: white; }
+.bg-aqua { background: #3498db !important; color: white; }
+.bg-teal { background: #1abc9c !important; color: white; }
 
 /* Hover effect */
 #tblKehadiran tbody tr:hover {
@@ -446,6 +479,9 @@ function loadKehadiranData() {
         $('#hariKerja').text(res.summary.hari_kerja);
         $('#avgKehadiran').text(res.summary.avg_kehadiran + '%');
         $('#totalAbsen').text(res.summary.total_absen);
+        $('#totalSakit').text(res.summary.total_sakit || 0);
+        $('#totalIzin').text(res.summary.total_izin || 0);
+        $('#totalCuti').text(res.summary.total_cuti || 0);
       } else {
         console.error('❌ Error response:', res);
         alert('Error: ' + res.message);
@@ -493,7 +529,10 @@ function renderKehadiranTable(data, dates, summary) {
   headerHtml += '<th style="background:#27ae60; min-width:80px;">Total<br>Hadir</th>';
   headerHtml += '<th style="background:#e74c3c; min-width:80px;">Total<br>Absen</th>';
   headerHtml += '<th style="background:#f39c12; min-width:80px;">Tidak<br>Hadir</th>';
-  headerHtml += '<th style="background:#3498db; min-width:80px;">%<br>Hadir</th>';
+  headerHtml += '<th style="background:#9b59b6; min-width:80px;">Jumlah<br>Sakit</th>';
+  headerHtml += '<th style="background:#3498db; min-width:80px;">Jumlah<br>Izin</th>';
+  headerHtml += '<th style="background:#1abc9c; min-width:80px;">Jumlah<br>Cuti</th>';
+  headerHtml += '<th style="background:#34495e; min-width:80px;">%<br>Hadir</th>';
   headerHtml += '</tr>';
   
   $('#tblKehadiran thead').html(headerHtml);
@@ -544,9 +583,17 @@ function renderKehadiranTable(data, dates, summary) {
     let hariKerja = summary.hari_kerja || 23; // Use from summary
     let persenHadir = hariKerja > 0 ? Math.round((totalHadir / hariKerja) * 100) : 0;
     
+    // Get izin counts from karyawan data
+    let jumlahSakit = karyawan.jumlah_sakit || 0;
+    let jumlahIzin = karyawan.jumlah_izin || 0;
+    let jumlahCuti = karyawan.jumlah_cuti || 0;
+    
     html += '<td style="background:#ecf0f1;"><strong>' + totalHadir + '</strong></td>';
     html += '<td style="background:#ecf0f1;"><strong>' + totalAbsen + '</strong></td>';
     html += '<td style="background:#ecf0f1;"><strong>' + totalTidakHadir + '</strong></td>';
+    html += '<td style="background:#ecf0f1;"><strong>' + jumlahSakit + '</strong></td>';
+    html += '<td style="background:#ecf0f1;"><strong>' + jumlahIzin + '</strong></td>';
+    html += '<td style="background:#ecf0f1;"><strong>' + jumlahCuti + '</strong></td>';
     html += '<td style="background:#ecf0f1;"><strong>' + persenHadir + '%</strong></td>';
     html += '</tr>';
   });

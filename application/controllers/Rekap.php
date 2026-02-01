@@ -1424,6 +1424,69 @@ class Rekap extends CI_Controller {
             $start_date = $startDate;
             $end_date = $endDate;
             
+            // Pre-aggregate izin data per employee for the entire date range
+            $izin_counts = [];
+            if (!empty($karyawan_list)) {
+                $karyawan_ids = array_column($karyawan_list, 'recid_karyawan');
+                
+                // Get Sakit counts
+                $sakit_query = "
+                    SELECT 
+                        ia.recid_karyawan,
+                        COUNT(*) as jumlah_sakit
+                    FROM master_finger.izin_absen ia
+                    WHERE ia.is_delete = '0' 
+                      AND ia.jenis = 'SAKIT'
+                      AND ia.tgl_mulai BETWEEN ? AND ?
+                      AND ia.recid_karyawan IN (" . implode(',', array_fill(0, count($karyawan_ids), '?')) . ")
+                    GROUP BY ia.recid_karyawan
+                ";
+                $sakit_params = array_merge([$start_date, $end_date], $karyawan_ids);
+                $sakit_result = $this->db2->query($sakit_query, $sakit_params)->result_array();
+                
+                foreach ($sakit_result as $row) {
+                    $izin_counts[$row['recid_karyawan']]['sakit'] = (int)$row['jumlah_sakit'];
+                }
+                
+                // Get Izin counts (P1, CM, CT, CK, CS, CN)
+                $izin_query = "
+                    SELECT 
+                        ia.recid_karyawan,
+                        COUNT(*) as jumlah_izin
+                    FROM master_finger.izin_absen ia
+                    WHERE ia.is_delete = '0' 
+                      AND ia.jenis IN ('P1', 'CM', 'CT', 'CK', 'CS', 'CN')
+                      AND ia.tgl_mulai BETWEEN ? AND ?
+                      AND ia.recid_karyawan IN (" . implode(',', array_fill(0, count($karyawan_ids), '?')) . ")
+                    GROUP BY ia.recid_karyawan
+                ";
+                $izin_params = array_merge([$start_date, $end_date], $karyawan_ids);
+                $izin_result = $this->db2->query($izin_query, $izin_params)->result_array();
+                
+                foreach ($izin_result as $row) {
+                    $izin_counts[$row['recid_karyawan']]['izin'] = (int)$row['jumlah_izin'];
+                }
+                
+                // Get Cuti counts (C)
+                $cuti_query = "
+                    SELECT 
+                        ia.recid_karyawan,
+                        COUNT(*) as jumlah_cuti
+                    FROM master_finger.izin_absen ia
+                    WHERE ia.is_delete = '0' 
+                      AND ia.jenis = 'C'
+                      AND ia.tgl_mulai BETWEEN ? AND ?
+                      AND ia.recid_karyawan IN (" . implode(',', array_fill(0, count($karyawan_ids), '?')) . ")
+                    GROUP BY ia.recid_karyawan
+                ";
+                $cuti_params = array_merge([$start_date, $end_date], $karyawan_ids);
+                $cuti_result = $this->db2->query($cuti_query, $cuti_params)->result_array();
+                
+                foreach ($cuti_result as $row) {
+                    $izin_counts[$row['recid_karyawan']]['cuti'] = (int)$row['jumlah_cuti'];
+                }
+            }
+            
             $query = "
                 SELECT 
                     k.recid_karyawan,
@@ -1462,6 +1525,9 @@ class Rekap extends CI_Controller {
             $data = [];
             $total_hadir_global = 0;
             $total_absen_global = 0;
+            $total_sakit_global = 0;
+            $total_izin_global = 0;
+            $total_cuti_global = 0;
             
             foreach ($karyawan_list as $karyawan) {
                 $recid = $karyawan['recid_karyawan'];
@@ -1484,10 +1550,22 @@ class Rekap extends CI_Controller {
                     }
                 }
                 
+                // Get izin counts for this employee
+                $jumlah_sakit = isset($izin_counts[$recid]['sakit']) ? $izin_counts[$recid]['sakit'] : 0;
+                $jumlah_izin = isset($izin_counts[$recid]['izin']) ? $izin_counts[$recid]['izin'] : 0;
+                $jumlah_cuti = isset($izin_counts[$recid]['cuti']) ? $izin_counts[$recid]['cuti'] : 0;
+                
+                $total_sakit_global += $jumlah_sakit;
+                $total_izin_global += $jumlah_izin;
+                $total_cuti_global += $jumlah_cuti;
+                
                 $data[] = [
                     'nik' => $karyawan['nik'],
                     'nama_karyawan' => $karyawan['nama_karyawan'],
-                    'kehadiran' => $kehadiran
+                    'kehadiran' => $kehadiran,
+                    'jumlah_sakit' => $jumlah_sakit,
+                    'jumlah_izin' => $jumlah_izin,
+                    'jumlah_cuti' => $jumlah_cuti
                 ];
             }
             
@@ -1518,6 +1596,9 @@ class Rekap extends CI_Controller {
                     'hari_kerja' => $hari_kerja,
                     'total_hadir' => $total_hadir_global,
                     'total_absen' => $total_absen_global,
+                    'total_sakit' => $total_sakit_global,
+                    'total_izin' => $total_izin_global,
+                    'total_cuti' => $total_cuti_global,
                     'avg_kehadiran' => $avg_kehadiran,
                     'nama_bag' => $nama_bag
                 ],

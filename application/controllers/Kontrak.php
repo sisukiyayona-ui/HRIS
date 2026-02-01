@@ -32,7 +32,10 @@ class Kontrak extends CI_Controller
 
         // Validate input
         if (empty($recid_karyawan) || empty($tgl_mulai) || empty($tgl_akhir)) {
-            echo json_encode(['status' => 'error', 'message' => 'Semua field harus diisi']);
+            $this->output
+                ->set_content_type('application/json')
+                ->set_status_header(400)
+                ->set_output(json_encode(['status' => 'error', 'message' => 'Semua field harus diisi']));
             return;
         }
 
@@ -58,9 +61,15 @@ class Kontrak extends CI_Controller
             );
             $this->M_hris->update_karyawan($recid_karyawan, $employee_data);
             
-            echo json_encode(['status' => 'success']);
+            $this->output
+                ->set_content_type('application/json')
+                ->set_status_header(200)
+                ->set_output(json_encode(['status' => 'success']));
         } else {
-            echo json_encode(['status' => 'error']);
+            $this->output
+                ->set_content_type('application/json')
+                ->set_status_header(400)
+                ->set_output(json_encode(['status' => 'error', 'message' => 'Gagal menyimpan kontrak']));
         }
     }
 
@@ -81,7 +90,10 @@ class Kontrak extends CI_Controller
 
         // Validate input
         if (empty($tgl_mulai) || empty($tgl_akhir)) {
-            echo json_encode(['status' => 'error', 'message' => 'Semua field harus diisi']);
+            $this->output
+                ->set_content_type('application/json')
+                ->set_status_header(400)
+                ->set_output(json_encode(['status' => 'error', 'message' => 'Semua field harus diisi']));
             return;
         }
 
@@ -106,9 +118,15 @@ class Kontrak extends CI_Controller
                 $this->M_hris->update_karyawan($contract->recid_karyawan, $employee_data);
             }
             
-            echo json_encode(['status' => 'success']);
+            $this->output
+                ->set_content_type('application/json')
+                ->set_status_header(200)
+                ->set_output(json_encode(['status' => 'success']));
         } else {
-            echo json_encode(['status' => 'error']);
+            $this->output
+                ->set_content_type('application/json')
+                ->set_status_header(400)
+                ->set_output(json_encode(['status' => 'error', 'message' => 'Gagal mengupdate kontrak']));
         }
     }
 
@@ -128,7 +146,10 @@ class Kontrak extends CI_Controller
         $this->load->model('M_kontrak');
         $contract = $this->M_kontrak->get_kontrak_by_id($recid_kontrak);
         if (!$contract) {
-            echo json_encode(['error' => 'Kontrak tidak ditemukan']);
+            $this->output
+                ->set_content_type('application/json')
+                ->set_status_header(400)
+                ->set_output(json_encode(['error' => 'Kontrak tidak ditemukan']));
             return;
         }
 
@@ -136,7 +157,10 @@ class Kontrak extends CI_Controller
         $total_contracts = $this->M_kontrak->get_total_contracts_by_karyawan($contract->recid_karyawan);
         $is_single_contract = ($total_contracts == 1);
 
-        echo json_encode(['is_single_contract' => $is_single_contract]);
+        $this->output
+            ->set_content_type('application/json')
+            ->set_status_header(200)
+            ->set_output(json_encode(['is_single_contract' => $is_single_contract]));
     }
 
     /**
@@ -155,7 +179,10 @@ class Kontrak extends CI_Controller
         $this->load->model('M_kontrak');
         $contract = $this->M_kontrak->get_kontrak_by_id($recid_kontrak);
         if (!$contract) {
-            echo json_encode(['status' => 'error', 'message' => 'Kontrak tidak ditemukan']);
+            $this->output
+                ->set_content_type('application/json')
+                ->set_status_header(400)
+                ->set_output(json_encode(['status' => 'error', 'message' => 'Kontrak tidak ditemukan']));
             return;
         }
 
@@ -222,9 +249,15 @@ class Kontrak extends CI_Controller
                 }
             }
             
-            echo json_encode(['status' => 'success']);
+            $this->output
+                ->set_content_type('application/json')
+                ->set_status_header(200)
+                ->set_output(json_encode(['status' => 'success']));
         } else {
-            echo json_encode(['status' => 'error', 'message' => 'Gagal menghapus kontrak']);
+            $this->output
+                ->set_content_type('application/json')
+                ->set_status_header(400)
+                ->set_output(json_encode(['status' => 'error', 'message' => 'Gagal menghapus kontrak']));
         }
     }
 
@@ -245,14 +278,20 @@ class Kontrak extends CI_Controller
 
         // Validate input
         if (empty($tgl_resign) || empty($alasan_resign)) {
-            echo json_encode(['status' => 'error', 'message' => 'Tanggal resign dan alasan harus diisi']);
+            $this->output
+                ->set_content_type('application/json')
+                ->set_status_header(400)
+                ->set_output(json_encode(['status' => 'error', 'message' => 'Tanggal resign dan alasan harus diisi']));
             return;
         }
 
         // Get contract details to get employee ID
         $contract = $this->M_kontrak->get_kontrak_by_id($recid_kontrak);
         if (!$contract) {
-            echo json_encode(['status' => 'error', 'message' => 'Kontrak tidak ditemukan']);
+            $this->output
+                ->set_content_type('application/json')
+                ->set_status_header(400)
+                ->set_output(json_encode(['status' => 'error', 'message' => 'Kontrak tidak ditemukan']));
             return;
         }
 
@@ -268,9 +307,15 @@ class Kontrak extends CI_Controller
             );
             $this->M_hris->update_karyawan($contract->recid_karyawan, $employee_data);
             
-            echo json_encode(['status' => 'success']);
+            $this->output
+                ->set_content_type('application/json')
+                ->set_status_header(200)
+                ->set_output(json_encode(['status' => 'success']));
         } else {
-            echo json_encode(['status' => 'error']);
+            $this->output
+                ->set_content_type('application/json')
+                ->set_status_header(400)
+                ->set_output(json_encode(['status' => 'error', 'message' => 'Gagal mengakhiri kontrak']));
         }
     }
 
@@ -347,9 +392,15 @@ class Kontrak extends CI_Controller
                 }
             }
             
-            echo json_encode(['status' => 'success']);
+            $this->output
+                ->set_content_type('application/json')
+                ->set_status_header(200)
+                ->set_output(json_encode(['status' => 'success']));
         } else {
-            echo json_encode(['status' => 'error']);
+            $this->output
+                ->set_content_type('application/json')
+                ->set_status_header(400)
+                ->set_output(json_encode(['status' => 'error', 'message' => 'Gagal menyelesaikan kontrak']));
         }
     }
 
@@ -371,14 +422,20 @@ class Kontrak extends CI_Controller
 
         // Validate input
         if (empty($jenis_non_aktif) || empty($tgl_non_aktif) || empty($keterangan_non_aktif)) {
-            echo json_encode(['status' => 'error', 'message' => 'Jenis non aktif, tanggal non aktif, dan keterangan harus diisi']);
+            $this->output
+                ->set_content_type('application/json')
+                ->set_status_header(400)
+                ->set_output(json_encode(['status' => 'error', 'message' => 'Jenis non aktif, tanggal non aktif, dan keterangan harus diisi']));
             return;
         }
 
         // Get contract details to get employee ID
         $contract = $this->M_kontrak->get_kontrak_by_id($recid_kontrak);
         if (!$contract) {
-            echo json_encode(['status' => 'error', 'message' => 'Kontrak tidak ditemukan']);
+            $this->output
+                ->set_content_type('application/json')
+                ->set_status_header(400)
+                ->set_output(json_encode(['status' => 'error', 'message' => 'Kontrak tidak ditemukan']));
             return;
         }
 
@@ -394,9 +451,15 @@ class Kontrak extends CI_Controller
             );
             $this->M_hris->update_karyawan($contract->recid_karyawan, $employee_data);
             
-            echo json_encode(['status' => 'success']);
+            $this->output
+                ->set_content_type('application/json')
+                ->set_status_header(200)
+                ->set_output(json_encode(['status' => 'success']));
         } else {
-            echo json_encode(['status' => 'error']);
+            $this->output
+                ->set_content_type('application/json')
+                ->set_status_header(400)
+                ->set_output(json_encode(['status' => 'error', 'message' => 'Gagal menonaktifkan karyawan']));
         }
     }
 }

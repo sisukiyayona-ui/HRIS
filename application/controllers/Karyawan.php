@@ -11032,4 +11032,34 @@ public function export($recid_karyawan = null)
     $writer->save('php://output');
 }
 
+    /**
+     * Get active contract for an employee (AJAX)
+     * @param int $recid_karyawan Employee ID
+     */
+    public function get_active_contract($recid_karyawan)
+    {
+        // Only allow AJAX requests
+        if (!$this->input->is_ajax_request()) {
+            show_404();
+            return;
+        }
+        
+        $this->load->model('M_kontrak');
+        $contracts = $this->M_kontrak->get_kontrak_by_karyawan($recid_karyawan);
+        
+        // Find the active contract (status = 'aktif')
+        $active_contract = null;
+        foreach ($contracts as $contract) {
+            if ($contract->status_kontrak == 'aktif') {
+                $active_contract = $contract;
+                break;
+            }
+        }
+        
+        $this->output
+            ->set_content_type('application/json')
+            ->set_status_header(200)
+            ->set_output(json_encode($active_contract ?: null));
+    }
+
 }
