@@ -54,7 +54,10 @@
     </style>
   <!-- jQuery -->
   <script src="<?php echo base_url()?>assets/vendors/jquery/dist/jquery.min.js"></script>
-  
+    
+  <!-- jQuery UI CSS -->
+  <link href="https://code.jquery.com/ui/1.12.1/themes/ui-lightness/jquery-ui.css" rel="stylesheet">
+    
   <!-- Bootstrap -->
   <link href="<?php echo base_url()?>assets/vendors/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
  

@@ -14,6 +14,8 @@
  <script src="<?php echo base_url() ?>assets/vendors/bootstrap/dist/js/bootstrap.min.js"></script>
  <!-- FastClick -->
  <script src="<?php echo base_url() ?>assets/vendors/fastclick/lib/fastclick.js"></script>
+ <!-- jQuery UI JavaScript -->
+ <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
  <!-- NProgress -->
  <script src="<?php echo base_url() ?>assets/vendors/nprogress/nprogress.js"></script>
  <!-- Datatables -->

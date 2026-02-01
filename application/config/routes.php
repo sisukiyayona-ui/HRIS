@@ -132,6 +132,15 @@ $route['employee_import/process_data'] = 'employee_import/process_data';
 $route['employee_import/do_import'] = 'employee_import/do_import';
 $route['employee_import/download_template'] = 'employee_import/download_template';
 
+// Routes for Contract Import
+$route['contract_import'] = 'contract_import';
+$route['contract_import/upload'] = 'contract_import/upload';
+$route['contract_import/preview'] = 'contract_import/preview';
+$route['contract_import/process_data'] = 'contract_import/process_data';
+$route['contract_import/do_import'] = 'contract_import/do_import';
+$route['contract_import/download_template'] = 'contract_import/download_template';
+$route['contract_import/results'] = 'contract_import/results';
+
 // Routes for Karyawan Export
 $route['karyawan/export'] = 'karyawan/export';
 

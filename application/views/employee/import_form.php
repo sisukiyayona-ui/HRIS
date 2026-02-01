@@ -3,7 +3,7 @@
   <div class="">
     <div class="page-title">
       <div class="title_left">
-        <h3>Import Karyawan Massal</h3>
+        <h3>Import Karyawan Bulk</h3>
       </div>
     </div>
 

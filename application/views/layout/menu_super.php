@@ -296,6 +296,7 @@ if ($as_user == "CINT") {
                     <?php } ?>
                     <?php if ($role == '1' or $role == '2' or $role == '3' or $role == '5' or $role == '25') { ?>
                       <li><a href="<?php echo base_url() ?>Employee_import">Bulk Employee Import</a></li>
+                      <li><a href="<?php echo base_url() ?>Contract_import">Bulk Contract Import</a></li>
                     <?php } ?>
 
                   </ul>
