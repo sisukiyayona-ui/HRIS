@@ -39,6 +39,9 @@
               <a class="btn btn-info btn-sm disabled" href="#" onclick="return false;">
                 <i class="fa fa-upload"></i> | Ekspedisi Berkas
               </a>
+              <a class="btn btn-primary btn-sm" href="<?php echo base_url()?>Status_update_import">
+                <i class="fa fa-upload"></i> | Ubah Status Jadi Tetap
+              </a>
 
             <?php } ?>
             <?php if ($tingkatan >= 6) { ?>
@@ -48,7 +51,7 @@
             <?php } ?>
 
           <?php if ($role == '1' or $role == '2' or $role == '3' or $role == '5' or $role == '26') { ?>
-              <a class="btn btn-dark btn-sm" href="<?php echo base_url('karyawan/export') ?>">
+              <a class="btn btn-dark btn-sm" id="exportBtn" href="javascript:void(0);" onclick="exportFilteredData()">
                   <i class="fa fa-file-excel-o"></i> | Export Data Karyawan
               </a>
           <?php } ?>
@@ -184,6 +187,9 @@
           <button type="button" class="btn btn-primary btn-lg" id="btnTambahKontrak" style="margin: 10px;">
             <i class="fa fa-plus"></i> Tambah Kontrak Baru
           </button>
+          <button type="button" class="btn btn-success btn-lg" id="btnJadikanTetap" style="margin: 10px;">
+            <i class="fa fa-check"></i> Diangkat Jadi Pegawai Tetap
+          </button>
           <button type="button" class="btn btn-danger btn-lg" id="btnNonAktif" style="margin: 10px;">
             <i class="fa fa-times"></i> Non Aktif Karyawan
           </button>
@@ -217,6 +223,35 @@
       <div class="modal-footer">
         <button type="button" class="btn btn-default" data-dismiss="modal">Batal</button>
         <button type="button" class="btn btn-primary" id="saveTambahKontrak">Simpan</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Jadikan Pegawai Tetap Modal -->
+<div class="modal fade" id="jadikanTetapModal" tabindex="-1" role="dialog" aria-labelledby="jadikanTetapModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="jadikanTetapModalLabel">Diangkat Jadi Pegawai Tetap</h4>
+      </div>
+      <div class="modal-body">
+        <form id="jadikanTetapForm">
+          <input type="hidden" id="jt_recid_karyawan">
+          <div class="form-group">
+            <label for="jt_sk_kary_tetap_nomor">Nomor SK Karyawan Tetap:</label>
+            <input type="text" class="form-control" id="jt_sk_kary_tetap_nomor" placeholder="Masukkan nomor SK karyawan tetap" required>
+          </div>
+          <div class="form-group">
+            <label for="jt_sk_kary_tetap_tanggal">Tanggal SK Karyawan Tetap:</label>
+            <input type="date" class="form-control" id="jt_sk_kary_tetap_tanggal" required>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-success" id="saveJadikanTetap">Simpan</button>
       </div>
     </div>
   </div>
@@ -343,7 +378,20 @@ $(document).ready(function() {
         $('#tk_tgl_akhir').val('');
         $('#tambahKontrakModal').modal('show');
     });
-
+    
+    // Handle Jadikan Tetap button click
+    $('#btnJadikanTetap').click(function() {
+        var recidKaryawan = $('#modalRecidKaryawan').val();
+        var namaKaryawan = $('#modalEmployeeName').text();
+        
+        $('#kontrakActionModal').modal('hide');
+        $('#jt_recid_karyawan').val(recidKaryawan);
+        $('#jadikanTetapModalLabel').text('Diangkat Jadi Pegawai Tetap - ' + namaKaryawan);
+        $('#jt_sk_kary_tetap_nomor').val('');
+        $('#jt_sk_kary_tetap_tanggal').val('');
+        $('#jadikanTetapModal').modal('show');
+    });
+    
     // Handle Non Aktif button click
     $('#btnNonAktif').click(function() {
         var recidKaryawan = $('#modalRecidKaryawan').val();
@@ -396,12 +444,12 @@ $(document).ready(function() {
         var jenis_non_aktif = $('#na_jenis_non_aktif').val();
         var tgl_non_aktif = $('#na_tgl_non_aktif').val();
         var keterangan = $('#na_keterangan').val();
-
+    
         if (!jenis_non_aktif || !tgl_non_aktif || !keterangan) {
             showToast('Harap lengkapi semua field', 'error');
             return;
         }
-
+    
         // First, we need to get the active contract for this employee
         $.ajax({
             url: '<?php echo base_url(); ?>index.php/Karyawan/get_active_contract/' + recid_karyawan,
@@ -493,5 +541,65 @@ $(document).ready(function() {
             }
         });
     });
+    
+    // Save Jadikan Tetap
+    $('#saveJadikanTetap').click(function() {
+        var recid_karyawan = $('#jt_recid_karyawan').val();
+        var sk_kary_tetap_nomor = $('#jt_sk_kary_tetap_nomor').val();
+        var sk_kary_tetap_tanggal = $('#jt_sk_kary_tetap_tanggal').val();
+    
+        if (!sk_kary_tetap_nomor || !sk_kary_tetap_tanggal) {
+            showToast('Harap lengkapi semua field', 'error');
+            return;
+        }
+    
+        // Update employee to permanent status
+        $.ajax({
+            url: '<?php echo base_url(); ?>index.php/Karyawan/jadikan_tetap',
+            type: 'POST',
+            dataType: 'json',
+            data: { 
+                recid_karyawan: recid_karyawan,
+                sk_kary_tetap_nomor: sk_kary_tetap_nomor,
+                sk_kary_tetap_tanggal: sk_kary_tetap_tanggal
+            },
+            success: function(response) {
+                if (typeof response === 'object' && response.status === 'success') {
+                    $('#jadikanTetapModal').modal('hide');
+                    showToast("Karyawan berhasil diangkat menjadi pegawai tetap", "success");
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showToast("Gagal mengubah status karyawan: " + (response.message || 'Unknown error'), "error");
+                }
+            },
+            error: function(xhr, status, error) {
+                console.log('Error details:', xhr.responseText);
+                showToast("Gagal mengubah status karyawan: " + error, "error");
+            }
+        });
+    });
 });
+
+// Function to export filtered data
+function exportFilteredData() {
+    // Get the current search term from the DataTables search input
+    var searchTerm = $('.dataTables_filter input').val();
+    
+    // Check if the search term contains "resign" (case insensitive)
+    if (searchTerm.toLowerCase().includes('resign')) {
+        window.location.href = '<?php echo base_url('karyawan/export?filter=resign'); ?>';
+    } 
+    // Check if the search term contains "aktif" (case insensitive)
+    else if (searchTerm.toLowerCase().includes('aktif')) {
+        window.location.href = '<?php echo base_url('karyawan/export?filter=aktif'); ?>';
+    }
+    // For other search terms
+    else if (searchTerm.trim() !== '') {
+        window.location.href = '<?php echo base_url('karyawan/export?filter='); ?>' + encodeURIComponent(searchTerm);
+    }
+    // If no filter, export all data
+    else {
+        window.location.href = '<?php echo base_url('karyawan/export'); ?>';
+    }
+}
 </script>

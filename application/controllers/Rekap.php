@@ -1039,6 +1039,7 @@ class Rekap extends CI_Controller {
         // Pisahkan data: yang sudah absen vs belum absen
         $data['absensi'] = []; // Untuk table utama (yang sudah absen)
         $data['belum_absen'] = []; // Untuk modal (yang belum absen)
+        $data['terlambat_list'] = []; // Untuk modal terlambat
         
         $tepat_waktu = 0;
         $terlambat = 0;
@@ -1075,6 +1076,12 @@ class Rekap extends CI_Controller {
                 $patokan = !empty($row->jam_in_shift) ? $row->jam_in_shift : $data['jam_masuk_std'];
                 if ($row->jam_masuk > $patokan) {
                     $terlambat++;
+                    // Tambahkan ke daftar terlambat untuk modal
+                    $diff = strtotime($row->jam_masuk) - strtotime($patokan);
+                    $menit_telat = floor($diff / 60);
+                    $row->jam_masuk_display = date('H:i', strtotime($row->jam_masuk));
+                    $row->keterangan = 'Telat ' . $menit_telat . ' menit';
+                    $data['terlambat_list'][] = $row;
                 } else {
                     $tepat_waktu++;
                 }
@@ -1101,6 +1108,150 @@ class Rekap extends CI_Controller {
         $this->load->view('layout/menu_super', $data);
         $this->load->view('rekap/absensi_view', $data);
         $this->load->view('layout/a_footer');
+    }
+    
+    // API: Get data karyawan terlambat
+    public function get_terlambat_data()
+    {
+        header('Content-Type: application/json');
+        
+        $tanggal = $this->input->post('tanggal');
+        
+        if (empty($tanggal)) {
+            echo json_encode(['success' => false, 'message' => 'Tanggal harus diisi']);
+            return;
+        }
+        
+        try {
+            $query = "
+                SELECT 
+                    k.nik,
+                    k.nama_karyawan,
+                    k.recid_karyawan,
+                    b.nama_bag AS nama_bagian,
+                    MIN(TIME(a.waktu)) as jam_masuk,
+                    ja.jam_in AS jam_in_shift,
+                    ja.jam_out AS jam_out_shift,
+                    ja.keterangan AS nama_shift
+                FROM hris.karyawan k
+                LEFT JOIN hris.karyawan_pin_map pm 
+                    ON k.recid_karyawan = pm.recid_karyawan
+                LEFT JOIN hris.bagian b
+                    ON k.recid_bag = b.recid_bag
+                LEFT JOIN master_finger.absensi a 
+                    ON pm.pin = a.nik 
+                    AND DATE(a.waktu) = ?
+                LEFT JOIN master_absen.jadwal_shift s
+                    ON s.recid_karyawan = k.recid_karyawan AND s.tgl_kerja = ? AND s.is_delete = '0'
+                LEFT JOIN master_absen.jenis_absen ja
+                    ON ja.recid_jenisabsen = s.recid_jenisabsen
+                WHERE k.sts_aktif = 'AKTIF'
+                    AND a.id IS NOT NULL
+                GROUP BY k.nik, k.nama_karyawan, k.recid_karyawan, b.nama_bag, ja.jam_in, ja.jam_out, ja.keterangan
+                HAVING MIN(TIME(a.waktu)) > COALESCE(ja.jam_in, '07:30:00')
+                ORDER BY k.nama_karyawan ASC
+            ";
+            
+            $result = $this->db->query($query, [$tanggal, $tanggal])->result();
+            
+            // Format data untuk response
+            $formatted_data = [];
+            foreach ($result as $row) {
+                $patokan = !empty($row->jam_in_shift) ? $row->jam_in_shift : '07:30:00';
+                $diff = strtotime($row->jam_masuk) - strtotime($patokan);
+                $menit_telat = floor($diff / 60);
+                
+                $formatted_data[] = [
+                    'nik' => $row->nik,
+                    'nama_karyawan' => $row->nama_karyawan,
+                    'recid_karyawan' => $row->recid_karyawan,
+                    'nama_bagian' => $row->nama_bagian,
+                    'jam_masuk' => $row->jam_masuk,
+                    'jam_masuk_display' => date('H:i', strtotime($row->jam_masuk)),
+                    'keterangan' => 'Telat ' . $menit_telat . ' menit'
+                ];
+            }
+            
+            echo json_encode([
+                'success' => true,
+                'data' => $formatted_data
+            ]);
+            
+        } catch (Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ]);
+        }
+    }
+    
+    // API: Simpan izin untuk karyawan terlambat
+    public function simpan_izin_terlambat()
+    {
+        header('Content-Type: application/json');
+        
+        $recid_karyawan = $this->input->post('recid_karyawan');
+        $tanggal = $this->input->post('tanggal');
+        $jenis = $this->input->post('jenis');
+        $keterangan = $this->input->post('keterangan');
+        
+        // Validasi input
+        if (empty($recid_karyawan) || empty($tanggal) || empty($jenis)) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'Semua field wajib diisi'
+            ]);
+            return;
+        }
+        
+        try {
+            // Cek apakah sudah ada izin untuk karyawan ini pada tanggal tsb
+            $existing = $this->db2->select('id')
+                                   ->from('izin_absen')
+                                   ->where('recid_karyawan', $recid_karyawan)
+                                   ->where('tgl_mulai', $tanggal)
+                                   ->where('is_delete', '0')
+                                   ->get()
+                                   ->num_rows();
+            
+            if ($existing > 0) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Izin untuk karyawan ini pada tanggal tersebut sudah ada'
+                ]);
+                return;
+            }
+            
+            // Simpan izin
+            $data = [
+                'recid_karyawan' => $recid_karyawan,
+                'tgl_mulai' => $tanggal,
+                'tgl_selesai' => $tanggal,
+                'jenis' => $jenis,
+                'keterangan' => $keterangan,
+                'crt_by' => $this->session->userdata('kar_id'),
+                'crt_date' => date('Y-m-d H:i:s'),
+                'is_delete' => '0'
+            ];
+            
+            if ($this->db2->insert('izin_absen', $data)) {
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Izin berhasil disimpan'
+                ]);
+            } else {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Gagal menyimpan izin'
+                ]);
+            }
+            
+        } catch (Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ]);
+        }
     }
 
     // View: Jadwal Shift (Absen Finger) - H-1 scheduler

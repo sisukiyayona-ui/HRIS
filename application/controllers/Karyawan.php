@@ -8240,6 +8240,9 @@ public function karyawan_pinsert()
 				}
 			}
 			$data['dept']	= $department;
+			// Load lembur model to get categories
+			$this->load->model('M_lembur');
+			$data['kategori'] = $this->M_lembur->kategori_lembur_aktif();
 			$usr = $this->session->userdata('kar_id');
 			$data['cek_usr'] = $this->m_hris->cek_usr($usr);
 			$this->load->view('layout/a_header');
@@ -10791,6 +10794,9 @@ public function export($recid_karyawan = null)
         return;
     }
 
+    // Get filter parameter from GET or POST
+    $filter_param = $this->input->get('filter') ?: $this->input->post('filter');
+    
     // Load the contract model to get contract data
     $this->load->model('M_kontrak');
 
@@ -10899,7 +10905,7 @@ public function export($recid_karyawan = null)
 
     $sheet->freezePane('A4'); // Freeze header rows
 
-    // QUERY
+    // QUERY - Apply filter if provided
     $this->db->select("
         k.*, b.nama_bag, bs.sub_bag AS subbag_nama,
         j.nama_jbtn, d.nama_department AS departemen
@@ -10909,6 +10915,23 @@ public function export($recid_karyawan = null)
     $this->db->join("bagian_sub bs","bs.recid_subbag=k.recid_subbag","left");
     $this->db->join("jabatan j","j.recid_jbtn=k.recid_jbtn","left");
     $this->db->join("department d","d.recid_department=b.recid_department","left");
+    
+    // Apply filter condition if provided
+    if (!empty($filter_param)) {
+        if (strtolower($filter_param) === 'resign') {
+            // Filter for resigned employees - covers various resignation indicators
+            $this->db->where("(LOWER(k.sts_aktif) LIKE '%resign%' OR LOWER(k.sts_aktif) LIKE '%non aktif%' OR LOWER(k.sts_aktif) LIKE '%keluar%' OR k.alasan_keluar IS NOT NULL AND k.alasan_keluar != '' OR k.tgl_keluar IS NOT NULL AND k.tgl_keluar != '0000-00-00')");
+        } elseif (strtolower($filter_param) === 'aktif') {
+            // Filter for active employees
+            $this->db->where("(LOWER(k.sts_aktif) LIKE '%aktif%' OR k.sts_aktif = 'Aktif' OR k.sts_aktif = 'aktif')");
+        } else {
+            // Generic filter - could be other status values
+            $this->db->where("(LOWER(k.sts_aktif) LIKE '%" . strtolower($this->db->escape_like_str($filter_param)) . "%' 
+                             OR k.alasan_keluar LIKE '%" . $this->db->escape_like_str($filter_param) . "%'
+                             OR k.nama_karyawan LIKE '%" . $this->db->escape_like_str($filter_param) . "%')");
+        }
+    }
+    
     $this->db->order_by("k.nama_karyawan","ASC");
 
     $data = $this->db->get()->result_array();
@@ -11060,6 +11083,67 @@ public function export($recid_karyawan = null)
             ->set_content_type('application/json')
             ->set_status_header(200)
             ->set_output(json_encode($active_contract ?: null));
+    }
+
+    /**
+     * Update employee to permanent status (diangkat jadi pegawai tetap)
+     */
+    public function jadikan_tetap()
+    {
+        // Only allow AJAX requests
+        if (!$this->input->is_ajax_request()) {
+            show_404();
+            return;
+        }
+
+        $recid_karyawan = $this->input->post('recid_karyawan');
+        $sk_kary_tetap_nomor = $this->input->post('sk_kary_tetap_nomor');
+        $sk_kary_tetap_tanggal = $this->input->post('sk_kary_tetap_tanggal');
+
+        // Validation
+        if (empty($recid_karyawan) || empty($sk_kary_tetap_nomor) || empty($sk_kary_tetap_tanggal)) {
+            $this->output
+                ->set_content_type('application/json')
+                ->set_status_header(400)
+                ->set_output(json_encode([
+                    'status' => 'error',
+                    'message' => 'Semua field harus diisi'
+                ]));
+            return;
+        }
+
+        // Load model
+        $this->load->model('M_hris');
+
+        // Prepare update data
+        $update_data = [
+            'kontrak' => 'Tidak', // Set to "Tidak" to indicate permanent status
+            'tgl_akhir_kontrak' => null, // Clear the contract end date
+            'sk_kary_tetap_nomor' => $sk_kary_tetap_nomor,
+            'sk_kary_tetap_tanggal' => $sk_kary_tetap_tanggal
+        ];
+
+        // Update the employee record
+        $this->db->where('recid_karyawan', $recid_karyawan);
+        $result = $this->db->update('karyawan', $update_data);
+
+        if ($result) {
+            $this->output
+                ->set_content_type('application/json')
+                ->set_status_header(200)
+                ->set_output(json_encode([
+                    'status' => 'success',
+                    'message' => 'Karyawan berhasil diangkat menjadi pegawai tetap'
+                ]));
+        } else {
+            $this->output
+                ->set_content_type('application/json')
+                ->set_status_header(500)
+                ->set_output(json_encode([
+                    'status' => 'error',
+                    'message' => 'Gagal mengupdate data karyawan'
+                ]));
+        }
     }
 
 }

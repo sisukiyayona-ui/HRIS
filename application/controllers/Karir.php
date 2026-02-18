@@ -352,7 +352,7 @@ class Karir extends CI_Controller
 		$recipients = $this->m_hris->expedisi_karir();
 		$terima = array();
 		foreach ($recipients->result() as $o) {
-			array_push($terima, $o->email_cint);
+			array_push($terima, $o->email);
 		}
 		array_push($terima, "diah@chitose.id");
 		array_push($terima, "legal@chitose.id");

@@ -54,10 +54,10 @@
                         </div>
                       </div>
                       <div class="item form-group">
-                        <label class="control-label col-md-3 col-sm-3 col-xs-12" for="judul">Kategori Lembur <span class="required" style="color: red">*</span>
+                        <label class="control-label col-md-3 col-sm-3 col-xs-12" for="judul">Kategori Lembur
                         </label>
                         <div class="col-md-6 col-sm-6 col-xs-12">
-                          <select name="recid_kategori" id="recid_kategori"  class="selectpicker form-control  col-md-12 col-xs-12" data-live-search="true" required="required" onchange="kategoris()">
+                          <select name="recid_kategori" id="recid_kategori"  class="selectpicker form-control  col-md-12 col-xs-12" data-live-search="true" onchange="kategoris()">
                             <?php
                             echo "<option value=''>-- Pilih --</option>";
                             foreach ($kategori->result() as $k) {
@@ -231,6 +231,8 @@
   $(document).ready(function(){
     $("#repeater").createRepeater();
     
+    // Initialize select pickers
+    $('.selectpicker').selectpicker();
   });
 
   function hitung_orang()
@@ -321,150 +323,55 @@
     recid_bagian = $("#recid_bagian").val();
     jam_mulai = $("#jam_mulai").val();
     jam_selesai = $("#jam_selesai").val();
-    if((jam_mulai == "06 : 00 " && jam_selesai == "14 : 00 ") || (jam_mulai == "14 : 00 " && jam_selesai == "22 : 00 ") || (jam_mulai == "22 : 00 " && jam_selesai == "06 : 00 "))
-    {
-       $.ajax({
-      type: "POST", // Method pengiriman data bisa dengan GET atau POST
-      url: "<?php echo base_url();?>index.php/Lembur/masterbudget_shift", // Isi dengan url/path file php yang dituju
-      data: {recid_bag :recid_bagian,tgl :tgl_lembur, jam_mulai : jam_mulai, jam_selesai : jam_selesai},
-      dataType: "json",
-      beforeSend: function(e) {
-        if(e && e.overrideMimeType) {
-          e.overrideMimeType("application/json;charset=UTF-8");
-          }
-       },
-      success: function(data, response){ // Ketika proses pengiriman berhasil
-        //data[0] => cek cut off udah dibuat apa belum
-        //data[1] => cek master budget bagian itu udah dibuat apa belum
-        //data[2] => cek jumlah budget per kuartal
-        //data[3] => recid mbl
-        //data[4] => kalkulasi jam lembur
-        
-        console.log("Cut off "+data[0]);
-        console.log("MBL "+data[1]);
-        if(data[0] == "Ready")
-        {
-          if(data[1] == "Ada")
-          {
-              budget_kuartal = data[2];
-              
-              kal_jam = data[4];
-
-              // jumlah orang
-              recid_karyawan = $("#callbacks").val();
-              jml_orang = recid_karyawan.length
-              console.log(jml_orang);
-
-              // jml jam lembur
-              jml_jam_lembur = kal_jam * jml_orang;
-              console.log("jml jam lemburnya : "+jml_jam_lembur);
-
-              /* hitung budget cukup atau tidak */
-              sisa_budget = budget_kuartal - jml_jam_lembur;
-              console.log("sisa budget = "+sisa_budget);
-               recid_mbl = parseInt(data[3]);
-              $('#mbl').val(recid_mbl);
-              $('#total_jam').val(jml_jam_lembur);
-              $('#jml_orang').val(jml_orang);
-
-              if(sisa_budget >= 0)
-              {
-                console.log("Budget Cukup");
-                $( "#form_lembur" ).submit();
-              }else{
-                // alert("Master Budget Over, Harap Isi Alasan!");
-                $("#alasan").show();
-                if($("#alasan_over").val() != '')  
-                {
-                  $( "#form_lembur" ).submit();
-                }else{
-                  alert("Master Budget Over, Harap Isi Alasan!");
-                }
-              }
-          }else{
-            alert("Harap isi master budget! (Hubungi bagian HC / Finance)");
-          }
-        }else{
-          alert("Cut Off Lembur Belum Dibuat");
-        }
-        console.log(data);
-       },
-      error: function (xhr, ajaxOptions, thrownError) { // Ketika ada error
-        alert(xhr.status + "\n" + xhr.responseText + "\n" + thrownError); // Munculkan alert error
-      }
-    });
-    }else{
-      $.ajax({
-      type: "POST", // Method pengiriman data bisa dengan GET atau POST
-      url: "<?php echo base_url();?>index.php/Lembur/masterbudget", // Isi dengan url/path file php yang dituju
-      data: {recid_bag :recid_bagian,tgl :tgl_lembur, jam_mulai : jam_mulai, jam_selesai : jam_selesai},
-      dataType: "json",
-      beforeSend: function(e) {
-        if(e && e.overrideMimeType) {
-          e.overrideMimeType("application/json;charset=UTF-8");
-          }
-       },
-      success: function(data, response){ // Ketika proses pengiriman berhasil
-        //data[0] => cek cut off udah dibuat apa belum
-        //data[1] => cek master budget bagian itu udah dibuat apa belum
-        //data[2] => cek jumlah budget per kuartal
-        //data[3] => recid mbl
-        //data[4] => kalkulasi jam lembur
-        
-        console.log("Cut off "+data[0]);
-        console.log("MBL "+data[1]);
-        if(data[0] == "Ready")
-        {
-          if(data[1] == "Ada")
-          {
-              budget_kuartal = data[2];
-              
-              kal_jam = data[4];
-
-              // jumlah orang
-              recid_karyawan = $("#callbacks").val();
-              jml_orang = recid_karyawan.length
-              console.log(jml_orang);
-
-              // jml jam lembur
-              jml_jam_lembur = kal_jam * jml_orang;
-              console.log("jml jam lemburnya : "+jml_jam_lembur);
-
-              /* hitung budget cukup atau tidak */
-              sisa_budget = budget_kuartal - jml_jam_lembur;
-              console.log("sisa budget = "+sisa_budget);
-               recid_mbl = parseInt(data[3]);
-              $('#mbl').val(recid_mbl);
-              $('#total_jam').val(jml_jam_lembur);
-              $('#jml_orang').val(jml_orang);
-
-              if(sisa_budget >= 0)
-              {
-                console.log("Budget Cukup");
-                $( "#form_lembur" ).submit();
-              }else{
-                // alert("Master Budget Over, Harap Isi Alasan!");
-                $("#alasan").show();
-                if($("#alasan_over").val() != '')  
-                {
-                  $( "#form_lembur" ).submit();
-                }else{
-                  alert("Master Budget Over, Harap Isi Alasan!");
-                }
-              }
-          }else{
-            alert("Harap isi master budget! (Hubungi bagian HC / Finance)");
-          }
-        }else{
-          alert("Cut Off Lembur Belum Dibuat");
-        }
-        console.log(data);
-       },
-      error: function (xhr, ajaxOptions, thrownError) { // Ketika ada error
-        alert(xhr.status + "\n" + xhr.responseText + "\n" + thrownError); // Munculkan alert error
-      }
-    });
+    
+    // Validate required fields
+    if (!tgl_lembur) {
+      alert("Tanggal Lembur harus diisi!");
+      return;
     }
+    if (!recid_bagian) {
+      alert("Bagian harus dipilih!");
+      return;
+    }
+    if (!jam_mulai) {
+      alert("Jam Mulai harus diisi!");
+      return;
+    }
+    if (!jam_selesai) {
+      alert("Jam Selesai harus diisi!");
+      return;
+    }
+    if ($("#callbacks").val() == null || $("#callbacks").val().length == 0) {
+      alert("Minimal 1 karyawan harus dipilih!");
+      return;
+    }
+    if (!$("#keterangan").val()) {
+      alert("Keterangan harus diisi!");
+      return;
+    }
+    
+    // Check if at least one pekerjaan is filled
+    var hasPekerjaan = false;
+    $(".pekerjaan").each(function() {
+      if ($(this).val().trim() != "") {
+        hasPekerjaan = true;
+        return false;
+      }
+    });
+    
+    if (!hasPekerjaan) {
+      alert("Minimal 1 uraian pekerjaan harus diisi!");
+      return;
+    }
+    
+    // Set default values for hidden fields
+    $('#mbl').val(1); // Default MBL ID
+    $('#total_jam').val(0); // Default total hours
+    $('#jml_orang').val($("#callbacks").val().length); // Number of employees
+    
+    // Submit form directly without budget validation
+    console.log("Submitting form without budget validation");
+    $( "#form_lembur" ).submit();
   }
 
 

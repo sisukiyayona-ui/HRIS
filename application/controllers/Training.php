@@ -283,7 +283,7 @@ class Training extends CI_Controller
 			$eatasan1 = $aju->email1;
 			$eatasan2 = $aju->email2;
 			$email = $aju->email;
-			$email_cint = $aju->email_cint;
+			$email_cint = $aju->email;
 
 			if ($email_cint == '') {
 				$email_pengaju = $email;

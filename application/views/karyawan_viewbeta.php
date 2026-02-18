@@ -29,6 +29,9 @@
              <a class="btn btn-default btn-sm" href="<?php echo base_url()?>Karyawan/renew">
               <i class="fa fa-plus"></i> | Renew Data
             </a>
+            <a class="btn btn-primary btn-sm" href="<?php echo base_url()?>Status_update_import">
+              <i class="fa fa-upload"></i> | Ubah Status Jadi Tetap
+            </a>
             <div class="clearfix"></div>
           </div>
         <?php } ?>

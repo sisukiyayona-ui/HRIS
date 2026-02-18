@@ -378,6 +378,15 @@ class Lembur extends CI_Controller
 		// $usr = 1090;
 		// $role = 23;
 		$cek_usr = $this->m_hris->cek_usr($usr);
+		// Initialize department variable to prevent undefined variable error
+		$department = '';
+		$dept_group = '';
+		$nama = '';
+		$bagian = '';
+		$recid_bag = '';
+		$jabatan = '';
+		$tingkatan = '';
+		$recid_struktur = '';
 		foreach ($cek_usr as $user) {
 			$nama = $user->nama_karyawan;
 			$bagian = $user->indeks_hr;
@@ -777,6 +786,15 @@ class Lembur extends CI_Controller
 		$usr = $this->session->userdata('kar_id');
 		$role = $this->session->userdata('role_id');
 		$cek_usr = $this->m_hris->cek_usr($usr);
+		// Initialize department variable to prevent undefined variable error
+		$department = '';
+		$dept_group = '';
+		$nama = '';
+		$bagian = '';
+		$recid_bag = '';
+		$jabatan = '';
+		$tingkatan = '';
+		$recid_struktur = '';
 		foreach ($cek_usr as $user) {
 			$nama = $user->nama_karyawan;
 			$bagian = $user->indeks_hr;
@@ -1139,6 +1157,15 @@ class Lembur extends CI_Controller
 		$usr = $this->session->userdata('kar_id');
 		$role = $this->session->userdata('role_id');
 		$cek_usr = $this->m_hris->cek_usr($usr);
+		// Initialize department variable to prevent undefined variable error
+		$department = '';
+		$dept_group = '';
+		$nama = '';
+		$bagian = '';
+		$recid_bag = '';
+		$jabatan = '';
+		$tingkatan = '';
+		$recid_struktur = '';
 		foreach ($cek_usr as $user) {
 			$nama = $user->nama_karyawan;
 			$bagian = $user->indeks_hr;
@@ -1687,6 +1714,15 @@ class Lembur extends CI_Controller
 			$role = $this->session->userdata('role_id');
 			$usr = $this->session->userdata('kar_id');
 			$cek_usr = $this->m_hris->cek_usr($usr);
+			// Initialize department variable to prevent undefined variable error
+			$department = '';
+			$id_dept = '';
+			$nama = '';
+			$bagian = '';
+			$recid_bag = '';
+			$jabatan = '';
+			$tingkatan = '';
+			$struktur = '';
 			foreach ($cek_usr as $user) {
 				$nama = $user->nama_karyawan;
 				$bagian = $user->indeks_hr;
@@ -1697,18 +1733,9 @@ class Lembur extends CI_Controller
 				$department = $user->nama_department;
 				$id_dept = $user->recid_department;
 			}
-			if ($role == '1' or $role == '5') {
-				$data['bagian'] = $this->m_hris->bagian_by_role();
-				$data['karyawan']	= $this->m_hris->karyawan_offdown();
-			} else if ($role == '32' or $role == '34') { // hc baros
-				$data['bagian'] = $this->m_hris->bagian_by_str('11');
-				$data['karyawan']	= $this->m_hris->karyawan_offdown();
-			} else {
-				// $data['bagian'] = $this->m_hris->bagian_by_role_dept($department);
-				$recid_karyawan = $this->session->userdata('kar_id');
-				$data['bagian'] = $this->m_absen->bagian_by_admin($recid_karyawan)->result();
-				$data['karyawan']	= $this->m_hris->karyawan_offdown();
-			}
+			// Show all departments and employees regardless of user role
+			$data['bagian'] = $this->m_hris->all_bagian();
+			$data['karyawan']	= $this->m_hris->karyawan_view();
 			$data['dept']	= $department;
 			$data['kategori']	= $this->m_lembur->kategori_lembur_aktif();
 			$usr = $this->session->userdata('kar_id');
@@ -1727,7 +1754,7 @@ class Lembur extends CI_Controller
 		// Ambil data ID bagian yang dikirim via ajax post
 		$tgl_lembur = $this->input->post('tgl_lembur');
 		$recid_bag = $this->input->post('recid_bag');
-		$nama = $this->m_lembur->karyawan_offdown_lembur2($tgl_lembur);
+		$nama = $this->m_hris->karyawan_view();
 		// if($recid_bag == 23) // pengemudi 
 		// {
 		// 	$nama = $this->m_lembur->karyawan_offdown_lembur2($tgl_lembur);
@@ -1753,6 +1780,14 @@ class Lembur extends CI_Controller
 			$role = $this->session->userdata('role_id');
 			$usr = $this->session->userdata('kar_id');
 			$cek_usr = $this->m_hris->cek_usr($usr);
+			// Initialize department variable to prevent undefined variable error
+			$department = '';
+			$nama = '';
+			$bagian = '';
+			$recid_bag = '';
+			$jabatan = '';
+			$tingkatan = '';
+			$struktur = '';
 			foreach ($cek_usr as $user) {
 				$nama = $user->nama_karyawan;
 				$bagian = $user->indeks_hr;
@@ -2637,6 +2672,10 @@ class Lembur extends CI_Controller
 			$klasifikasi = $this->input->post('klasifikasi');
 			$tipe = $this->input->post('tipe');
 			$recid_kategori = $this->input->post('recid_kategori');
+			// If no category selected, set default category (assuming 1 is a valid default)
+			if (empty($recid_kategori)) {
+				$recid_kategori = 1; // Default category
+			}
 			$kat_lain = $this->input->post('kat_lain');
 			$status = "Pengajuan";
 			$approval = "Belum Acc Manager";
@@ -2745,6 +2784,10 @@ class Lembur extends CI_Controller
 			$klasifikasi = $this->input->post('klasifikasi');
 			$tipe = $this->input->post('tipe');
 			$recid_kategori = $this->input->post('recid_kategori');
+			// If no category selected, set default category (assuming 1 is a valid default)
+			if (empty($recid_kategori)) {
+				$recid_kategori = 1; // Default category
+			}
 			$kat_lain = $this->input->post('kat_lain');
 			$status = "Pengajuan";
 			$approval = "Belum Acc Manager";
@@ -2795,6 +2838,14 @@ class Lembur extends CI_Controller
 			$role = $this->session->userdata('role_id');
 			$usr = $this->session->userdata('kar_id');
 			$cek_usr = $this->m_hris->cek_usr($usr);
+			// Initialize department variable to prevent undefined variable error
+			$department = '';
+			$nama = '';
+			$bagian = '';
+			$recid_bag = '';
+			$jabatan = '';
+			$tingkatan = '';
+			$struktur = '';
 			foreach ($cek_usr as $user) {
 				$nama = $user->nama_karyawan;
 				$bagian = $user->indeks_hr;
@@ -2930,6 +2981,14 @@ class Lembur extends CI_Controller
 			$role = $this->session->userdata('role_id');
 			$usr = $this->session->userdata('kar_id');
 			$cek_usr = $this->m_hris->cek_usr($usr);
+			// Initialize department variable to prevent undefined variable error
+			$department = '';
+			$nama = '';
+			$bagian = '';
+			$recid_bag = '';
+			$jabatan = '';
+			$tingkatan = '';
+			$struktur = '';
 			foreach ($cek_usr as $user) {
 				$nama = $user->nama_karyawan;
 				$bagian = $user->indeks_hr;
@@ -2981,6 +3040,14 @@ class Lembur extends CI_Controller
 		if ($logged_in == 1) {
 			$usr = $this->session->userdata('kar_id');
 			$cek_usr = $this->m_hris->cek_usr($usr);
+			// Initialize department variable to prevent undefined variable error
+			$department = '';
+			$nama = '';
+			$bagian = '';
+			$recid_bag = '';
+			$jabatan = '';
+			$tingkatan = '';
+			$struktur = '';
 			foreach ($cek_usr as $user) {
 				$nama = $user->nama_karyawan;
 				$bagian = $user->indeks_hr;
@@ -3106,6 +3173,14 @@ class Lembur extends CI_Controller
 			$usr = $this->session->userdata('kar_id');
 			$data['cek_usr'] = $this->m_hris->cek_usr($usr);
 			$cek_usr = $this->m_hris->cek_usr($usr);
+			// Initialize department variable to prevent undefined variable error
+			$department = '';
+			$nama = '';
+			$bagian = '';
+			$recid_bag = '';
+			$jabatan = '';
+			$tingkatan = '';
+			$struktur = '';
 			foreach ($cek_usr as $user) {
 				$nama = $user->nama_karyawan;
 				$bagian = $user->indeks_hr;
@@ -3281,6 +3356,14 @@ class Lembur extends CI_Controller
 			$role = $this->session->userdata('role_id');
 			$usr = $this->session->userdata('kar_id');
 			$cek_usr = $this->m_hris->cek_usr($usr);
+			// Initialize department variable to prevent undefined variable error
+			$department = '';
+			$nama = '';
+			$bagian = '';
+			$recid_bag = '';
+			$jabatan = '';
+			$tingkatan = '';
+			$struktur = '';
 			foreach ($cek_usr as $user) {
 				$nama = $user->nama_karyawan;
 				$bagian = $user->indeks_hr;
@@ -3976,6 +4059,8 @@ class Lembur extends CI_Controller
 		$this->load->library('email');
 		$msg = "";
 		$stkl = $this->m_lembur->stkl_id($recid_stkl);
+		$recid_struktur = 0; // Initialize variable
+		$dept_group = "";
 		foreach ($stkl->result() as $s) {
 			$recid_bag = $s->recid_bag;
 			$dept_group = $s->dept_group;
@@ -3987,14 +4072,14 @@ class Lembur extends CI_Controller
 		$pic = $this->m_lembur->pic_struktur($recid_struktur);
 		$pic_lindep = $this->m_lembur->pic_lindep($recid_stkl);
 		foreach ($pic_lindep->result() as $pl) {
-			// array_push($terima, $pl->email_cint);
-			$epic = $pl->email_cint;
+			// array_push($terima, $pl->email);
+			$epic = $pl->email;
 		}
 
 		if ($pic->num_rows() > 0) {
 			foreach ($pic->result() as $p) {
 				if ($s->approval == 'Belum Acc Manager') {
-					array_push($terima, $p->email_cint);
+					array_push($terima, $p->email);
 					array_push($terima, $epic);
 					$title .= "Pengajuan Lembur ";
 					$ke = "Manager / Ass Manager " . $s->indeks_hr;
@@ -4011,7 +4096,7 @@ class Lembur extends CI_Controller
 							$title .= "Pengajuan Lembur ";
 						}
 					} else {
-						array_push($terima, $p->email_cint);
+						array_push($terima, $p->email);
 						array_push($terima, $epic);
 						$ke = "Manager / Ass Manager " . $s->indeks_hr;
 						$title .= "Pengajuan Lembur ";
@@ -4022,27 +4107,27 @@ class Lembur extends CI_Controller
 						$ke = "Manager HC ";
 						$title .= "Pengajuan Lembur ";
 					} else {
-						array_push($terima, $p->email_cint);
+						array_push($terima, $p->email);
 						array_push($terima, $epic);
 						$ke = "Manager / Ass Manager " . $s->indeks_hr;
 						$title .= "Pengajuan Lembur ";
 					}
 				} else if ($s->approval == 'Acc HC' or $s->approval == 'Tidak Acc HC') {
 					if ($dept_group == 'Middle Office') {
-						array_push($terima, $p->email_cint);
+						array_push($terima, $p->email);
 						array_push($terima, $epic);
 						array_push($terima, "ade.arifin@chitose.id");
 						array_push($terima, "anita@chitose.id");
 						$ke = "Manager / Ass Manager " . $s->indeks_hr;
 						$title .= "Pengajuan Lembur ";
 					} else {
-						array_push($terima, $p->email_cint);
+						array_push($terima, $p->email);
 						array_push($terima, $epic);
 						$ke = "Manager / Ass Manager " . $s->indeks_hr;
 						$title .= "Pengajuan Lembur ";
 					}
 				} else if ($s->approval == 'Realisasi Bagian') {
-					array_push($terima, $p->email_cint);
+					array_push($terima, $p->email);
 					$title .= "Realisasi Lembur Admin Bagian";
 					$ke = "Manager / Ass Manager " . $s->indeks_hr;
 				} else if ($s->approval == 'Acc Realisasi Manager') {
@@ -4149,6 +4234,14 @@ class Lembur extends CI_Controller
 		$usr = $this->session->userdata('kar_id');
 		$role = $this->session->userdata('role_id');
 		$cek_usr = $this->m_hris->cek_usr($usr);
+		// Initialize department variable to prevent undefined variable error
+		$department = '';
+		$nama = '';
+		$bagian = '';
+		$recid_bag = '';
+		$jabatan = '';
+		$tingkatan = '';
+		$struktur = '';
 		foreach ($cek_usr as $user) {
 			$nama = $user->nama_karyawan;
 			$bagian = $user->indeks_hr;
@@ -4263,6 +4356,14 @@ class Lembur extends CI_Controller
 		$usr = $this->session->userdata('kar_id');
 		$role = $this->session->userdata('role_id');
 		$cek_usr = $this->m_hris->cek_usr($usr);
+		// Initialize department variable to prevent undefined variable error
+		$department = '';
+		$nama = '';
+		$bagian = '';
+		$recid_bag = '';
+		$jabatan = '';
+		$tingkatan = '';
+		$struktur = '';
 		foreach ($cek_usr as $user) {
 			$nama = $user->nama_karyawan;
 			$bagian = $user->indeks_hr;

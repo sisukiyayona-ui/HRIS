@@ -56,6 +56,19 @@
                         </label>
                         <div class="col-md-6 col-sm-6 col-xs-12">
                           <div class="form-group">
+                            <?php
+                            if (isset($kategori) && $kategori->num_rows() > 0) {
+                                // Use dynamic categories from database
+                                foreach ($kategori->result() as $kat) {
+                                    echo '<div class="radio">';
+                                    echo '  <label>';
+                                    echo '    <input type="radio" name="kategori" class="flat" value="' . $kat->jenis . '" required> ' . $kat->jenis . '<br>';
+                                    echo '  </label>';
+                                    echo '</div>';
+                                }
+                            } else {
+                                // Fallback to hardcoded categories
+                            ?>
                             <div class="radio">
                               <label>
                                 <input type="radio" name="kategori" class="flat" value="Kapasitas" required> Kapasitas<br>
@@ -95,6 +108,7 @@
                                </div>
                                <?php  }
                             ?>
+                            <?php } // Close the if statement ?>
                           </div>
                       </div>
                     </div>

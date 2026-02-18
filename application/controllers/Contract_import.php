@@ -119,12 +119,13 @@ class Contract_import extends CI_Controller
             
             // Check if we have the expected structure
             $nik_header = trim(strtoupper($worksheet->getCell('A3')->getValue() ?? ''));
-            $kontrak_header = trim(strtoupper($worksheet->getCell('B3')->getValue() ?? ''));
+            $status_header = trim(strtoupper($worksheet->getCell('B3')->getValue() ?? ''));
+            $kontrak_header = trim(strtoupper($worksheet->getCell('C3')->getValue() ?? ''));
             
-            if ($nik_header !== 'NIK' || $kontrak_header !== 'KONTRAK') {
+            if ($nik_header !== 'NIK' || $status_header !== 'STATUS KARYAWAN' || $kontrak_header !== 'KONTRAK') {
                 return [
                     'success' => false,
-                    'message' => 'Invalid header format. Expected: A3=NIK, B3=KONTRAK'
+                    'message' => 'Invalid header format. Expected: A3=NIK, B3=STATUS KARYAWAN, C3=KONTRAK'
                 ];
             }
 
@@ -140,13 +141,17 @@ class Contract_import extends CI_Controller
                 $nik_cell = $worksheet->getCell('A' . $row);
                 $nik_value = trim((string)$nik_cell->getValue());
                 
+                // Get STATUS KARYAWAN (column B)
+                $status_cell = $worksheet->getCell('B' . $row);
+                $status_value = trim((string)$status_cell->getValue());
+                
                 // Skip rows that contain instruction text
                 if (stripos($nik_value, 'instruksi') !== false || 
                     stripos($nik_value, 'kolom') !== false ||
                     stripos($nik_value, 'wajib') !== false ||
                     stripos($nik_value, 'isi tanggal') !== false ||
                     stripos($nik_value, 'pasangan awal') !== false ||
-                    preg_match('/^\d+\.$/', trim($nik_value)) || // Matches "1.", "2.", "3.", etc.
+                    preg_match('/^\d+\./', trim($nik_value)) || // Matches lines starting with number and period like "1.", "2.", "3. Hanya karyawan..."
                     preg_match('/^\d+$/', trim($nik_value)) || // Matches pure numbers like "2", "3"
                     empty($nik_value)) {
                     continue;
@@ -155,11 +160,12 @@ class Contract_import extends CI_Controller
                 if ($nik_value !== '') {
                     $hasData = true;
                     $rowData['NIK'] = $nik_value;
+                    $rowData['STATUS_KARYAWAN'] = $status_value;
                 }
 
-                // Process contract pairs starting from column B
+                // Process contract pairs starting from column C (since B is now STATUS KARYAWAN)
                 $contract_index = 1;
-                $col_index = 2; // Start from column B
+                $col_index = 3; // Start from column C
                 
                 while ($col_index <= $highestColumnIndex) {
                     // Get AWAL (current column)
@@ -326,6 +332,42 @@ class Contract_import extends CI_Controller
                 continue;
             }
 
+            // Validate employee status - only KONTRAK employees can have contracts
+            $employee_status = isset($contract['STATUS_KARYAWAN']) ? trim(strtoupper($contract['STATUS_KARYAWAN'])) : '';
+            $actual_status = trim(strtoupper($employee->sts_aktif));
+            
+            // If status is provided in import file, validate it matches database
+            if (!empty($employee_status)) {
+                if ($employee_status !== $actual_status) {
+                    $results['errors'][] = [
+                        'row' => $row_number,
+                        'field' => 'STATUS_KARYAWAN',
+                        'message' => 'Status mismatch: Import file shows "' . $employee_status . '" but database shows "' . $actual_status . '" for NIK ' . $contract['NIK']
+                    ];
+                    $results['failed_imports']++;
+                    continue;
+                }
+            }
+            
+            // Check if employee status allows contract operations
+            if ($actual_status === 'TETAP') {
+                $results['errors'][] = [
+                    'row' => $row_number,
+                    'field' => 'STATUS_KARYAWAN',
+                    'message' => 'Cannot create/update contract for TETAP employee (NIK: ' . $contract['NIK'] . '). Only KONTRAK employees can have contracts.'
+                ];
+                $results['failed_imports']++;
+                continue;
+            }
+            
+            // If status is not TETAP, it should be KONTRAK or similar contract status
+            if ($actual_status !== 'KONTRAK' && $actual_status !== 'KONTRAK HABIS' && $actual_status !== 'RESIGN') {
+                $results['warnings'][] = [
+                    'row' => $row_number,
+                    'message' => 'Employee status is "' . $actual_status . '" (NIK: ' . $contract['NIK'] . '). This may not be a standard contract status.'
+                ];
+            }
+
             // Validate contract dates
             $contract_pairs = [];
             for ($i = 1; $i <= 44; $i++) { // Assuming up to 44 contract pairs like in the template
@@ -422,8 +464,8 @@ class Contract_import extends CI_Controller
                 return;
             }
 
-            // Perform the actual import
-            $import_results = $this->perform_import($contract_data);
+            // Perform the actual import using the model
+            $import_results = $this->M_contract_import->perform_import($contract_data);
 
             // Store results in session
             $this->session->set_userdata('contract_import_results', $import_results);
@@ -431,7 +473,8 @@ class Contract_import extends CI_Controller
 
         $usr = $this->session->userdata('kar_id');
         $data['cek_usr'] = $this->M_hris->cek_usr($usr);
-        $data['import_results'] = $import_results;
+        $data['import_summary'] = $import_results; // Changed from import_results to match view expectation
+        $data['results'] = $this->session->userdata('contract_import_data'); // Pass original data for sample display
 
         $this->load->view('layout/a_header');
         $this->load->view('layout/menu_super', $data);
@@ -439,131 +482,7 @@ class Contract_import extends CI_Controller
         $this->load->view('layout/a_footer');
     }
 
-    /**
-     * Perform the actual contract import
-     */
-    private function perform_import($contract_data)
-    {
-        $results = [
-            'total_records' => count($contract_data),
-            'inserted_records' => 0,
-            'updated_records' => 0,
-            'failed_imports' => 0,
-            'errors' => [],
-            'inserted_details' => [],
-            'updated_details' => []
-        ];
 
-        foreach ($contract_data as $index => $contract) {
-            $row_number = $index + 2; // +2 because data starts from row 2 (row 1 is header)
-            
-            // Check if employee exists
-            $employee = $this->db->get_where('karyawan', array('nik' => $contract['NIK']))->row();
-            if (!$employee) {
-                $results['errors'][] = [
-                    'row' => $row_number,
-                    'message' => 'Employee with NIK ' . $contract['NIK'] . ' does not exist'
-                ];
-                $results['failed_imports']++;
-                continue;
-            }
-
-            // Process contract dates
-            $contracts_added = 0;
-            for ($i = 1; $i <= 44; $i++) { // Assuming up to 44 contract pairs like in the template
-                $awal_key = 'AWAL_' . $i;
-                $akhir_key = 'AKHIR_' . $i;
-                
-                $awal_value = isset($contract[$awal_key]) ? trim($contract[$awal_key]) : '';
-                $akhir_value = isset($contract[$akhir_key]) ? trim($contract[$akhir_key]) : '';
-
-                if ($awal_value !== '' && $akhir_value !== '') {
-                    // Validate date format
-                    $awal_date = DateTime::createFromFormat('d-M-y', $awal_value) ?: 
-                               DateTime::createFromFormat('d-M-Y', $awal_value) ?: 
-                               DateTime::createFromFormat('Y-m-d', $awal_value) ?: 
-                               DateTime::createFromFormat('d/m/Y', $awal_value) ?: 
-                               DateTime::createFromFormat('d-m-Y', $awal_value);
-                    $akhir_date = DateTime::createFromFormat('d-M-y', $akhir_value) ?: 
-                                DateTime::createFromFormat('d-M-Y', $akhir_value) ?: 
-                                DateTime::createFromFormat('Y-m-d', $akhir_value) ?: 
-                                DateTime::createFromFormat('d/m/Y', $akhir_value) ?: 
-                                DateTime::createFromFormat('d-m-Y', $akhir_value);
-
-                    if ($awal_date && $akhir_date) {
-                        // Format dates to Y-m-d for database
-                        $formatted_awal = $awal_date->format('Y-m-d');
-                        $formatted_akhir = $akhir_date->format('Y-m-d');
-
-                        // Check if contract already exists for this employee and date range
-                        $existing_contract = $this->db->get_where('karyawan_kontrak', array(
-                            'recid_karyawan' => $employee->recid_karyawan,
-                            'tgl_mulai' => $formatted_awal,
-                            'tgl_akhir' => $formatted_akhir
-                        ))->row();
-
-                        if (!$existing_contract) {
-                            // Insert new contract (only using existing columns)
-                            $contract_data = array(
-                                'recid_karyawan' => $employee->recid_karyawan,
-                                'tgl_mulai' => $formatted_awal,
-                                'tgl_akhir' => $formatted_akhir,
-                                'status_kontrak' => 'aktif',
-                                'created_at' => date('Y-m-d H:i:s'),
-                                'updated_at' => date('Y-m-d H:i:s')
-                            );
-
-                            if ($this->db->insert('karyawan_kontrak', $contract_data)) {
-                                $results['inserted_records']++;
-                                $contracts_added++;
-                                
-                                // Track inserted record details
-                                $results['inserted_details'][] = [
-                                    'NIK' => $contract['NIK'],
-                                    'NAMA' => $employee->nama_karyawan,
-                                    'tgl_mulai' => $formatted_awal,
-                                    'tgl_akhir' => $formatted_akhir
-                                ];
-                            } else {
-                                $db_error = $this->db->error();
-                                log_message('error', 'Contract controller insert failed for NIK ' . $contract['NIK'] . ': ' . $db_error['message']);
-                                $results['errors'][] = [
-                                    'row' => $row_number,
-                                    'message' => 'Failed to insert contract for NIK: ' . $contract['NIK'] . ' - ' . $db_error['message']
-                                ];
-                                $results['failed_imports']++;
-                            }
-                        } else {
-                            // Contract already exists
-                            $results['updated_records']++;
-                            $results['updated_details'][] = [
-                                'NIK' => $contract['NIK'],
-                                'NAMA' => $employee->nama_karyawan,
-                                'tgl_mulai' => $formatted_awal,
-                                'tgl_akhir' => $formatted_akhir,
-                                'message' => 'Contract already exists, skipping duplicate'
-                            ];
-                        }
-                    } else {
-                        $results['errors'][] = [
-                            'row' => $row_number,
-                            'message' => 'Invalid date format in contract data for NIK: ' . $contract['NIK'] . ' (both AWAL and AKHIR dates required)'
-                        ];
-                        $results['failed_imports']++;
-                    }
-                }
-            }
-
-            if ($contracts_added === 0 && !empty($results['errors']) && end($results['errors'])['row'] !== $row_number) {
-                $results['warnings'][] = [
-                    'row' => $row_number,
-                    'message' => 'No valid contracts found for NIK: ' . $contract['NIK']
-                ];
-            }
-        }
-
-        return $results;
-    }
 
     /**
      * Download sample template for contract import
@@ -587,16 +506,20 @@ class Contract_import extends CI_Controller
         // Create the header structure (merged cells format)
         // Row 3: Headers
         $sheet->setCellValue('A3', 'NIK');
-        $sheet->setCellValue('B3', 'KONTRAK');
+        $sheet->setCellValue('B3', 'STATUS KARYAWAN');
+        $sheet->setCellValue('C3', 'KONTRAK');
         
         // Merge NIK cell vertically across all header rows (rows 3-5)
         $sheet->mergeCells('A3:A5');
         
+        // Merge STATUS KARYAWAN cell vertically across all header rows (rows 3-5)
+        $sheet->mergeCells('B3:B5');
+        
         // Merge KONTRAK cell to span all contract columns
-        $sheet->mergeCells('B3:G3'); // Assuming up to 3 contract pairs (6 columns)
+        $sheet->mergeCells('C3:H3'); // Assuming up to 3 contract pairs (6 columns)
         
         // Row 4: Numbered contract periods (1, 2, 3)
-        $contract_num_col = 2; // Start from column B
+        $contract_num_col = 3; // Start from column C
         for ($i = 1; $i <= 3; $i++) { // 3 contract periods
             $start_col = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($contract_num_col);
             $end_col = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($contract_num_col + 1);
@@ -606,7 +529,7 @@ class Contract_import extends CI_Controller
         }
         
         // Row 5: Sub-headers (AWAL/AKHIR pairs)
-        $sub_header_col = 2; // Start from column B
+        $sub_header_col = 3; // Start from column C
         for ($i = 1; $i <= 3; $i++) { // 3 contract pairs
             $sheet->setCellValueByColumnAndRow($sub_header_col, 5, 'AWAL');
             $sheet->setCellValueByColumnAndRow($sub_header_col + 1, 5, 'AKHIR');
@@ -615,34 +538,39 @@ class Contract_import extends CI_Controller
         
         // Style headers
         $sheet->getStyle('A3:A5')->getAlignment()->setVertical('center')->setHorizontal('center');
-        $sheet->getStyle('A3:G5')->getFont()->setBold(true);
-        $sheet->getStyle('A3:G5')->getAlignment()->setHorizontal('center');
-        $sheet->getStyle('A3:G5')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setRGB('E6E6E6');
-        $sheet->getStyle('A3:G5')->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+        $sheet->getStyle('B3:B5')->getAlignment()->setVertical('center')->setHorizontal('center');
+        $sheet->getStyle('A3:H5')->getFont()->setBold(true);
+        $sheet->getStyle('A3:H5')->getAlignment()->setHorizontal('center');
+        $sheet->getStyle('A3:H5')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setRGB('E6E6E6');
+        $sheet->getStyle('A3:H5')->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
         
         // Add sample data (row 6)
         $sheet->setCellValue('A6', '123456789');
-        $sheet->setCellValue('B6', '30-Jun-25');
-        $sheet->setCellValue('C6', '19-Sep-25');
-        $sheet->setCellValue('D6', '20-Sep-25');
-        $sheet->setCellValue('E6', '19-Dec-25');
-        // Leave F6 and G6 empty for the third contract period
+        $sheet->setCellValue('B6', 'KONTRAK'); // STATUS KARYAWAN
+        $sheet->setCellValue('C6', '30-Jun-25');
+        $sheet->setCellValue('D6', '19-Sep-25');
+        $sheet->setCellValue('E6', '20-Sep-25');
+        $sheet->setCellValue('F6', '19-Dec-25');
+        // Leave G6 and H6 empty for the third contract period
                 
         // Add borders to sample data row
-        $sheet->getStyle('A6:G6')->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+        $sheet->getStyle('A6:H6')->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
         
         // Add instructions below the table (row 8 onwards)
         $sheet->setCellValue('A8', 'Instruksi:');
         $sheet->setCellValue('A9', '1. Kolom NIK wajib diisi');
-        $sheet->setCellValue('A10', '2. Isi tanggal kontrak dalam format DD-MMM-YY (misal: 30-Jun-25)');
-        $sheet->setCellValue('A11', '3. Setiap pasangan AWAL dan AKHIR merepresentasikan satu periode kontrak');
-        $sheet->setCellValue('A12', '4. Kosongkan kolom jika tidak ada data');
+        $sheet->setCellValue('A10', '2. Kolom STATUS KARYAWAN wajib diisi (isi dengan "KONTRAK" untuk karyawan kontrak)');
+        $sheet->setCellValue('A11', '3. Hanya karyawan dengan status "KONTRAK" yang dapat memiliki kontrak');
+        $sheet->setCellValue('A12', '4. Karyawan dengan status "TETAP" tidak dapat memiliki kontrak');
+        $sheet->setCellValue('A13', '5. Isi tanggal kontrak dalam format DD-MMM-YY (misal: 30-Jun-25)');
+        $sheet->setCellValue('A14', '6. Setiap pasangan AWAL dan AKHIR merepresentasikan satu periode kontrak');
+        $sheet->setCellValue('A15', '7. Kosongkan kolom jika tidak ada data');
         
         // Style instructions
         $sheet->getStyle('A8')->getFont()->setBold(true);
         
         // Auto size columns
-        for ($col = 'A'; $col <= 'G'; $col++) {
+        for ($col = 'A'; $col <= 'H'; $col++) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
 
@@ -674,8 +602,8 @@ class Contract_import extends CI_Controller
             return;
         }
 
-        // Perform the import
-        $import_results = $this->perform_import($contract_data);
+        // Perform the import using the model
+        $import_results = $this->M_contract_import->perform_import($contract_data);
 
         // Store results in session
         $this->session->set_userdata('contract_import_results', $import_results);
@@ -691,6 +619,34 @@ class Contract_import extends CI_Controller
      * Show import results
      */
     public function results()
+    {
+        $logged_in = $this->session->userdata('logged_in');
+        if ($logged_in != 1) {
+            redirect('Auth/keluar');
+            return;
+        }
+
+        // Get import results from session
+        $import_results = $this->session->userdata('contract_import_results');
+        
+        if (empty($import_results)) {
+            $this->session->set_flashdata('error', 'No import results found.');
+            redirect('Contract_import');
+            return;
+        }
+
+        $usr = $this->session->userdata('kar_id');
+        $data['cek_usr'] = $this->M_hris->cek_usr($usr);
+        $data['import_summary'] = $import_results;
+        $data['results'] = $this->session->userdata('contract_import_data'); // Pass original data for sample display
+
+        $this->load->view('layout/a_header');
+        $this->load->view('layout/menu_super', $data);
+        $this->load->view('contract/import_complete', $data);
+        $this->load->view('layout/a_footer');
+    }
+    
+    public function paginate_results()
     {
         $logged_in = $this->session->userdata('logged_in');
         if ($logged_in != 1) {

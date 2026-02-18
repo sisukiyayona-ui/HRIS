@@ -59,9 +59,9 @@
                 </div>
               </div>
               <div class="col-md-3 col-sm-6 col-xs-12">
-                <div class="info-box" style="background: #f0ad4e; color: white; padding: 15px; border-radius: 5px; text-align: center;">
+                <div class="info-box" data-toggle="modal" data-target="#modalTerlambat" style="background: #f0ad4e; color: white; padding: 15px; border-radius: 5px; text-align: center; cursor: pointer; transition: all 0.3s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
                   <h3 style="margin: 0; font-size: 36px; font-weight: bold;"><?php echo $statistik['terlambat']?></h3>
-                  <p style="margin: 5px 0 0 0; font-size: 14px;">Terlambat</p>
+                  <p style="margin: 5px 0 0 0; font-size: 14px;">Terlambat <i class="fa fa-eye"></i></p>
                 </div>
               </div>
               <div class="col-md-3 col-sm-6 col-xs-12">
@@ -182,7 +182,100 @@
   </div>
 </div>
 
-<!-- Modal Belum Absen -->
+<!-- Modal Terlambat -->
+<div class="modal fade" id="modalTerlambat" tabindex="-1" role="dialog" aria-labelledby="modalTerlambatLabel">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header" style="background: #f0ad4e; color: white;">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color: white; opacity: 1;">
+          <span aria-hidden="true">&times;</span>
+        </button>
+        <h4 class="modal-title" id="modalTerlambatLabel">
+          <i class="fa fa-clock-o"></i> 
+          Daftar Karyawan Terlambat - <?php echo date('d F Y', strtotime($tanggal))?>
+        </h4>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-warning">
+          <strong>Total:</strong> <span id="total_terlambat">0</span> karyawan aktif terlambat
+        </div>
+        
+        <div class="table-responsive">
+          <table id="tbl_terlambat" class="table table-striped table-bordered">
+            <thead>
+              <tr>
+                <th><center>No</center></th>
+                <th><center>NIK</center></th>
+                <th><center>Nama Karyawan</center></th>
+                <th><center>Bagian</center></th>
+                <th><center>Jam Masuk</center></th>
+                <th><center>Keterangan</center></th>
+                <th><center>Validasi</center></th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Data will be loaded via AJAX -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Tutup</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Validasi Terlambat -->
+<div class="modal fade" id="modalValidasiTerlambat" tabindex="-1" role="dialog" aria-labelledby="modalValidasiTerlambatLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header" style="background: #337ab7; color:#fff;">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color:#fff; opacity:1;">
+          <span aria-hidden="true">&times;</span>
+        </button>
+        <h4 class="modal-title" id="modalValidasiTerlambatLabel"><i class="fa fa-check"></i> Validasi Ketidakhadiran</h4>
+      </div>
+      <div class="modal-body">
+        <form id="formValidasiTerlambat">
+          <input type="hidden" name="recid_karyawan" id="valt_recid_karyawan">
+          <input type="hidden" name="tanggal" id="valt_tanggal" value="<?php echo $tanggal?>">
+
+          <div class="form-group">
+            <label>Karyawan</label>
+            <input type="text" class="form-control" id="valt_nama" readonly>
+          </div>
+
+          <div class="form-group">
+            <label>Jenis Izin</label>
+            <select name="jenis" id="valt_jenis" class="form-control" required>
+              <option value="">-- Pilih --</option>
+              <option value="SAKIT">SAKIT (Sakit)</option>
+              <option value="MANGKIR">MANGKIR (Tanpa Izin)</option>
+              <option value="TANPA KETERANGAN">TANPA KETERANGAN (Alpa)</option>
+              <option value="CM">CM (Cuti Melahirkan)</option>
+              <option value="CT">CT (Cuti Tahunan)</option>
+              <option value="CK">CK (Cuti Khusus)</option>
+              <option value="CS">CS (Cuti Sakit)</option>
+              <option value="CN">CN (Cuti Nikah)</option>
+              <option value="LAIN">Lain-Lainnya</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Keterangan</label>
+            <textarea name="keterangan" id="valt_keterangan" class="form-control" rows="3" placeholder="Opsional"></textarea>
+          </div>
+        </form>
+        <div id="valt_alert" style="display:none" class="alert"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Batal</button>
+        <button type="button" id="btnSimpanValidasiTerlambat" class="btn btn-primary">Simpan</button>
+      </div>
+    </div>
+  </div>
+</div>
 <div class="modal fade" id="modalBelumAbsen" tabindex="-1" role="dialog" aria-labelledby="modalBelumAbsenLabel">
   <div class="modal-dialog modal-lg" role="document">
     <div class="modal-content">
@@ -266,14 +359,15 @@
             <label>Jenis Izin</label>
             <select name="jenis" id="val_jenis" class="form-control" required>
               <option value="">-- Pilih --</option>
-              <option value="SAKIT">SAKIT</option>
-              <option value="MANGKIR">MANGKIR</option>
-              <option value="TANPA KETERANGAN">TANPA KETERANGAN</option>
-              <option value="CM">CM</option>
-              <option value="CT">CT</option>
-              <option value="CK">CK</option>
-              <option value="CS">CS</option>
-              <option value="CN">CN</option>
+              <option value="SAKIT">SAKIT (Sakit)</option>
+              <option value="MANGKIR">MANGKIR (Tanpa Izin)</option>
+              <option value="TANPA KETERANGAN">TANPA KETERANGAN (Alpa)</option>
+              <option value="CM">CM (Cuti Melahirkan)</option>
+              <option value="CT">CT (Cuti Tahunan)</option>
+              <option value="CK">CK (Cuti Khusus)</option>
+              <option value="CS">CS (Cuti Sakit)</option>
+              <option value="CN">CN (Cuti Nikah)</option>
+              <option value="LAIN">Lain-Lainnya</option>
             </select>
           </div>
 
@@ -319,6 +413,118 @@ $(document).ready(function() {
     "language": {
       "url": "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json"
     }
+  });
+  
+  // DataTable untuk modal terlambat
+  $('#tbl_terlambat').DataTable({
+    "pageLength": 10,
+    "order": [[1, "asc"]], // Sort by NIK
+    "language": {
+      "url": "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json"
+    }
+  });
+  
+  // Handle modal terlambat show event
+  $('#modalTerlambat').on('show.bs.modal', function() {
+    loadTerlambatData();
+  });
+  
+  function loadTerlambatData() {
+    $.ajax({
+      url: '<?php echo base_url('rekap/get_terlambat_data')?>',
+      method: 'POST',
+      data: { tanggal: '<?php echo $tanggal?>' },
+      dataType: 'json',
+      success: function(res) {
+        if (res.success) {
+          renderTerlambatTable(res.data);
+          $('#total_terlambat').text(res.data.length);
+        } else {
+          alert('Error: ' + res.message);
+        }
+      },
+      error: function(xhr, status, error) {
+        console.error('Error loading terlambat data:', error);
+        alert('Terjadi kesalahan saat memuat data terlambat');
+      }
+    });
+  }
+  
+  function renderTerlambatTable(data) {
+    let tbody = $('#tbl_terlambat tbody');
+    tbody.empty();
+    
+    if (data && data.length > 0) {
+      data.forEach(function(karyawan, idx) {
+        let row = `
+          <tr>
+            <td><center>${idx + 1}</center></td>
+            <td>${karyawan.nik}</td>
+            <td>${karyawan.nama_karyawan}</td>
+            <td>${karyawan.nama_bagian || '-'}</td>
+            <td><center>${karyawan.jam_masuk_display}</center></td>
+            <td><center><span class="label label-warning">${karyawan.keterangan}</span></center></td>
+            <td class="text-center">
+              <button class="btn btn-xs btn-primary btn-validasi-terlambat" 
+                      data-recid_karyawan="${karyawan.recid_karyawan}"
+                      data-nama="${karyawan.nama_karyawan}"
+                      data-nik="${karyawan.nik}"
+                      data-tanggal="<?php echo $tanggal?>">
+                <i class="fa fa-check"></i> Validasi
+              </button>
+            </td>
+          </tr>
+        `;
+        tbody.append(row);
+      });
+    } else {
+      tbody.append('<tr><td colspan="7" class="text-center">Tidak ada data karyawan terlambat</td></tr>');
+    }
+  }
+  
+  // Handle klik validasi terlambat
+  $(document).on('click', '.btn-validasi-terlambat', function() {
+    const recid = $(this).data('recid_karyawan');
+    const nama  = $(this).data('nama');
+    const nik   = $(this).data('nik');
+    const tgl   = $(this).data('tanggal');
+
+    $('#valt_recid_karyawan').val(recid);
+    $('#valt_tanggal').val(tgl);
+    $('#valt_nama').val(nik + ' - ' + nama);
+    $('#valt_jenis').val('');
+    $('#valt_keterangan').val('');
+    $('#valt_alert').hide().removeClass('alert-danger alert-success').text('');
+    $('#modalValidasiTerlambat').modal('show');
+  });
+
+  // Simpan validasi terlambat
+  $('#btnSimpanValidasiTerlambat').on('click', function(){
+    const form = $('#formValidasiTerlambat');
+    const data = form.serialize();
+    $('#btnSimpanValidasiTerlambat').prop('disabled', true).text('Menyimpan...');
+
+    $.ajax({
+      url: '<?php echo base_url('rekap/simpan_izin_terlambat')?>',
+      method: 'POST',
+      data: data,
+      dataType: 'json'
+    }).done(function(res){
+      const alert = $('#valt_alert');
+      if(res.success){
+        alert.removeClass('alert-danger').addClass('alert alert-success').text(res.message).show();
+        setTimeout(function(){ 
+          $('#modalValidasiTerlambat').modal('hide');
+          loadTerlambatData(); // Refresh data
+        }, 800);
+      } else {
+        alert.removeClass('alert-success').addClass('alert alert-danger').text(res.message||'Gagal menyimpan').show();
+      }
+    }).fail(function(xhr){
+      $('#valt_alert').removeClass('alert-success').addClass('alert alert-danger').text('Error: ' + (xhr.responseText||xhr.statusText)).show();
+    }).always(function(){
+      $('#btnSimpanValidasiTerlambat').prop('disabled', false).text('Simpan');
+    });
   });
   
   // Handle klik debug tap

@@ -141,6 +141,14 @@ $route['contract_import/do_import'] = 'contract_import/do_import';
 $route['contract_import/download_template'] = 'contract_import/download_template';
 $route['contract_import/results'] = 'contract_import/results';
 
+// Routes for Status Update Import
+$route['status_update_import'] = 'status_update_import';
+$route['status_update_import/upload'] = 'status_update_import/upload';
+$route['status_update_import/preview'] = 'status_update_import/preview';
+$route['status_update_import/validate_data'] = 'status_update_import/validate_data';
+$route['status_update_import/do_import'] = 'status_update_import/do_import';
+$route['status_update_import/download_template'] = 'status_update_import/download_template';
+
 // Routes for Karyawan Export
 $route['karyawan/export'] = 'karyawan/export';
 

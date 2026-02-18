@@ -526,7 +526,7 @@ function renderKehadiranTable(data, dates, summary) {
                   d.tanggal + '<br><small>' + dayShort + '</small></th>';
   });
   
-  headerHtml += '<th style="background:#27ae60; min-width:80px;">Total<br>Hadir</th>';
+  // headerHtml += '<th style="background:#27ae60; min-width:80px;">Total<br>Hadir</th>';
   headerHtml += '<th style="background:#e74c3c; min-width:80px;">Total<br>Absen</th>';
   headerHtml += '<th style="background:#f39c12; min-width:80px;">Tidak<br>Hadir</th>';
   headerHtml += '<th style="background:#9b59b6; min-width:80px;">Jumlah<br>Sakit</th>';
@@ -588,7 +588,7 @@ function renderKehadiranTable(data, dates, summary) {
     let jumlahIzin = karyawan.jumlah_izin || 0;
     let jumlahCuti = karyawan.jumlah_cuti || 0;
     
-    html += '<td style="background:#ecf0f1;"><strong>' + totalHadir + '</strong></td>';
+    // html += '<td style="background:#ecf0f1;"><strong>' + totalHadir + '</strong></td>';
     html += '<td style="background:#ecf0f1;"><strong>' + totalAbsen + '</strong></td>';
     html += '<td style="background:#ecf0f1;"><strong>' + totalTidakHadir + '</strong></td>';
     html += '<td style="background:#ecf0f1;"><strong>' + jumlahSakit + '</strong></td>';

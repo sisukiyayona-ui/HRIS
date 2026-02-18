@@ -42,6 +42,7 @@
                 <thead>
                   <tr>
                     <th rowspan="3" style="vertical-align: middle; text-align: center;">NIK</th>
+                    <th rowspan="3" style="vertical-align: middle; text-align: center;">STATUS KARYAWAN</th>
                     <th colspan="6" style="text-align: center;">KONTRAK</th>
                   </tr>
                   <tr>
@@ -61,6 +62,7 @@
                 <tbody>
                   <tr>
                     <td>123456789</td>
+                    <td>KONTRAK</td>
                     <td>30-Jun-25</td>
                     <td>19-Sep-25</td>
                     <td>20-Sep-25</td>
@@ -74,6 +76,9 @@
             
             <ul>
               <li><strong>NIK</strong>: Nomor Induk Karyawan (wajib)</li>
+              <li><strong>STATUS KARYAWAN</strong>: Status karyawan (wajib diisi dengan "KONTRAK" untuk karyawan kontrak)</li>
+              <li><strong>Hanya karyawan dengan status "KONTRAK" yang dapat memiliki kontrak</strong></li>
+              <li><strong>Karyawan dengan status "TETAP" tidak dapat memiliki kontrak</strong></li>
               <li><strong>AWAL</strong>: Tanggal mulai kontrak (format: DD-MMM-YY)</li>
               <li><strong>AKHIR</strong>: Tanggal akhir kontrak (format: DD-MMM-YY)</li>
               <li>Kolom bisa kosong jika tidak ada data kontrak</li>

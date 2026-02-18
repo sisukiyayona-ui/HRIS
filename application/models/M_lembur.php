@@ -458,7 +458,23 @@ class M_lembur extends CI_Model
 
 	public function kategori_lembur_aktif()
 	{
-		$query = $this->db->query("SELECT * from stkl_kategori where is_active = '1'");
+		// First try to get from master_absen.jenis_absen table
+		$db_absen = $this->load->database('absen', TRUE);
+		$query = $db_absen->query("SELECT * FROM jenis_absen");
+		
+		if ($query->num_rows() > 0) {
+			return $query;
+		}
+		
+		// Fallback to stkl_kategori if master_absen doesn't have lembur data
+		$query = $this->db->query("SELECT * FROM stkl_kategori WHERE is_active = '1'");
+		return $query;
+	}
+	
+	public function semua_kategori_lembur()
+	{
+		$db_absen = $this->load->database('absen', TRUE);
+		$query = $db_absen->query("SELECT * FROM jenis_absen ORDER BY jenis");
 		return $query;
 	}
 
@@ -574,19 +590,19 @@ class M_lembur extends CI_Model
 
 	public function pic_bagian($bagian)
 	{
-		$query = $this->db->query("SELECT k.email_cint, k.nama_karyawan FROM bagian b join karyawan k on k.recid_karyawan = b.pic_bagian where b.recid_bag = $bagian;");
+		$query = $this->db->query("SELECT k.email, k.nama_karyawan FROM bagian b join karyawan k on k.recid_karyawan = b.pic_bagian where b.recid_bag = $bagian;");
 		return $query;
 	}
 
 	public function pic_struktur($recid_str)
 	{
-		$query = $this->db->query("SELECT k.email_cint, k.nama_karyawan FROM struktur s join bagian b on b.recid_struktur = s.recid_struktur join karyawan k on k.recid_karyawan = s.pic_struktur where s.recid_struktur = $recid_str group by email_cint;;");
+		$query = $this->db->query("SELECT k.email, k.nama_karyawan FROM struktur s join bagian b on b.recid_struktur = s.recid_struktur join karyawan k on k.recid_karyawan = s.pic_struktur where s.recid_struktur = $recid_str group by `email`");
 		return $query;
 	}
 
 	public function pic_lindep($recid_stkl)
 	{
-		$query = $this->db->query("SELECT distinct(k2.email_cint) FROM `stkl_detail` sd
+		$query = $this->db->query("SELECT distinct(k2.email) FROM `stkl_detail` sd
 		join karyawan k on k.recid_karyawan = sd.recid_karyawan
 		join bagian b on b.recid_bag = k.recid_bag
 		join struktur s on s.recid_struktur = b.recid_struktur

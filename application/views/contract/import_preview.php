@@ -22,23 +22,34 @@
             <div class="table-responsive">
               <table class="table table-striped table-bordered">
                 <thead>
+                  <?php
+                  // Determine the maximum contract number in the data
+                  $max_contract = 1;
+                  foreach ($preview_data as $contract) {
+                      for ($i = 1; $i <= 44; $i++) {
+                          if (isset($contract['AWAL_' . $i]) && !empty($contract['AWAL_' . $i]) || 
+                              isset($contract['AKHIR_' . $i]) && !empty($contract['AKHIR_' . $i])) {
+                              $max_contract = max($max_contract, $i);
+                          }
+                      }
+                  }
+                  ?>
                   <tr>
                     <th rowspan="3" style="vertical-align: middle; text-align: center;">No</th>
                     <th rowspan="3" style="vertical-align: middle; text-align: center;">NIK</th>
-                    <th colspan="6" style="text-align: center;">KONTRAK</th>
+                    <th rowspan="3" style="vertical-align: middle; text-align: center;">STATUS KARYAWAN</th>
+                    <th colspan="<?php echo $max_contract * 2; ?>" style="text-align: center;">KONTRAK</th>
                   </tr>
                   <tr>
-                    <th colspan="2" style="text-align: center;">1</th>
-                    <th colspan="2" style="text-align: center;">2</th>
-                    <th colspan="2" style="text-align: center;">3</th>
+                    <?php for ($i = 1; $i <= $max_contract; $i++): ?>
+                    <th colspan="2" style="text-align: center;"><?php echo $i; ?></th>
+                    <?php endfor; ?>
                   </tr>
                   <tr>
+                    <?php for ($i = 1; $i <= $max_contract; $i++): ?>
                     <th style="text-align: center;">AWAL</th>
                     <th style="text-align: center;">AKHIR</th>
-                    <th style="text-align: center;">AWAL</th>
-                    <th style="text-align: center;">AKHIR</th>
-                    <th style="text-align: center;">AWAL</th>
-                    <th style="text-align: center;">AKHIR</th>
+                    <?php endfor; ?>
                   </tr>
                 </thead>
                 <tbody>
@@ -46,18 +57,17 @@
                   <tr>
                     <td><?php echo $index + 1; ?></td>
                     <td><?php echo isset($contract['NIK']) ? htmlspecialchars($contract['NIK']) : ''; ?></td>
-                    <td><?php echo isset($contract['AWAL_1']) ? htmlspecialchars($contract['AWAL_1']) : ''; ?></td>
-                    <td><?php echo isset($contract['AKHIR_1']) ? htmlspecialchars($contract['AKHIR_1']) : ''; ?></td>
-                    <td><?php echo isset($contract['AWAL_2']) ? htmlspecialchars($contract['AWAL_2']) : ''; ?></td>
-                    <td><?php echo isset($contract['AKHIR_2']) ? htmlspecialchars($contract['AKHIR_2']) : ''; ?></td>
-                    <td><?php echo isset($contract['AWAL_3']) ? htmlspecialchars($contract['AWAL_3']) : ''; ?></td>
-                    <td><?php echo isset($contract['AKHIR_3']) ? htmlspecialchars($contract['AKHIR_3']) : ''; ?></td>
+                    <td><?php echo isset($contract['STATUS_KARYAWAN']) ? htmlspecialchars($contract['STATUS_KARYAWAN']) : ''; ?></td>
+                    <?php for ($i = 1; $i <= $max_contract; $i++): ?>
+                    <td><?php echo isset($contract['AWAL_' . $i]) ? htmlspecialchars($contract['AWAL_' . $i]) : ''; ?></td>
+                    <td><?php echo isset($contract['AKHIR_' . $i]) ? htmlspecialchars($contract['AKHIR_' . $i]) : ''; ?></td>
+                    <?php endfor; ?>
                   </tr>
                   <?php endforeach; ?>
                   
                   <?php if (count($preview_data) > 10): ?>
                   <tr>
-                    <td colspan="8" class="text-center">... dan <?php echo count($preview_data) - 10; ?> data lainnya</td>
+                    <td colspan="<?php echo 3 + ($max_contract * 2); ?>" class="text-center">... dan <?php echo count($preview_data) - 10; ?> data lainnya</td>
                   </tr>
                   <?php endif; ?>
                 </tbody>

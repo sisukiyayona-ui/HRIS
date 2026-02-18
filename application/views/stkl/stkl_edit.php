@@ -417,6 +417,11 @@
     return monthNames[this.getMonth()];
   }
 
+  $(document).ready(function(){
+    // Initialize select pickers
+    $('.selectpicker').selectpicker();
+  });
+
    $('#myModal').on('show.bs.modal', function (event) {
       emp_free_ot()        
     });

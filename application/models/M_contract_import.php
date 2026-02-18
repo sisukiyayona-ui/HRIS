@@ -30,12 +30,13 @@ class M_contract_import extends CI_Model {
 
             // Check header structure
             $nik_header = trim(strtoupper($worksheet->getCell('A3')->getValue() ?? ''));
-            $kontrak_header = trim(strtoupper($worksheet->getCell('B3')->getValue() ?? ''));
+            $status_header = trim(strtoupper($worksheet->getCell('B3')->getValue() ?? ''));
+            $kontrak_header = trim(strtoupper($worksheet->getCell('C3')->getValue() ?? ''));
             
-            if ($nik_header !== 'NIK' || $kontrak_header !== 'KONTRAK') {
+            if ($nik_header !== 'NIK' || $status_header !== 'STATUS KARYAWAN' || $kontrak_header !== 'KONTRAK') {
                 return [
                     'success' => false,
-                    'message' => 'Invalid header format. Expected: A3=NIK, B3=KONTRAK'
+                    'message' => 'Invalid header format. Expected: A3=NIK, B3=STATUS KARYAWAN, C3=KONTRAK'
                 ];
             }
 
@@ -51,13 +52,17 @@ class M_contract_import extends CI_Model {
                 $nik_cell = $worksheet->getCell('A' . $row);
                 $nik_value = trim((string)$nik_cell->getValue());
                 
+                // Get STATUS KARYAWAN (column B)
+                $status_cell = $worksheet->getCell('B' . $row);
+                $status_value = trim((string)$status_cell->getValue());
+                
                 // Skip rows that contain instruction text
                 if (stripos($nik_value, 'instruksi') !== false || 
                     stripos($nik_value, 'kolom') !== false ||
                     stripos($nik_value, 'wajib') !== false ||
                     stripos($nik_value, 'isi tanggal') !== false ||
                     stripos($nik_value, 'pasangan awal') !== false ||
-                    preg_match('/^\d+\.$/', trim($nik_value)) || // Matches "1.", "2.", "3.", etc.
+                    preg_match('/^\d+\./', trim($nik_value)) || // Matches lines starting with number and period like "1.", "2.", "3. Hanya karyawan..."
                     preg_match('/^\d+$/', trim($nik_value)) || // Matches pure numbers like "2", "3"
                     empty($nik_value)) {
                     continue;
@@ -66,11 +71,12 @@ class M_contract_import extends CI_Model {
                 if ($nik_value !== '') {
                     $hasData = true;
                     $rowData['NIK'] = $nik_value;
+                    $rowData['STATUS_KARYAWAN'] = $status_value;
                 }
 
-                // Process contract pairs starting from column B
+                // Process contract pairs starting from column C (since B is now STATUS KARYAWAN)
                 $contract_index = 1;
-                $col_index = 2; // Start from column B
+                $col_index = 3; // Start from column C
                 
                 while ($col_index <= $highestColumnIndex) {
                     // Get AWAL (current column)
@@ -158,7 +164,9 @@ class M_contract_import extends CI_Model {
                 $results['errors'][] = [
                     'row' => $row_number,
                     'field' => 'NIK',
-                    'message' => 'NIK is required'
+                    'message' => 'NIK is required',
+                    'NIK' => $contract['NIK'] ?? '',
+                    'NAMA' => $contract['NIK'] ?? ''
                 ];
                 $results['failed_imports']++;
                 continue;
@@ -170,10 +178,68 @@ class M_contract_import extends CI_Model {
                 $results['errors'][] = [
                     'row' => $row_number,
                     'field' => 'NIK',
-                    'message' => 'Employee with NIK ' . $contract['NIK'] . ' does not exist'
+                    'message' => 'Employee with NIK ' . $contract['NIK'] . ' does not exist',
+                    'NIK' => $contract['NIK'],
+                    'NAMA' => $contract['NIK'] // Nama karyawan tidak bisa diambil karena karyawan tidak ditemukan
                 ];
                 $results['failed_imports']++;
                 continue;
+            }
+
+            // Validate employee contract status - only employees with "Ya" in kontrak field can have contracts
+            $employee_status = isset($contract['STATUS_KARYAWAN']) ? trim(strtoupper($contract['STATUS_KARYAWAN'])) : '';
+            $actual_contract_status = trim(strtoupper($employee->kontrak)); // Use 'kontrak' field instead of 'sts_aktif'
+            
+            // Map the database kontrak value to meaningful status
+            $mapped_actual_status = $actual_contract_status === 'YA' ? 'KONTRAK' : 'TETAP';
+            
+            // If status is provided in import file, validate it matches database
+            if (!empty($employee_status)) {
+                // Determine expected database value based on import file
+                $expected_db_value = '';
+                if ($employee_status === 'KONTRAK' || $employee_status === 'YA') {
+                    $expected_db_value = 'YA';
+                } elseif ($employee_status === 'TETAP' || $employee_status === 'TIDAK') {
+                    $expected_db_value = 'TIDAK';
+                }
+                
+                if ($expected_db_value !== '' && $actual_contract_status !== $expected_db_value) {
+                    $mapped_expected_status = $expected_db_value === 'YA' ? 'KONTRAK' : 'TETAP';
+                    $mapped_actual_status_display = $actual_contract_status === 'YA' ? 'KONTRAK' : 'TETAP';
+                    
+                    $results['errors'][] = [
+                        'row' => $row_number,
+                        'field' => 'STATUS_KARYAWAN',
+                        'message' => 'Status mismatch: Import file shows "' . $employee_status . '" but database shows "' . $mapped_actual_status_display . '" for NIK ' . $contract['NIK'],
+                        'NIK' => $contract['NIK'],
+                        'NAMA' => $employee->nama_karyawan
+                    ];
+                    $results['failed_imports']++;
+                    continue;
+                }
+            }
+            
+            // Check if employee status allows contract operations
+            if ($actual_contract_status === 'TIDAK') { // If kontrak is 'TIDAK', employee cannot have contracts
+                $results['errors'][] = [
+                    'row' => $row_number,
+                    'field' => 'STATUS_KARYAWAN',
+                    'message' => 'Cannot create/update contract for employee without contract permission (NIK: ' . $contract['NIK'] . '). Only employees with contract permission ("Ya") can have contracts.',
+                    'NIK' => $contract['NIK'],
+                    'NAMA' => $employee->nama_karyawan
+                ];
+                $results['failed_imports']++;
+                continue;
+            }
+            
+            // If status is not TIDAK, it means kontrak is 'YA', which is valid for contracts
+            if ($actual_contract_status !== 'YA') {
+                $results['warnings'][] = [
+                    'row' => $row_number,
+                    'message' => 'Employee contract permission is "' . $actual_contract_status . '" (NIK: ' . $contract['NIK'] . '). This may not be a standard contract status.',
+                    'NIK' => $contract['NIK'],
+                    'NAMA' => $employee->nama_karyawan
+                ];
             }
 
             // Validate contract dates
@@ -197,7 +263,9 @@ class M_contract_import extends CI_Model {
                             $results['errors'][] = [
                                 'row' => $row_number,
                                 'field' => $awal_key,
-                                'message' => 'Invalid date format for ' . $awal_key . '. Expected DD-MMM-YY, DD-MMM-YYYY, YYYY-MM-DD, DD/MM/YYYY, or DD-MM-YYYY'
+                                'message' => 'Invalid date format for ' . $awal_key . '. Expected DD-MMM-YY, DD-MMM-YYYY, YYYY-MM-DD, DD/MM/YYYY, or DD-MM-YYYY',
+                                'NIK' => $contract['NIK'],
+                                'NAMA' => $employee->nama_karyawan
                             ];
                             continue;
                         }
@@ -213,7 +281,9 @@ class M_contract_import extends CI_Model {
                             $results['errors'][] = [
                                 'row' => $row_number,
                                 'field' => $akhir_key,
-                                'message' => 'Invalid date format for ' . $akhir_key . '. Expected DD-MMM-YY, DD-MMM-YYYY, YYYY-MM-DD, DD/MM/YYYY, or DD-MM-YYYY'
+                                'message' => 'Invalid date format for ' . $akhir_key . '. Expected DD-MMM-YY, DD-MMM-YYYY, YYYY-MM-DD, DD/MM/YYYY, or DD-MM-YYYY',
+                                'NIK' => $contract['NIK'],
+                                'NAMA' => $employee->nama_karyawan
                             ];
                             continue;
                         }
@@ -235,7 +305,9 @@ class M_contract_import extends CI_Model {
                             $results['errors'][] = [
                                 'row' => $row_number,
                                 'field' => $awal_key . '/' . $akhir_key,
-                                'message' => 'Start date cannot be after end date'
+                                'message' => 'Start date cannot be after end date',
+                                'NIK' => $contract['NIK'],
+                                'NAMA' => $employee->nama_karyawan
                             ];
                             continue;
                         }
@@ -274,6 +346,7 @@ class M_contract_import extends CI_Model {
             'total_records' => count($contract_data),
             'inserted_records' => 0,
             'updated_records' => 0,
+            'successful_imports' => 0,
             'failed_imports' => 0,
             'errors' => [],
             'inserted_details' => [],
@@ -284,15 +357,79 @@ class M_contract_import extends CI_Model {
         foreach ($contract_data as $index => $contract) {
             $row_number = $index + 2; // +2 because data starts from row 2 (row 1 is header)
             
+            log_message('debug', 'Processing contract for NIK: ' . $contract['NIK']);
+            
             // Check if employee exists
             $employee = $this->db->get_where('karyawan', array('nik' => $contract['NIK']))->row();
             if (!$employee) {
+                log_message('debug', 'Employee with NIK ' . $contract['NIK'] . ' does not exist in database');
                 $results['errors'][] = [
                     'row' => $row_number,
-                    'message' => 'Employee with NIK ' . $contract['NIK'] . ' does not exist'
+                    'message' => 'Employee with NIK ' . $contract['NIK'] . ' does not exist',
+                    'NIK' => $contract['NIK'],
+                    'NAMA' => $contract['NIK'] // Nama karyawan tidak bisa diambil karena karyawan tidak ditemukan
                 ];
                 $results['failed_imports']++;
                 continue;
+            } else {
+                log_message('debug', 'Employee found: ' . $employee->nama_karyawan . ' (ID: ' . $employee->recid_karyawan . ')');
+                
+                // Validate employee contract status - only employees with "Ya" in kontrak field can have contracts
+                $employee_status = isset($contract['STATUS_KARYAWAN']) ? trim(strtoupper($contract['STATUS_KARYAWAN'])) : '';
+                $actual_contract_status = trim(strtoupper($employee->kontrak)); // Use 'kontrak' field instead of 'sts_aktif'
+                
+                // Map the database kontrak value to meaningful status
+                $mapped_actual_status = $actual_contract_status === 'YA' ? 'KONTRAK' : 'TETAP';
+                
+                // If status is provided in import file, validate it matches database
+                if (!empty($employee_status)) {
+                    // Determine expected database value based on import file
+                    $expected_db_value = '';
+                    if ($employee_status === 'KONTRAK' || $employee_status === 'YA') {
+                        $expected_db_value = 'YA';
+                    } elseif ($employee_status === 'TETAP' || $employee_status === 'TIDAK') {
+                        $expected_db_value = 'TIDAK';
+                    }
+                    
+                    if ($expected_db_value !== '' && $actual_contract_status !== $expected_db_value) {
+                        $mapped_expected_status = $expected_db_value === 'YA' ? 'KONTRAK' : 'TETAP';
+                        $mapped_actual_status_display = $actual_contract_status === 'YA' ? 'KONTRAK' : 'TETAP';
+                        
+                        log_message('debug', 'Status mismatch for NIK ' . $contract['NIK'] . ': Import file shows "' . $employee_status . '" but database shows "' . $mapped_actual_status_display . '"');
+                        $results['errors'][] = [
+                            'row' => $row_number,
+                            'message' => 'Status mismatch: Import file shows "' . $employee_status . '" but database shows "' . $mapped_actual_status_display . '" for NIK ' . $contract['NIK'],
+                            'NIK' => $contract['NIK'],
+                            'NAMA' => $employee->nama_karyawan
+                        ];
+                        $results['failed_imports']++;
+                        continue;
+                    }
+                }
+                
+                // Check if employee status allows contract operations
+                if ($actual_contract_status === 'TIDAK') { // If kontrak is 'TIDAK', employee cannot have contracts
+                    log_message('debug', 'Employee without contract permission cannot have contract: ' . $contract['NIK']);
+                    $results['errors'][] = [
+                        'row' => $row_number,
+                        'message' => 'Cannot create contract for employee without contract permission (NIK: ' . $contract['NIK'] . '). Only employees with contract permission ("Ya") can have contracts.',
+                        'NIK' => $contract['NIK'],
+                        'NAMA' => $employee->nama_karyawan
+                    ];
+                    $results['failed_imports']++;
+                    continue;
+                }
+                
+                // If status is not TIDAK, it means kontrak is 'YA', which is valid for contracts
+                if ($actual_contract_status !== 'YA') {
+                    log_message('debug', 'Non-standard employee contract permission: ' . $actual_contract_status . ' for NIK: ' . $contract['NIK']);
+                    $results['warnings'][] = [
+                        'row' => $row_number,
+                        'message' => 'Employee contract permission is "' . $actual_contract_status . '" (NIK: ' . $contract['NIK'] . '). This may not be a standard contract status.',
+                        'NIK' => $contract['NIK'],
+                        'NAMA' => $employee->nama_karyawan
+                    ];
+                }
             }
 
             // Process contract dates - simple approach like Employee_import
@@ -305,14 +442,19 @@ class M_contract_import extends CI_Model {
                 $akhir_value = isset($contract[$akhir_key]) ? trim($contract[$akhir_key]) : '';
 
                 if ($awal_value !== '' && $akhir_value !== '') {
+                    log_message('debug', 'Processing dates for NIK ' . $contract['NIK'] . ': AWAL=' . $awal_value . ', AKHIR=' . $akhir_value);
+                    
                     // Validate date format (simple approach)
                     $awal_date = $this->parse_date($awal_value);
                     $akhir_date = $this->parse_date($akhir_value);
                 
                     if (!$awal_date || !$akhir_date) {
+                        log_message('debug', 'Date parsing failed for NIK ' . $contract['NIK'] . ': AWAL=' . $awal_value . ', AKHIR=' . $akhir_value);
                         $results['errors'][] = [
                             'row' => $row_number,
-                            'message' => 'Invalid date format in contract data for NIK: ' . $contract['NIK'] . ' (both AWAL and AKHIR dates required)'
+                            'message' => 'Invalid date format in contract data for NIK: ' . $contract['NIK'] . ' (both AWAL and AKHIR dates required)',
+                            'NIK' => $contract['NIK'],
+                            'NAMA' => $employee->nama_karyawan
                         ];
                         $results['failed_imports']++;
                         continue;
@@ -321,59 +463,47 @@ class M_contract_import extends CI_Model {
                     // Format dates for database
                     $formatted_awal = $awal_date->format('Y-m-d');
                     $formatted_akhir = $akhir_date->format('Y-m-d');
-
-                    // Check if contract already exists
-                    $existing_where = ['recid_karyawan' => $employee->recid_karyawan];
-                    if ($formatted_awal) $existing_where['tgl_mulai'] = $formatted_awal;
-                    if ($formatted_akhir) $existing_where['tgl_akhir'] = $formatted_akhir;
                     
-                    $existing_contract = $this->db->get_where('karyawan_kontrak', $existing_where)->row();
+                    log_message('debug', 'Successfully parsed dates for NIK ' . $contract['NIK'] . ': ' . $formatted_awal . ' to ' . $formatted_akhir);
 
-                    if (!$existing_contract) {
-                        // Prepare data for insert (only using existing columns)
-                        // Note: tgl_mulai and tgl_akhir are NOT NULL, so we must provide values
-                        $contract_insert_data = [
-                            'recid_karyawan' => $employee->recid_karyawan,
-                            'status_kontrak' => 'aktif',
-                            'created_at' => date('Y-m-d H:i:s'),
-                            'updated_at' => date('Y-m-d H:i:s')
-                        ];
+                    // Prepare data for insert (always insert new contract, regardless of existing contracts)
+                    // Note: tgl_mulai and tgl_akhir are NOT NULL, so we must provide values
+                    $contract_insert_data = [
+                        'recid_karyawan' => $employee->recid_karyawan,
+                        'status_kontrak' => 'aktif',
+                        'created_at' => date('Y-m-d H:i:s'),
+                        'updated_at' => date('Y-m-d H:i:s')
+                    ];
+                    
+                    // Add dates - both are required (NOT NULL)
+                    $contract_insert_data['tgl_mulai'] = $formatted_awal ?: '1900-01-01';  // Default if null
+                    $contract_insert_data['tgl_akhir'] = $formatted_akhir ?: '1900-01-01'; // Default if null
+
+                    log_message('debug', 'Attempting to insert contract for employee ID: ' . $employee->recid_karyawan . ', dates: ' . $formatted_awal . ' to ' . $formatted_akhir);
+                    
+                    // Simple insert like Employee_import (always insert, don't check for duplicates)
+                    if ($this->db->insert('karyawan_kontrak', $contract_insert_data)) {
+                        log_message('debug', 'Successfully inserted contract for employee ID: ' . $employee->recid_karyawan);
+                        $results['inserted_records']++;
+                        $contracts_added++;
                         
-                        // Add dates - both are required (NOT NULL)
-                        $contract_insert_data['tgl_mulai'] = $formatted_awal ?: '1900-01-01';  // Default if null
-                        $contract_insert_data['tgl_akhir'] = $formatted_akhir ?: '1900-01-01'; // Default if null
-
-                        // Simple insert like Employee_import
-                        if ($this->db->insert('karyawan_kontrak', $contract_insert_data)) {
-                            $results['inserted_records']++;
-                            $contracts_added++;
-                            
-                            // Track inserted record details
-                            $results['inserted_details'][] = [
-                                'NIK' => $contract['NIK'],
-                                'NAMA' => $employee->nama_karyawan,
-                                'tgl_mulai' => $formatted_awal,
-                                'tgl_akhir' => $formatted_akhir
-                            ];
-                        } else {
-                            $db_error = $this->db->error();
-                            log_message('error', 'Contract insert failed for NIK ' . $contract['NIK'] . ': ' . $db_error['message']);
-                            $results['errors'][] = [
-                                'row' => $row_number,
-                                'message' => 'Failed to insert contract for NIK: ' . $contract['NIK'] . ' - ' . $db_error['message']
-                            ];
-                            $results['failed_imports']++;
-                        }
-                    } else {
-                        // Contract already exists
-                        $results['updated_records']++;
-                        $results['updated_details'][] = [
+                        // Track inserted record details
+                        $results['inserted_details'][] = [
                             'NIK' => $contract['NIK'],
                             'NAMA' => $employee->nama_karyawan,
                             'tgl_mulai' => $formatted_awal,
-                            'tgl_akhir' => $formatted_akhir,
-                            'message' => 'Contract already exists, skipping duplicate'
+                            'tgl_akhir' => $formatted_akhir
                         ];
+                    } else {
+                        $db_error = $this->db->error();
+                        log_message('error', 'Contract insert failed for NIK ' . $contract['NIK'] . ': ' . $db_error['message']);
+                        $results['errors'][] = [
+                            'row' => $row_number,
+                            'message' => 'Failed to insert contract for NIK: ' . $contract['NIK'] . ' - ' . $db_error['message'],
+                            'NIK' => $contract['NIK'],
+                            'NAMA' => $employee->nama_karyawan
+                        ];
+                        $results['failed_imports']++;
                     }
                 }
             }
@@ -412,6 +542,19 @@ class M_contract_import extends CI_Model {
         foreach ($formats as $format) {
             $date = DateTime::createFromFormat($format, $date_string);
             if ($date) {
+                // For 2-digit year formats like 'd-M-y', PHP should handle them correctly
+                // But let's ensure we interpret years like '25' as '2025' rather than '1925'
+                if ($format === 'd-M-y') {
+                    $parsed_year = $date->format('Y');
+                    $original_2digit = intval(substr($date_string, -2));
+                    
+                    // If the parsed year is too far in the past (like 1925 instead of 2025)
+                    if ($parsed_year < 2000) {
+                        // Adjust for years that should be in the future
+                        $adjusted_year = 2000 + $original_2digit;
+                        $date->setDate($adjusted_year, $date->format('n'), $date->format('j'));
+                    }
+                }
                 return $date;
             }
         }
