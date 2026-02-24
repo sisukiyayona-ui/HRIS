@@ -3369,4 +3369,191 @@ class Rekap extends CI_Controller {
             ]);
         }
     }
+
+    // Export XLSX for Terlambat List
+    public function export_terlambat_list()
+    {
+        try {
+            $tanggal = $this->input->get('tanggal') ?: date('Y-m-d');
+
+            if (empty($tanggal)) {
+                throw new Exception('Tanggal harus diisi');
+            }
+
+            $query = "
+                SELECT 
+                    k.nik,
+                    k.nama_karyawan,
+                    k.recid_karyawan,
+                    b.nama_bag AS nama_bagian,
+                    MIN(TIME(a.waktu)) as jam_masuk,
+                    ja.jam_in AS jam_in_shift,
+                    ja.jam_out AS jam_out_shift,
+                    ja.keterangan AS nama_shift
+                FROM hris.karyawan k
+                LEFT JOIN hris.karyawan_pin_map pm 
+                    ON k.recid_karyawan = pm.recid_karyawan
+                LEFT JOIN hris.bagian b
+                    ON k.recid_bag = b.recid_bag
+                LEFT JOIN master_finger.absensi a 
+                    ON pm.pin = a.nik 
+                    AND DATE(a.waktu) = ?
+                LEFT JOIN master_absen.jadwal_shift s
+                    ON s.recid_karyawan = k.recid_karyawan AND s.tgl_kerja = ? AND s.is_delete = '0'
+                LEFT JOIN master_absen.jenis_absen ja
+                    ON ja.recid_jenisabsen = s.recid_jenisabsen
+                WHERE k.sts_aktif = 'AKTIF'
+                    AND a.id IS NOT NULL
+                GROUP BY k.nik, k.nama_karyawan, k.recid_karyawan, b.nama_bag, ja.jam_in, ja.jam_out, ja.keterangan
+                HAVING MIN(TIME(a.waktu)) > COALESCE(ja.jam_in, '07:30:00')
+                ORDER BY k.nama_karyawan ASC
+            ";
+            
+            $result = $this->db->query($query, [$tanggal, $tanggal])->result();
+
+            // Prepare Excel
+            if (ob_get_level() > 0) { @ob_end_clean(); }
+            @ob_start();
+            require_once APPPATH.'../vendor/autoload.php';
+            $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+            $sheet = $spreadsheet->getActiveSheet();
+            $sheet->setTitle('Karyawan Terlambat');
+
+            // Header
+            $headers = ['No', 'NIK', 'Nama Karyawan', 'Bagian', 'Jam Masuk', 'Durasi Terlambat'];
+            $col = 'A';
+            foreach ($headers as $header) {
+                $sheet->setCellValue($col . '1', $header);
+                $sheet->getStyle($col . '1')->getFont()->setBold(true);
+                $sheet->getStyle($col . '1')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setARGB('E6E6FA');
+                $col++;
+            }
+
+            // Data
+            $row = 2;
+            $no = 1;
+            foreach ($result as $data) {
+                $patokan = !empty($data->jam_in_shift) ? $data->jam_in_shift : '07:30:00';
+                $diff = strtotime($data->jam_masuk) - strtotime($patokan);
+                $menit_telat = floor($diff / 60);
+                $durasi_telat = floor($menit_telat / 60) . ' jam ' . ($menit_telat % 60) . ' menit';
+
+                $sheet->setCellValue('A' . $row, $no++);
+                $sheet->setCellValue('B' . $row, $data->nik);
+                $sheet->setCellValue('C' . $row, $data->nama_karyawan);
+                $sheet->setCellValue('D' . $row, $data->nama_bagian ?: '-');
+                $sheet->setCellValue('E' . $row, date('H:i', strtotime($data->jam_masuk)));
+                $sheet->setCellValue('F' . $row, $durasi_telat);
+                $row++;
+            }
+
+            // Auto size columns
+            foreach (range('A', 'F') as $col) {
+                $sheet->getColumnDimension($col)->setAutoSize(true);
+            }
+
+            // Output
+            $filename = 'daftar_karyawan_terlambat_' . $tanggal . '.xlsx';
+            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            header('Content-Disposition: attachment; filename="' . $filename . '"');
+            header('Cache-Control: max-age=0, no-cache, no-store, must-revalidate');
+            header('Pragma: no-cache');
+            header('Expires: 0');
+
+            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+            $writer->save('php://output');
+            @ob_end_flush();
+            exit;
+        } catch (Exception $e) {
+            echo "Error: " . $e->getMessage();
+        }
+    }
+
+    // Export XLSX for Belum Absen List
+    public function export_belum_absen_list()
+    {
+        try {
+            $tanggal = $this->input->get('tanggal') ?: date('Y-m-d');
+
+            if (empty($tanggal)) {
+                throw new Exception('Tanggal harus diisi');
+            }
+
+            $query = "
+                SELECT 
+                    k.nik,
+                    k.nama_karyawan,
+                    k.recid_karyawan,
+                    b.nama_bag AS nama_bagian
+                FROM hris.karyawan k
+                LEFT JOIN hris.bagian b ON k.recid_bag = b.recid_bag
+                WHERE k.sts_aktif = 'AKTIF'
+                    AND k.recid_karyawan NOT IN (
+                        SELECT DISTINCT km.recid_karyawan
+                        FROM hris.karyawan km
+                        LEFT JOIN hris.karyawan_pin_map pm ON km.recid_karyawan = pm.recid_karyawan
+                        LEFT JOIN master_finger.absensi a ON pm.pin = a.nik AND DATE(a.waktu) = ?
+                        WHERE a.id IS NOT NULL
+                    )
+                    AND k.recid_karyawan NOT IN (
+                        SELECT recid_karyawan
+                        FROM master_finger.izin_absen
+                        WHERE tgl_mulai = ? AND is_delete = '0'
+                    )
+                ORDER BY k.nama_karyawan ASC
+            ";
+            
+            $result = $this->db->query($query, [$tanggal, $tanggal])->result();
+
+            // Prepare Excel
+            if (ob_get_level() > 0) { @ob_end_clean(); }
+            @ob_start();
+            require_once APPPATH.'../vendor/autoload.php';
+            $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+            $sheet = $spreadsheet->getActiveSheet();
+            $sheet->setTitle('Karyawan Belum Absen');
+
+            // Header
+            $headers = ['No', 'NIK', 'Nama Karyawan', 'Bagian', 'Status'];
+            $col = 'A';
+            foreach ($headers as $header) {
+                $sheet->setCellValue($col . '1', $header);
+                $sheet->getStyle($col . '1')->getFont()->setBold(true);
+                $sheet->getStyle($col . '1')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setARGB('FFE4E1');
+                $col++;
+            }
+
+            // Data
+            $row = 2;
+            $no = 1;
+            foreach ($result as $data) {
+                $sheet->setCellValue('A' . $row, $no++);
+                $sheet->setCellValue('B' . $row, $data->nik);
+                $sheet->setCellValue('C' . $row, $data->nama_karyawan);
+                $sheet->setCellValue('D' . $row, $data->nama_bagian ?: '-');
+                $sheet->setCellValue('E' . $row, 'Belum Absen');
+                $row++;
+            }
+
+            // Auto size columns
+            foreach (range('A', 'E') as $col) {
+                $sheet->getColumnDimension($col)->setAutoSize(true);
+            }
+
+            // Output
+            $filename = 'daftar_karyawan_belum_absen_' . $tanggal . '.xlsx';
+            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            header('Content-Disposition: attachment; filename="' . $filename . '"');
+            header('Cache-Control: max-age=0, no-cache, no-store, must-revalidate');
+            header('Pragma: no-cache');
+            header('Expires: 0');
+
+            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+            $writer->save('php://output');
+            @ob_end_flush();
+            exit;
+        } catch (Exception $e) {
+            echo "Error: " . $e->getMessage();
+        }
+    }
 }

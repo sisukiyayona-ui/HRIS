@@ -187,13 +187,20 @@
   <div class="modal-dialog modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header" style="background: #f0ad4e; color: white;">
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color: white; opacity: 1;">
-          <span aria-hidden="true">&times;</span>
-        </button>
-        <h4 class="modal-title" id="modalTerlambatLabel">
-          <i class="fa fa-clock-o"></i> 
-          Daftar Karyawan Terlambat - <?php echo date('d F Y', strtotime($tanggal))?>
-        </h4>
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+          <h4 class="modal-title" id="modalTerlambatLabel">
+            <i class="fa fa-clock-o"></i> 
+            Daftar Karyawan Terlambat - <?php echo date('d F Y', strtotime($tanggal))?>
+          </h4>
+          <div>
+            <button type="button" class="btn btn-sm btn-success" id="exportTerlambatBtn" style="color: white; margin-right: 10px;">
+              <i class="fa fa-file-excel-o"></i> Export Excel
+            </button>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color: white; opacity: 1; font-size: 24px; line-height: 1;">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+        </div>
       </div>
       <div class="modal-body">
         <div class="alert alert-warning">
@@ -280,13 +287,20 @@
   <div class="modal-dialog modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header" style="background: #d9534f; color: white;">
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color: white; opacity: 1;">
-          <span aria-hidden="true">&times;</span>
-        </button>
-        <h4 class="modal-title" id="modalBelumAbsenLabel">
-          <i class="fa fa-exclamation-triangle"></i> 
-          Daftar Karyawan Belum Absen - <?php echo date('d F Y', strtotime($tanggal))?>
-        </h4>
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+          <h4 class="modal-title" id="modalBelumAbsenLabel">
+            <i class="fa fa-exclamation-triangle"></i> 
+            Daftar Karyawan Belum Absen - <?php echo date('d F Y', strtotime($tanggal))?>
+          </h4>
+          <div>
+            <button type="button" class="btn btn-sm btn-success" id="exportBelumAbsenBtn" style="color: white; margin-right: 10px;">
+              <i class="fa fa-file-excel-o"></i> Export Excel
+            </button>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color: white; opacity: 1; font-size: 24px; line-height: 1;">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+        </div>
       </div>
       <div class="modal-body">
         <div class="alert alert-warning">
@@ -427,6 +441,20 @@ $(document).ready(function() {
   // Handle modal terlambat show event
   $('#modalTerlambat').on('show.bs.modal', function() {
     loadTerlambatData();
+  });
+  
+  // Handle export terlambat button click
+  $(document).on('click', '#exportTerlambatBtn', function() {
+    const tanggal = '<?php echo $tanggal?>';
+    const url = '<?php echo base_url('rekap/export_terlambat_list')?>' + '?tanggal=' + encodeURIComponent(tanggal);
+    window.open(url, '_blank');
+  });
+  
+  // Handle export belum absen button click
+  $(document).on('click', '#exportBelumAbsenBtn', function() {
+    const tanggal = '<?php echo $tanggal?>';
+    const url = '<?php echo base_url('rekap/export_belum_absen_list')?>' + '?tanggal=' + encodeURIComponent(tanggal);
+    window.open(url, '_blank');
   });
   
   function loadTerlambatData() {
